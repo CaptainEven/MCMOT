@@ -174,7 +174,7 @@ class opts(object):
                                  help='filter out tiny boxes')
         self.parser.add_argument('--input-video',
                                  type=str,
-                                 default='../videos/test4.mp4',  # '../videos/MOT16-03.mp4'
+                                 default='../videos/test1.mp4',  # '../videos/MOT16-03.mp4'
                                  help='path to the input video')
         self.parser.add_argument('--output-format',
                                  type=str,

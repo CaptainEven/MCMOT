@@ -262,19 +262,20 @@ def gen_labels(xml_root, img_root, label_root, viz_root=None):
                         bbox_center_x = bbox_left + bbox_width * 0.5
                         bbox_center_y = bbox_top + bbox_height * 0.5
 
-                        # 对bbox进行归一化([0., 1.])
-                        bbox_center_x /= img.shape[1]
-                        bbox_center_y /= img.shape[0]
-                        bbox_width /= img.shape[1]
-                        bbox_height /= img.shape[0]
+                        # 对bbox进行归一化([0.0, 1.0])
+                        bbox_center_x /= img.shape[1]  # W
+                        bbox_center_y /= img.shape[0]  # H
+                        bbox_width /= img.shape[1]     # W
+                        bbox_height /= img.shape[0]    # H
 
                         # 组织label的内容, TODO: 优化IO, 硬盘读写一次, 每帧label生成完成才输出
+                        # class_id, track_id, bbox_center_x, box_center_y, bbox_width, bbox_height
                         label_str = '0 {:d} {:.6f} {:.6f} {:.6f} {:.6f}\n'.format(
                             track_id,
                             bbox_center_x,  # center_x
                             bbox_center_y,  # center_y
-                            bbox_width,  # bbox_w
-                            bbox_height)  # bbox_h
+                            bbox_width,     # bbox_w
+                            bbox_height)    # bbox_h
                         frame_label_strs.append(label_str)
 
                         # # 输出label
@@ -415,7 +416,7 @@ if __name__ == '__main__':
 
     gen_dot_train_file(data_root='/mnt/diskb/even/dataset',
                        rel_path='/MCMOT/images',
-                       out_root='/mnt/diskb/even/MCMOT2/src/data',
+                       out_root='/mnt/diskb/even/MCMOT/src/data',
                        f_name='mcmot.train')
 
     # clean_train_set(img_root='/mnt/diskb/even/dataset/DETRAC/images/train',

@@ -219,7 +219,7 @@ class JDETracker(object):
         # self.removed_stracks = []  # type: list[STrack]
 
         self.tracked_stracks_dict = defaultdict(list)  # value type: list[STrack]
-        self.lost_stracks_dict = defaultdict(list)  # value type: list[STrack]
+        self.lost_stracks_dict = defaultdict(list)     # value type: list[STrack]
         self.removed_stracks_dict = defaultdict(list)  # value type: list[STrack]
 
         self.frame_id = 0
