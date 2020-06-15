@@ -1,0 +1,15 @@
+{
+    "root":"/mnt/diskb/even/dataset",
+    "train":
+    {
+        "mcmot":"./data/mcmot.train"
+    },
+    "test_emb":
+    {
+        "mcmot":"./data/mcmot.train"
+    },
+    "test":
+    {
+        "mcmot":"./data/mcmot.train"
+    }
+}

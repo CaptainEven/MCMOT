@@ -1,0 +1,15 @@
+{
+    "root":"/mnt/diskb/even/dataset",
+    "train":
+    {
+        "detrac":"./data/detrac.train"
+    },
+    "test_emb":
+    {
+        "detrac":"./data/detrac.train"
+    },
+    "test":
+    {
+        "detrac":"./data/detrac.train"
+    }
+}
