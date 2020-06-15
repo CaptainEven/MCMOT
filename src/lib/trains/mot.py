@@ -159,7 +159,7 @@ class McMotLoss(torch.nn.Module):
             if not opt.mse_loss:
                 output['hm'] = _sigmoid(output['hm'])
 
-            # 计算heatmap loss
+            # 计算heat-map loss
             hm_loss += self.crit(output['hm'], batch['hm']) / opt.num_stacks
             if opt.wh_weight > 0:
                 if opt.dense_wh:
