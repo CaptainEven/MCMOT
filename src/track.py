@@ -49,9 +49,11 @@ def write_results(filename, results, data_type):
     logger.info('save results to {}'.format(filename))
 
 
-def write_results_dict(filename, results_dict, data_type, num_classes=2):
+# def write_detect_imgs()
+
+def write_results_dict(file_name, results_dict, data_type, num_classes=2):
     """
-    :param filename:
+    :param file_name:
     :param results_dict:
     :param data_type:
     :param num_classes:
@@ -64,7 +66,7 @@ def write_results_dict(filename, results_dict, data_type, num_classes=2):
     else:
         raise ValueError(data_type)
 
-    with open(filename, 'w') as f:
+    with open(file_name, 'w') as f:
         for cls_id in range(num_classes):
             if cls_id == 0:  # 背景类不处理
                 continue
@@ -83,7 +85,7 @@ def write_results_dict(filename, results_dict, data_type, num_classes=2):
                     line = save_format.format(frame=frame_id, id=track_id, x1=x1, y1=y1, x2=x2, y2=y2, w=w, h=h)
                     f.write(line)
 
-    logger.info('save results to {}'.format(filename))
+    logger.info('save results to {}'.format(file_name))
 
 
 def eval_seq(opt,
@@ -162,6 +164,8 @@ def eval_seq(opt,
             # update detection results of this frame(or image)
             dets_dict = tracker.update_detections(blob, img_0)
 
+            timer.toc()
+
             # plot detection results
             if show_image or save_dir is not None:
                 online_im = vis.plot_detects(image=img_0,
@@ -173,10 +177,10 @@ def eval_seq(opt,
             print('[Err]: un-recognized mode.')
 
 
-        # 可视化中间结果
-        if frame_id > 0:
-            cv2.imshow('Frame {}'.format(str(frame_id)), online_im)
-            cv2.waitKey()
+        # # 可视化中间结果
+        # if frame_id > 0:
+        #     cv2.imshow('Frame {}'.format(str(frame_id)), online_im)
+        #     cv2.waitKey()
 
         if frame_id > 0:
             # 是否显示中间结果
