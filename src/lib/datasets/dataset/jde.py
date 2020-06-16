@@ -219,7 +219,7 @@ class LoadImagesAndLabels:  # for training
                 warnings.simplefilter("ignore")
                 labels_0 = np.loadtxt(label_path, dtype=np.float32).reshape(-1, 6)
 
-                # Normalized xywh to pixel xyxy(x1, y1, x2, y2) format
+                # reformat xywh to pixel xyxy(x1, y1, x2, y2) format
                 labels = labels_0.copy()  # deep copy
                 labels[:, 2] = ratio * w * (labels_0[:, 2] - labels_0[:, 4] / 2) + pad_w  # x1
                 labels[:, 3] = ratio * h * (labels_0[:, 3] - labels_0[:, 5] / 2) + pad_h  # y1

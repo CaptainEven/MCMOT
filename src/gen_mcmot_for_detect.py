@@ -576,12 +576,6 @@ def gen_dataset_for_mcmot_det(src_root, dst_root, dot_train_f_path, dataset_pref
         print('Class {} contains {:d} items'.format(k, v))
 
 
-def gen_dot_train_file():
-    """
-    :return:
-    """
-
-
 if __name__ == "__main__":
     # gen_one_voc_train_dir()
 
