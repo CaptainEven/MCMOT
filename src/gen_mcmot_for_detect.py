@@ -421,6 +421,7 @@ def gen_dataset_for_mcmot_det(src_root, dst_root, dot_train_f_path, dataset_pref
 
     # ----- 数据集统计
     class_cnt_dict = defaultdict(int)
+    sub_dir_cnt = 0
     item_cnt = 0
 
     # 生成.train文件
@@ -428,12 +429,26 @@ def gen_dataset_for_mcmot_det(src_root, dst_root, dot_train_f_path, dataset_pref
 
     # 遍历每一个子目录
     sub_dirs = os.listdir(src_root)
+    sub_dirs.sort()
     for dir_name in sub_dirs:
         print('\nProcessing {}...'.format(dir_name))
 
         dir_path = src_root + '/' + dir_name
         if not os.path.isdir(dir_path):
             print('[Warning]: {} is not a valid dir'.format(dir_path))
+            continue
+
+        # 遍历原始图片目录和xml标签目录
+        src_image_dir = dir_path + '/JPEGImages'
+        src_label_dir = dir_path + '/Annotations'
+        if not (os.path.isdir(src_image_dir) and os.path.isdir(src_label_dir)):
+            print('[Warning]: invalid src image(or label) dir.')
+            continue
+
+        # 遍历子目录的每一张图和对应的xml标签
+        img_names = os.listdir(src_image_dir)
+
+        if len(img_names) == 0 or len(os.listdir(src_label_dir)) == 0:
             continue
 
         # 在dst_root中创建目标子目录
@@ -451,15 +466,11 @@ def gen_dataset_for_mcmot_det(src_root, dst_root, dot_train_f_path, dataset_pref
             shutil.rmtree(dst_label_dir)
             os.makedirs(dst_label_dir)
 
-        # 遍历原始图片目录和xml标签目录
-        src_image_dir = dir_path + '/JPEGImages'
-        src_label_dir = dir_path + '/Annotations'
-        if not (os.path.isdir(src_image_dir) and os.path.isdir(src_label_dir)):
-            print('[Warning]: invalid src image(or label) dir.')
-            continue
+        # 有效的子目录数量
+        sub_dir_cnt += 1
 
-        # 遍历子目录的每一张图和对应的xml标签
-        for img_name in os.listdir(src_image_dir):
+        img_names.sort()
+        for img_name in img_names:
             # 处理每一张图和对应的标签
             img_path = src_image_dir + '/' + img_name
             xml_path = src_label_dir + '/' + img_name.split('.')[0] + '.xml'
@@ -560,10 +571,15 @@ def gen_dataset_for_mcmot_det(src_root, dst_root, dot_train_f_path, dataset_pref
     # 关闭.train文件
     train_f_h.close()
 
-    print('Total {:d} images in the dataset(total {:d} sub_dirs)'.format(item_cnt, len(sub_dirs)))
+    print('Total {:d} images in the dataset(total {:d} sub_dirs)'.format(item_cnt, sub_dir_cnt))
     for k, v in class_cnt_dict.items():
         print('Class {} contains {:d} items'.format(k, v))
 
+
+def gen_dot_train_file():
+    """
+    :return:
+    """
 
 
 if __name__ == "__main__":

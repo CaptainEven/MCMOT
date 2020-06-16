@@ -116,34 +116,33 @@ class McMotLoss(torch.nn.Module):
                 RegWeightedL1Loss() if opt.cat_spec_wh else self.crit_reg  # box size loss
         self.circle_loss = CircleLoss(m=0.25, gamma=80)
 
-        self.emb_dim = opt.reid_dim
+        if opt.id_weight > 0:
+            self.emb_dim = opt.reid_dim
 
-        # @even: 用nID_dict取代nID, 用于MCMOT(multi-class multi-object tracking)训练
-        self.nID_dict = opt.nID_dict
+            # @even: 用nID_dict取代nID, 用于MCMOT(multi-class multi-object tracking)训练
+            self.nID_dict = opt.nID_dict
 
-        # 包含可学习参数的层: 用于Re-ID的全连接层
-        # @even: 为每个需要ReID的类别定义一个分类器
-        self.classifiers = nn.ModuleDict()  # 使用ModuleList或ModuleDict才可以自动注册参数
-        for cls_id, nID in self.nID_dict.items():
-            self.classifiers[str(cls_id)] = nn.Linear(self.emb_dim, nID)  # 全连接层
-            # self.classifiers[str(cls_id)] = ArcMarginFc(in_features=self.emb_dim,  # 使用Arc margin全连接层
-            #                                             out_features=nID,
-            #                                             device=self.opt.device,
-            #                                             m=0.4)
+            # 包含可学习参数的层: 用于Re-ID的全连接层
+            # @even: 为每个需要ReID的类别定义一个分类器
+            self.classifiers = nn.ModuleDict()  # 使用ModuleList或ModuleDict才可以自动注册参数
+            for cls_id, nID in self.nID_dict.items():
+                self.classifiers[str(cls_id)] = nn.Linear(self.emb_dim, nID)  # 全连接层
+                # self.classifiers[str(cls_id)] = ArcMarginFc(in_features=self.emb_dim,  # 使用Arc margin全连接层
+                #                                             out_features=nID,
+                #                                             device=self.opt.device,
+                #                                             m=0.4)
 
-        self.IDLoss = nn.CrossEntropyLoss(ignore_index=-1)  # 不同的track id分类用交叉熵损失
-        # self.TriLoss = TripletLoss()
+            self.IDLoss = nn.CrossEntropyLoss(ignore_index=-1)  # 不同的track id分类用交叉熵损失
+            # self.TriLoss = TripletLoss()
 
-        # 定义每个(y, x)位置的分类损失
-        self.ClsLoss = nn.CrossEntropyLoss()  # 对feature map上每个位置(y, x)检测类别分类
+            # @even: 为每个需要ReID的类别定义一个embedding scale
+            self.emb_scale_dict = dict()
+            for cls_id, nID in self.nID_dict.items():
+                self.emb_scale_dict[cls_id] = math.sqrt(2) * math.log(nID - 1)
 
-        # @even: 为每个需要ReID的类别定义一个embedding scale
-        self.emb_scale_dict = dict()
-        for cls_id, nID in self.nID_dict.items():
-            self.emb_scale_dict[cls_id] = math.sqrt(2) * math.log(nID - 1)
+            self.s_id = nn.Parameter(-1.05 * torch.ones(1))  # track reid分类的损失缩放系数
 
         self.s_det = nn.Parameter(-1.85 * torch.ones(1))  # 检测的损失缩放系数
-        self.s_id = nn.Parameter(-1.05 * torch.ones(1))  # track id分类的损失缩放系数
 
     def forward(self, outputs, batch):
         """
@@ -156,11 +155,12 @@ class McMotLoss(torch.nn.Module):
         # 初始化4个loss为0
         hm_loss, wh_loss, off_loss, reid_loss = 0.0, 0.0, 0.0, 0.0
         for s in range(opt.num_stacks):
+            # ----- Detection loss
             output = outputs[s]
             if not opt.mse_loss:
                 output['hm'] = _sigmoid(output['hm'])
 
-            # 计算heat-map loss
+            # heat-map loss
             hm_loss += self.crit(output['hm'], batch['hm']) / opt.num_stacks
             if opt.wh_weight > 0:
                 if opt.dense_wh:
@@ -168,7 +168,7 @@ class McMotLoss(torch.nn.Module):
                     wh_loss += (self.crit_wh(output['wh'] * batch['dense_wh_mask'],
                                              batch['dense_wh'] * batch['dense_wh_mask']) /
                                 mask_weight) / opt.num_stacks
-                else:  # 计算box尺寸的L1/Smooth L1 loss
+                else:  # box width and height using L1/Smooth L1 loss
                     wh_loss += self.crit_reg(
                         output['wh'], batch['reg_mask'],
                         batch['ind'], batch['wh']) / opt.num_stacks
@@ -177,10 +177,10 @@ class McMotLoss(torch.nn.Module):
                 off_loss += self.crit_reg(output['reg'], batch['reg_mask'],
                                           batch['ind'], batch['reg']) / opt.num_stacks
 
-            cls_id_map = batch['cls_id_map']
+            # ----- ReID loss: only process the class requiring ReID
+            if opt.id_weight > 0:  # if ReID is needed
+                cls_id_map = batch['cls_id_map']
 
-            # ----- ReID损失: 仅仅处理需要ReID的类别
-            if opt.id_weight > 0:  # 如果需要训练ReID
                 # 遍历每一个需要ReID的检测类别, 计算ReID损失
                 for cls_id, id_num in self.nID_dict.items():
                     inds = torch.where(cls_id_map == cls_id)
@@ -222,16 +222,23 @@ class McMotLoss(torch.nn.Module):
                    + (self.s_det + self.s_id)
         else:
             loss = torch.exp(-self.s_det) * det_loss \
-                   + (self.s_det + self.s_id)
+                   + self.s_det
 
         loss *= 0.5
         # print(loss, hm_loss, wh_loss, off_loss, id_loss)
 
-        loss_stats = {'loss': loss,
-                      'hm_loss': hm_loss,
-                      'wh_loss': wh_loss,
-                      'off_loss': off_loss,
-                      'id_loss': reid_loss}
+        if opt.id_weight > 0:
+            loss_stats = {'loss': loss,
+                          'hm_loss': hm_loss,
+                          'wh_loss': wh_loss,
+                          'off_loss': off_loss,
+                          'id_loss': reid_loss}
+        else:
+            loss_stats = {'loss': loss,
+                          'hm_loss': hm_loss,
+                          'wh_loss': wh_loss,
+                          'off_loss': off_loss}  # only exists det loss
+
         return loss, loss_stats
 
 
@@ -241,7 +248,10 @@ class MotTrainer(BaseTrainer):
         super(MotTrainer, self).__init__(opt, model, optimizer=optimizer)
 
     def _get_losses(self, opt):
-        loss_states = ['loss', 'hm_loss', 'wh_loss', 'off_loss', 'id_loss']
+        if opt.id_weight > 0:
+            loss_states = ['loss', 'hm_loss', 'wh_loss', 'off_loss', 'id_loss']
+        else:
+            loss_states = ['loss', 'hm_loss', 'wh_loss', 'off_loss']
 
         # loss = MotLoss(opt)
         loss = McMotLoss(opt)  # multi-class multi-object tracking loss

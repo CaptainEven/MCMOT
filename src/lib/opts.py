@@ -174,7 +174,7 @@ class opts(object):
                                  help='filter out tiny boxes')
         self.parser.add_argument('--input-video',
                                  type=str,
-                                 default='../videos/test4.mp4',  # '../videos/MOT16-03.mp4'
+                                 default='../videos/test5.mp4',  # '../videos/MOT16-03.mp4'
                                  help='path to the input video')
         self.parser.add_argument('--output-format',
                                  type=str,
@@ -191,7 +191,7 @@ class opts(object):
         #                          default='../src/lib/cfg/detrac.json',  # 'mot15.json',
         #                          help='load data from cfg')
         self.parser.add_argument('--data_cfg', type=str,
-                                 default='../src/lib/cfg/mcmot.json',  # 'mot15.json',
+                                 default='../src/lib/cfg/mcmot_det.json',  # 'mot15.json',
                                  help='load data from cfg')
         self.parser.add_argument('--data_dir',
                                  type=str,
@@ -217,12 +217,13 @@ class opts(object):
                                  type=float,
                                  default=0.1,
                                  help='loss weight for bounding box size.')
-        self.parser.add_argument('--id_loss', default='ce',
+        self.parser.add_argument('--id_loss',
+                                 default='ce',
                                  help='reid loss: ce | triplet')
         self.parser.add_argument('--id_weight',
                                  type=float,
-                                 default=1,
-                                 help='loss weight for id')
+                                 default=0,  # 1
+                                 help='loss weight for id')  # 控制是否计算ReID
         self.parser.add_argument('--reid_dim',
                                  type=int,
                                  default=128,  # 512
@@ -321,7 +322,8 @@ class opts(object):
             # opt.nID = dataset.nID
 
             # @even: 用nID_dict取代nID
-            opt.nID_dict = dataset.nID_dict
+            if opt.id_weight > 0:
+                opt.nID_dict = dataset.nID_dict
 
             opt.img_size = (1088, 608)
         else:
