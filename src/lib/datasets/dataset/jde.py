@@ -215,14 +215,16 @@ class LoadImagesAndLabels:  # for training
 
         # Load labels
         if os.path.isfile(label_path):
-            labels0 = np.loadtxt(label_path, dtype=np.float32).reshape(-1, 6)
+            with warnings.catch_warnings():  # 空的txt文件不报警告
+                warnings.simplefilter("ignore")
+                labels_0 = np.loadtxt(label_path, dtype=np.float32).reshape(-1, 6)
 
-            # Normalized xywh to pixel xyxy(x1, y1, x2, y2) format
-            labels = labels0.copy()  # deep copy
-            labels[:, 2] = ratio * w * (labels0[:, 2] - labels0[:, 4] / 2) + pad_w  # x1
-            labels[:, 3] = ratio * h * (labels0[:, 3] - labels0[:, 5] / 2) + pad_h  # y1
-            labels[:, 4] = ratio * w * (labels0[:, 2] + labels0[:, 4] / 2) + pad_w  # x2
-            labels[:, 5] = ratio * h * (labels0[:, 3] + labels0[:, 5] / 2) + pad_h  # y2
+                # Normalized xywh to pixel xyxy(x1, y1, x2, y2) format
+                labels = labels_0.copy()  # deep copy
+                labels[:, 2] = ratio * w * (labels_0[:, 2] - labels_0[:, 4] / 2) + pad_w  # x1
+                labels[:, 3] = ratio * h * (labels_0[:, 3] - labels_0[:, 5] / 2) + pad_h  # y1
+                labels[:, 4] = ratio * w * (labels_0[:, 2] + labels_0[:, 4] / 2) + pad_w  # x2
+                labels[:, 5] = ratio * h * (labels_0[:, 3] + labels_0[:, 5] / 2) + pad_h  # y2
         else:
             labels = np.array([])
 
@@ -544,12 +546,11 @@ class JointDataset(LoadImagesAndLabels):  # for training
         # print('output_h, output_w: %d %d' % (output_h, output_w))
 
         num_classes = self.num_classes
-        # print('{:d} classes of objects need to be classified'.format(self.num_classes))
 
         # 图片中实际标注的目标数
         num_objs = labels.shape[0]
 
-        # GT of detection
+        # --- GT of detection
         hm = np.zeros((num_classes, output_h, output_w), dtype=np.float32)  # C×H×W: heat-map通道数即类别数
         wh = np.zeros((self.max_objs, 2), dtype=np.float32)
         reg = np.zeros((self.max_objs, 2), dtype=np.float32)
@@ -558,7 +559,7 @@ class JointDataset(LoadImagesAndLabels):  # for training
                             dtype=np.uint8)  # 只计算feature map有目标的像素的reg loss
 
         if self.opt.id_weight > 0:
-            # GT of ReID
+            # --- GT of ReID
             ids = np.zeros((self.max_objs,), dtype=np.int64)  # 一张图最多检测并ReID K个目标, 都初始化id为0
 
             # @even: 每个目标类别都对应一组track ids

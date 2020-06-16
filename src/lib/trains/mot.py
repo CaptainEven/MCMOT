@@ -160,20 +160,22 @@ class McMotLoss(torch.nn.Module):
             if not opt.mse_loss:
                 output['hm'] = _sigmoid(output['hm'])
 
-            # heat-map loss
+            # --- heat-map loss
             hm_loss += self.crit(output['hm'], batch['hm']) / opt.num_stacks
+
+            # --- box width and height loss
             if opt.wh_weight > 0:
                 if opt.dense_wh:
                     mask_weight = batch['dense_wh_mask'].sum() + 1e-4
                     wh_loss += (self.crit_wh(output['wh'] * batch['dense_wh_mask'],
-                                             batch['dense_wh'] * batch['dense_wh_mask']) /
-                                mask_weight) / opt.num_stacks
+                                             batch['dense_wh'] * batch['dense_wh_mask']) / mask_weight) \
+                               / opt.num_stacks
                 else:  # box width and height using L1/Smooth L1 loss
-                    wh_loss += self.crit_reg(
-                        output['wh'], batch['reg_mask'],
-                        batch['ind'], batch['wh']) / opt.num_stacks
+                    wh_loss += self.crit_reg(output['wh'], batch['reg_mask'],
+                                             batch['ind'], batch['wh']) / opt.num_stacks
 
-            if opt.reg_offset and opt.off_weight > 0:  # 计算box中心坐标偏移的L1 loss
+            # --- bbox center offset loss
+            if opt.reg_offset and opt.off_weight > 0:  # offset using L1 loss
                 off_loss += self.crit_reg(output['reg'], batch['reg_mask'],
                                           batch['ind'], batch['reg']) / opt.num_stacks
 
@@ -201,13 +203,13 @@ class McMotLoss(torch.nn.Module):
                     # cls_id_output = self.classifiers[str(cls_id)].forward(cls_id_head, cls_id_target).contiguous()
 
                     # --- 累加每一个检测类别的ReID loss
-                    # 使用交叉熵优化ReID
+                    # 选择一: 使用交叉熵优化ReID
                     # reid_loss += self.IDLoss(cls_id_output, cls_id_target)
 
-                    # 使用Circle loss优化ReID
+                    # 选择二: 使用Circle loss优化ReID
                     reid_loss += self.circle_loss(*convert_label_to_similarity(cls_id_output, cls_id_target))
 
-                    # 使用triplet loss优化ReID
+                    # 选择三: 使用triplet loss优化ReID
                     # reid_loss += self.IDLoss(id_output, id_target) + self.TriLoss(id_head, id_target)
 
         # loss = opt.hm_weight * hm_loss + opt.wh_weight * wh_loss + opt.off_weight * off_loss + opt.id_weight * id_loss
