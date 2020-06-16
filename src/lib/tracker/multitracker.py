@@ -299,6 +299,8 @@ class JDETracker(object):
 
         # ----- get detections
         with torch.no_grad():
+            dets_dict = defaultdict(list)
+
             output = self.model.forward(im_blob)[-1]
 
             hm = output['hm'].sigmoid_()
@@ -320,6 +322,23 @@ class JDETracker(object):
                                                    num_classes=self.opt.num_classes,
                                                    cat_spec_wh=self.opt.cat_spec_wh,
                                                    K=self.opt.K)
+
+            # 检测结果后处理
+            dets = self.post_process(dets, meta)
+            dets = self.merge_outputs([dets])
+            # dets = self.merge_outputs(dets)[1]
+
+            # ----- 解析每个检测类别
+            for cls_id in range(self.opt.num_classes):  # cls_id从0开始
+                cls_dets = dets[cls_id + 1]
+
+                # 过滤掉score得分太低的dets
+                remain_inds = cls_dets[:, 4] > self.opt.conf_thres
+                cls_dets = cls_dets[remain_inds]
+                # print(cls_dets)
+                dets_dict[cls_id] = cls_dets
+
+        return dets_dict
 
 
     # JDE跟踪器更新追踪状态

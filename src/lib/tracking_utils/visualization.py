@@ -26,6 +26,43 @@ def resize_image(image, max_size=800):
     return image
 
 
+def plot_detects(image, dets_dict, num_classes, frame_id, fps=0.0):
+    """
+    plot detection results of this frame(or image)
+    :param image:
+    :param dets_dict:
+    :param num_classes:
+    :param frame_id:
+    :param fps:
+    :return:
+    """
+    img = np.ascontiguousarray(np.copy(image))
+    im_h, im_w = img.shape[:2]
+
+    text_scale = max(1.0, image.shape[1] / 1200.)  # 1600.
+    # text_thickness = 1 if text_scale > 1.1 else 1
+    text_thickness = 2  # 自定义ID文本线宽
+    line_thickness = max(1, int(image.shape[1] / 500.))
+
+    radius = max(5, int(im_w / 140.))
+
+    for cls_id in range(num_classes):
+        # plot each object class
+        cls_dets = dets_dict[cls_id]
+
+        cv2.putText(img, 'frame: %d fps: %.2f'
+                    % (frame_id, fps),
+                    (0, int(15 * text_scale)),
+                    cv2.FONT_HERSHEY_PLAIN,
+                    text_scale,
+                    (0, 0, 255),
+                    thickness=2)
+
+        # plot each object of the object class
+        for obj_i, obj in enumerate(cls_dets):
+            pass
+
+
 def plot_tracks(image,
                 tlwhs_dict,
                 obj_ids_dict,
@@ -34,6 +71,7 @@ def plot_tracks(image,
                 frame_id=0,
                 fps=0.0):
     """
+    :rtype:
     :param image:
     :param tlwhs_dict:
     :param obj_ids_dict:
@@ -46,7 +84,7 @@ def plot_tracks(image,
     img = np.ascontiguousarray(np.copy(image))
     im_h, im_w = img.shape[:2]
 
-    top_view = np.zeros([im_w, im_w, 3], dtype=np.uint8) + 255
+    # top_view = np.zeros([im_w, im_w, 3], dtype=np.uint8) + 255
 
     text_scale = max(1.0, image.shape[1] / 1200.)  # 1600.
     # text_thickness = 1 if text_scale > 1.1 else 1
@@ -59,8 +97,8 @@ def plot_tracks(image,
         cls_tlwhs = tlwhs_dict[cls_id]
         obj_ids = obj_ids_dict[cls_id]
 
-        cv2.putText(img, 'frame: %d fps: %.2f num: %d'
-                    % (frame_id, fps, len(cls_tlwhs)),
+        cv2.putText(img, 'frame: %d fps: %.2f'
+                    % (frame_id, fps),
                     (0, int(15 * text_scale)),
                     cv2.FONT_HERSHEY_PLAIN,
                     text_scale,
@@ -119,7 +157,7 @@ def plot_tracking(image,
     im = np.ascontiguousarray(np.copy(image))
     im_h, im_w = im.shape[:2]
 
-    top_view = np.zeros([im_w, im_w, 3], dtype=np.uint8) + 255
+    # top_view = np.zeros([im_w, im_w, 3], dtype=np.uint8) + 255
 
     text_scale = max(1.0, image.shape[1] / 1200.)  # 1600.
     # text_thickness = 1 if text_scale > 1.1 else 1

@@ -31,7 +31,8 @@ def run_demo(opt):
                  result_f_name=result_file_name,
                  save_dir=frame_dir,
                  show_image=False,
-                 frame_rate=frame_rate)
+                 frame_rate=frame_rate,
+                 mode='detect')
     except Exception as e:
         logger.info(e)
 
