@@ -1,5 +1,5 @@
 # MCMOT
-## One-shot multi-class multi-object tracking(单阶段实时多类别多目标跟踪)
+One-shot multi-class multi-object tracking(单阶段实时多类别多目标跟踪)
 </br>
 This is an extention work of FairMOT, which extends the one-class multi-object tracking to multi-class multi-object tracking
 </br>
