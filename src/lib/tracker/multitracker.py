@@ -303,17 +303,10 @@ class JDETracker(object):
 
             output = self.model.forward(im_blob)[-1]
 
+            # detect outputs
             hm = output['hm'].sigmoid_()
-            # print("hm shape ", hm.shape, "hm:\n", hm)
-
             wh = output['wh']
-            # print("wh shape ", wh.shape, "wh:\n", wh)
-
-            id_feature = output['id']
-            id_feature = F.normalize(id_feature, dim=1)
-
             reg = output['reg'] if self.opt.reg_offset else None
-            # print("reg shape ", reg.shape, "reg:\n", reg)
 
             # 检测和分类结果解析
             dets, inds, cls_inds_mask = mot_decode(heatmap=hm,

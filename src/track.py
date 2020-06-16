@@ -147,24 +147,37 @@ def eval_seq(opt,
             # 保存每一帧的结果
             for cls_id in range(opt.num_classes):
                 results_dict[cls_id].append((frame_id + 1, online_tlwhs_dict[cls_id], online_ids_dict[cls_id]))
+
+            # 绘制每一帧的结果
+            if show_image or save_dir is not None:
+                if frame_id > 0:
+                    online_im: ndarray = vis.plot_tracks(image=img_0,
+                                                         tlwhs_dict=online_tlwhs_dict,
+                                                         obj_ids_dict=online_ids_dict,
+                                                         num_classes=opt.num_classes,
+                                                         frame_id=frame_id,
+                                                         fps=1.0 / timer.average_time)
+
         elif mode == 'detect':  # process detections
+            # update detection results of this frame(or image)
             dets_dict = tracker.update_detections(blob, img_0)
+
+            # plot detection results
+            if show_image or save_dir is not None:
+                online_im = vis.plot_detects(image=img_0,
+                                             dets_dict=dets_dict,
+                                             num_classes=opt.num_classes,
+                                             frame_id=frame_id,
+                                             fps=1.0 / max(1e-5, timer.average_time))
         else:
             print('[Err]: un-recognized mode.')
 
-        # 绘制每一帧的结果
-        if show_image or save_dir is not None:
-            if frame_id > 0:
-                online_im: ndarray = vis.plot_tracks(image=img_0,
-                                                     tlwhs_dict=online_tlwhs_dict,
-                                                     obj_ids_dict=online_ids_dict,
-                                                     num_classes=opt.num_classes,
-                                                     frame_id=frame_id,
-                                                     fps=1.0 / timer.average_time)
-        # # 可视化中间结果
-        # if frame_id > 0:
-        #     cv2.imshow('Frame {}'.format(str(frame_id)), online_im)
-        #     cv2.waitKey()
+
+        # 可视化中间结果
+        if frame_id > 0:
+            cv2.imshow('Frame {}'.format(str(frame_id)), online_im)
+            cv2.waitKey()
+
         if frame_id > 0:
             # 是否显示中间结果
             if show_image:

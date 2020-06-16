@@ -2,6 +2,14 @@ import numpy as np
 import cv2
 from lib.tracker.multitracker import id2cls, cls2id
 
+cls_color_dict = {
+    'car': [0, 255, 0],
+    'bicycle': [255, 0, 0],
+    'person': [0, 0, 255],
+    'cyclist': [237, 149, 100],
+    'tricycle': [211, 85, 186]
+}
+
 
 def tlwhs_to_tlbrs(tlwhs):
     tlbrs = np.copy(tlwhs)
@@ -26,7 +34,11 @@ def resize_image(image, max_size=800):
     return image
 
 
-def plot_detects(image, dets_dict, num_classes, frame_id, fps=0.0):
+def plot_detects(image,
+                 dets_dict,
+                 num_classes,
+                 frame_id,
+                 fps=0.0):
     """
     plot detection results of this frame(or image)
     :param image:
@@ -39,12 +51,9 @@ def plot_detects(image, dets_dict, num_classes, frame_id, fps=0.0):
     img = np.ascontiguousarray(np.copy(image))
     im_h, im_w = img.shape[:2]
 
-    text_scale = max(1.0, image.shape[1] / 1200.)  # 1600.
-    # text_thickness = 1 if text_scale > 1.1 else 1
-    text_thickness = 2  # 自定义ID文本线宽
-    line_thickness = max(1, int(image.shape[1] / 500.))
-
-    radius = max(5, int(im_w / 140.))
+    text_scale = max(1.0, image.shape[1] / 1300.)  # 1600.
+    text_thickness = 2
+    line_thickness = max(1, int(image.shape[1] / 800.))
 
     for cls_id in range(num_classes):
         # plot each object class
@@ -60,7 +69,28 @@ def plot_detects(image, dets_dict, num_classes, frame_id, fps=0.0):
 
         # plot each object of the object class
         for obj_i, obj in enumerate(cls_dets):
-            pass
+            # left, top, right, down, score, cls_id
+            x1, y1, x2, y2, score, cls_id = obj
+            cls_name = id2cls[cls_id]
+            box_int = tuple(map(int, (x1, y1, x2, y2)))
+            color = cls_color_dict[cls_name]
+
+            # draw bbox
+            cv2.rectangle(img,
+                          box_int[0:2],
+                          box_int[2:4],
+                          color=color,
+                          thickness=line_thickness)
+
+            # draw class name
+            cv2.putText(img,
+                        cls_name,
+                        (box_int[0], box_int[1]),
+                        cv2.FONT_HERSHEY_PLAIN,
+                        text_scale,
+                        [0, 255, 255],  # cls_id: yellow
+                        thickness=text_thickness)
+    return img
 
 
 def plot_tracks(image,
@@ -115,7 +145,7 @@ def plot_tracks(image,
             color = get_color(abs(obj_id))
             cv2.rectangle(img, int_box[0:2], int_box[2:4], color=color, thickness=line_thickness)  # bbox: 随机颜色
 
-            # 绘制id编号
+            # plot track id
             cv2.putText(img,
                         id_text,
                         (int_box[0], int_box[1] + 30),
@@ -124,7 +154,7 @@ def plot_tracks(image,
                         (0, 255, 255),  # id: yellow
                         thickness=text_thickness)
 
-            # 绘制目标类别
+            # plot class id
             cv2.putText(img,
                         id2cls[cls_id],
                         (int(x1), int(y1)),
@@ -134,6 +164,7 @@ def plot_tracks(image,
                         thickness=text_thickness)
 
     return img
+
 
 def plot_tracking(image,
                   tlwhs,
@@ -219,6 +250,14 @@ def plot_trajectory(image, tlwhs, track_ids):
 
 
 def plot_detections(image, tlbrs, scores=None, color=(255, 0, 0), ids=None):
+    """
+    :param image:
+    :param tlbrs:
+    :param scores:
+    :param color:
+    :param ids:
+    :return:
+    """
     im = np.copy(image)
     text_scale = max(1, image.shape[1] / 800.)
     thickness = 2 if text_scale > 1.3 else 1
