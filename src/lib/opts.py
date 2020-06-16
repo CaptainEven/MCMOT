@@ -174,7 +174,7 @@ class opts(object):
                                  help='filter out tiny boxes')
         self.parser.add_argument('--input-video',
                                  type=str,
-                                 default='../videos/test1.mp4',  # '../videos/MOT16-03.mp4'
+                                 default='../videos/test4.mp4',  # '../videos/MOT16-03.mp4'
                                  help='path to the input video')
         self.parser.add_argument('--output-format',
                                  type=str,
@@ -219,7 +219,9 @@ class opts(object):
                                  help='loss weight for bounding box size.')
         self.parser.add_argument('--id_loss', default='ce',
                                  help='reid loss: ce | triplet')
-        self.parser.add_argument('--id_weight', type=float, default=1,
+        self.parser.add_argument('--id_weight',
+                                 type=float,
+                                 default=1,
                                  help='loss weight for id')
         self.parser.add_argument('--reid_dim',
                                  type=int,

@@ -8,6 +8,7 @@ import shutil
 import math
 from os import listdir, getcwd
 from os.path import join
+from collections import defaultdict
 import cv2
 import numpy as np
 
@@ -51,7 +52,7 @@ classes_c5 = ['car',                 # 0
               "person",              # 2
               "cyclist",             # 3
               "tricycle",            # 4
-              "non_interest_zone"]
+              "non_interest_zone"]   # 5
 
 # classes = classes_c6
 classes = classes_c5  # 选择5类目标检测
@@ -62,6 +63,12 @@ nCount = 0
 
 
 def bbox_format(size, box):
+    """
+    输出center_x, center_y, bbox_w, bbox_h ~[0.0, 1.0]
+    :param size:
+    :param box:
+    :return:
+    """
     dw = 1.0 / size[0]
     dh = 1.0 / size[1]
     x_min = box[0]
@@ -73,12 +80,14 @@ def bbox_format(size, box):
         x_min = 0
     if x_max < 0 or x_min >= size[0]:
         return None
+
     if x_max >= size[0]:
         x_max = size[0] - 1
     if y_min < 0:
         y_min = 0
     if y_max < 0 or y_min >= size[1]:
         return None
+
     if y_max >= size[1]:
         y_max = size[1] - 1
 
@@ -229,8 +238,7 @@ def convert_annotation(img_path, xml_path, label_path, file_name):
     return poly_non, boxes_non, label_statis
 
 
-if __name__ == "__main__":
-
+def gen_one_voc_train_dir():
     # rootdir = '/users/maqiao/mq/Data_checked/multiClass/multiClass0320'
     # root_path = "/users/maqiao/mq/Data_checked/multiClass/pucheng20191101"
     # rootdirs = [
@@ -277,16 +285,12 @@ if __name__ == "__main__":
     # changsha_test_poly_nointer
     # /mnt/diskb/maqiao/multiClass/beijing20200110
     # /mnt/diskb/maqiao/multiClass/changsha20191224-2
-
     root_path = '/mnt/diskb/maqiao/multiClass/c5_puer_20200611'
     root_dirs = ["/mnt/diskb/maqiao/multiClass/c5_puer_20200611"]
-
     # root_path = '/users/duanyou/backup_c5/changsha_c5/test_new_chuiting'
     # rootdirs =  ["/users/duanyou/backup_c5/changsha_c5/test_new_chuiting"]
-
     # root_path = 'F:/mq1/test_data'
     # rootdirs  = [root_path+'/1']
-
     all_list_file = os.path.join(root_path, 'multiClass_train.txt')
     all_list = open(os.path.join(root_path, all_list_file), 'w')
     dir_num = len(root_dirs)
@@ -316,7 +320,8 @@ if __name__ == "__main__":
                 if not os.path.exists(img_path):  # 没有对应的图片则跳过
                     continue
 
-                poly_non, boxes_non, label_statistics = convert_annotation(img_path, xml_path, label_path, img_name[:-4])
+                poly_non, boxes_non, label_statistics = convert_annotation(img_path, xml_path, label_path,
+                                                                           img_name[:-4])
                 print('boxes_on:', boxes_non)
 
                 if label_statistics == []:
@@ -387,3 +392,184 @@ if __name__ == "__main__":
 
         list_file.close()
     all_list.close()
+
+
+def gen_dataset_for_mcmot_det(src_root, dst_root, dot_train_f_path, dataset_prefix=''):
+    """
+    :param src_root:
+    :param dst_root:
+    :param dot_train_f_path:
+    :return:
+    """
+
+    if not os.path.isdir(src_root):
+        print('[Err]: invalid src root.')
+        return
+
+    if not os.path.isdir(dst_root):
+        print('[Note]: invalid dst root')
+        os.makedirs(dst_root)
+        print('{} made.'.format(dst_root))
+
+    # 创建训练根目录
+    dst_img_root = dst_root + '/images'
+    dst_label_root = dst_root + '/labels_with_ids'
+    if not os.path.isdir(dst_img_root):
+        os.makedirs(dst_img_root)
+    if not os.path.isdir(dst_label_root):
+        os.makedirs(dst_label_root)
+
+    # ----- 数据集统计
+    class_cnt_dict = defaultdict(int)
+    item_cnt = 0
+
+    # 生成.train文件
+    train_f_h = open(dot_train_f_path, 'w', encoding='utf-8')
+
+    # 遍历每一个子目录
+    sub_dirs = os.listdir(src_root)
+    for dir_name in sub_dirs:
+        print('\nProcessing {}...'.format(dir_name))
+
+        dir_path = src_root + '/' + dir_name
+        if not os.path.isdir(dir_path):
+            print('[Warning]: {} is not a valid dir'.format(dir_path))
+            continue
+
+        # 在dst_root中创建目标子目录
+        dst_img_dir = dst_img_root + '/' + dir_name
+        if not os.path.isdir(dst_img_dir):
+            os.makedirs(dst_img_dir)
+        else:
+            shutil.rmtree(dst_img_dir)
+            os.makedirs(dst_img_dir)
+
+        dst_label_dir = dst_label_root + '/' + dir_name
+        if not os.path.isdir(dst_label_dir):
+            os.makedirs(dst_label_dir)
+        else:
+            shutil.rmtree(dst_label_dir)
+            os.makedirs(dst_label_dir)
+
+        # 遍历原始图片目录和xml标签目录
+        src_image_dir = dir_path + '/JPEGImages'
+        src_label_dir = dir_path + '/Annotations'
+        if not (os.path.isdir(src_image_dir) and os.path.isdir(src_label_dir)):
+            print('[Warning]: invalid src image(or label) dir.')
+            continue
+
+        # 遍历子目录的每一张图和对应的xml标签
+        for img_name in os.listdir(src_image_dir):
+            # 处理每一张图和对应的标签
+            img_path = src_image_dir + '/' + img_name
+            xml_path = src_label_dir + '/' + img_name.split('.')[0] + '.xml'
+            if not (os.path.isfile(img_path) and os.path.isfile(xml_path)):
+                # print('[Warning]: invalid image(or xml) file.')
+                continue
+
+            # 读取并解析xml
+            tree = ET.parse(xml_path)
+            root = tree.getroot()
+            # print(root)
+
+            mark_node = root.find('markNode')
+            if mark_node is None:
+                print('[Warning]: markNode not found.')
+                continue
+
+            label_obj_strs = []
+
+            try:
+                # 图片宽高
+                w = int(root.find('width').text.strip())
+                h = int(root.find('height').text.strip())
+            except Exception as e:
+                print('[Warning]: invalid (w, h)')
+                print(e)
+                continue
+
+            # 更新item_cnt
+            item_cnt += 1
+
+            for obj in mark_node.iter('object'):
+                target_type = obj.find('targettype')
+                cls_name = target_type.text
+                if cls_name not in target_types:
+                    print("=> " + cls_name + " is not in targetTypes list.")
+                    continue
+
+                # classes_c5(5类别的特殊处理)
+                if cls_name == 'car_front' or cls_name == 'car_rear':
+                    cls_name = 'car_fr'
+                if cls_name == 'car':
+                    car_type = obj.find('cartype').text
+                    if car_type == 'motorcycle':
+                        cls_name = 'bicycle'
+                if cls_name == "motorcycle":
+                    cls_name = "bicycle"
+                if cls_name not in classes:
+                    # print("=> " + cls_name + " is not in class list.")
+                    continue
+                if cls_name == 'non_interest_zone':
+                    # print('Non interest zone.')
+                    continue
+
+                # 获取class_id
+                cls_id = classes.index(cls_name)
+                assert(0 <= cls_id < 5)
+
+                # 更新class_cnt_dict
+                class_cnt_dict[cls_name] += 1
+
+                # 获取bounding box
+                xml_box = obj.find('bndbox')
+                box = (float(xml_box.find('xmin').text),
+                       float(xml_box.find('xmax').text),
+                       float(xml_box.find('ymin').text),
+                       float(xml_box.find('ymax').text))
+
+                # bounding box格式化: bbox([0.0, 1.0]): center_x, center_y, width, height
+                bbox = bbox_format((w, h), box)
+                if bbox is None:
+                    print('[Warning]: bbox is err.')
+                    continue
+
+                # 生成检测对象的标签行: class_id, track_id, bbox_center_x, box_center_y, bbox_width, bbox_height
+                obj_str = '{:d} 0 {:.6f} {:.6f} {:.6f} {:.6f}\n'.format(
+                    cls_id,   # class_id
+                    bbox[0],  # center_x
+                    bbox[1],  # center_y
+                    bbox[2],  # bbox_w
+                    bbox[3])  # bbox_h
+                label_obj_strs.append(obj_str)
+
+            # 拷贝图片文件
+            shutil.copy(img_path, dst_img_dir)
+
+            # 写入txt标签文件
+            txt_f_path = dst_label_dir + '/' + img_name.split('.')[0] + '.txt'
+            with open(txt_f_path, 'w', encoding='utf-8') as w_h:
+                for obj in label_obj_strs:
+                    w_h.write(obj)
+                print('{} written'.format(os.path.split(txt_f_path)[-1]))
+
+            # 写入.train文件
+            train_str = str(dst_img_dir + '/' + img_name).replace(dataset_prefix, '')
+            train_f_h.write(train_str + '\n')
+
+    # 关闭.train文件
+    train_f_h.close()
+
+    print('Total {:d} images in the dataset(total {:d} sub_dirs)'.format(item_cnt, len(sub_dirs)))
+    for k, v in class_cnt_dict.items():
+        print('Class {} contains {:d} items'.format(k, v))
+
+
+
+if __name__ == "__main__":
+    # gen_one_voc_train_dir()
+
+    gen_dataset_for_mcmot_det(src_root='/mnt/diskb/maqiao/multiClass',
+                              dst_root='/mnt/diskb/even/dataset/MCMOT_DET',
+                              dot_train_f_path='/mnt/diskb/even/MCMOT/src/data/mcmot_det.train',
+                              dataset_prefix='/mnt/diskb/even/dataset/')

@@ -9,7 +9,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from lib.models.decode import mot_decode
 from lib.models.losses import FocalLoss
-from lib.models.losses import RegL1Loss, RegLoss, NormRegL1Loss, RegWeightedL1Loss, ArcMarginFc, CircleLoss, convert_label_to_similarity
+from lib.models.losses import RegL1Loss, RegLoss, NormRegL1Loss, RegWeightedL1Loss, ArcMarginFc, CircleLoss, \
+    convert_label_to_similarity
 from lib.models.utils import _sigmoid, _tranpose_and_gather_feat
 from lib.utils.post_process import ctdet_post_process
 
@@ -153,7 +154,7 @@ class McMotLoss(torch.nn.Module):
         opt = self.opt
 
         # 初始化4个loss为0
-        hm_loss, wh_loss, off_loss, id_loss = 0.0, 0.0, 0.0, 0.0
+        hm_loss, wh_loss, off_loss, reid_loss = 0.0, 0.0, 0.0, 0.0
         for s in range(opt.num_stacks):
             output = outputs[s]
             if not opt.mse_loss:
@@ -201,13 +202,13 @@ class McMotLoss(torch.nn.Module):
 
                     # --- 累加每一个检测类别的ReID loss
                     # 使用交叉熵优化ReID
-                    # id_loss += self.IDLoss(cls_id_output, cls_id_target)
+                    # reid_loss += self.IDLoss(cls_id_output, cls_id_target)
 
                     # 使用Circle loss优化ReID
-                    id_loss += self.circle_loss(*convert_label_to_similarity(cls_id_output, cls_id_target))
+                    reid_loss += self.circle_loss(*convert_label_to_similarity(cls_id_output, cls_id_target))
 
                     # 使用triplet loss优化ReID
-                    # id_loss += self.IDLoss(id_output, id_target) + self.TriLoss(id_head, id_target)
+                    # reid_loss += self.IDLoss(id_output, id_target) + self.TriLoss(id_head, id_target)
 
         # loss = opt.hm_weight * hm_loss + opt.wh_weight * wh_loss + opt.off_weight * off_loss + opt.id_weight * id_loss
 
@@ -215,9 +216,14 @@ class McMotLoss(torch.nn.Module):
                    + opt.wh_weight * wh_loss \
                    + opt.off_weight * off_loss
 
-        loss = torch.exp(-self.s_det) * det_loss \
-               + torch.exp(-self.s_id) * id_loss \
-               + (self.s_det + self.s_id)
+        if opt.id_weight > 0:
+            loss = torch.exp(-self.s_det) * det_loss \
+                   + torch.exp(-self.s_id) * reid_loss \
+                   + (self.s_det + self.s_id)
+        else:
+            loss = torch.exp(-self.s_det) * det_loss \
+                   + (self.s_det + self.s_id)
+
         loss *= 0.5
         # print(loss, hm_loss, wh_loss, off_loss, id_loss)
 
@@ -225,7 +231,7 @@ class McMotLoss(torch.nn.Module):
                       'hm_loss': hm_loss,
                       'wh_loss': wh_loss,
                       'off_loss': off_loss,
-                      'id_loss': id_loss}
+                      'id_loss': reid_loss}
         return loss, loss_stats
 
 
