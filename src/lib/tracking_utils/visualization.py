@@ -51,9 +51,9 @@ def plot_detects(image,
     img = np.ascontiguousarray(np.copy(image))
     im_h, im_w = img.shape[:2]
 
-    text_scale = max(1.0, image.shape[1] / 1300.)  # 1600.
+    text_scale = max(1.0, image.shape[1] / 1200.)  # 1600.
     text_thickness = 2
-    line_thickness = max(1, int(image.shape[1] / 800.))
+    line_thickness = max(1, int(image.shape[1] / 600.))
 
     for cls_id in range(num_classes):
         # plot each object class

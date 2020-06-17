@@ -16,7 +16,7 @@ class opts(object):
         self.parser.add_argument('--exp_id', default='default')
         self.parser.add_argument('--test', action='store_true')
         self.parser.add_argument('--load_model',
-                                 default='../exp/mot/default/model_last_mcmot.pth',  # ctdet_coco_dla_2x.pth
+                                 default='../exp/mot/default/model_last.pth',  # ctdet_coco_dla_2x.pth
                                  help='path to pretrained model')
         # self.parser.add_argument('--load_model',
         #                          default='../models/all_dla34.pth',
