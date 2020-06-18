@@ -16,7 +16,7 @@ class opts(object):
         self.parser.add_argument('--exp_id', default='default')
         self.parser.add_argument('--test', action='store_true')
         self.parser.add_argument('--load_model',
-                                 default='../exp/mot/default/model_last.pth',  # ctdet_coco_dla_2x.pth
+                                 default='../exp/mot/default/mcmot_last.pth',  # ctdet_coco_dla_2x.pth
                                  help='path to pretrained model')
         # self.parser.add_argument('--load_model',
         #                          default='../models/all_dla34.pth',
@@ -174,7 +174,7 @@ class opts(object):
                                  help='filter out tiny boxes')
         self.parser.add_argument('--input-video',
                                  type=str,
-                                 default='../videos/test10.mp4',  # '../videos/MOT16-03.mp4'
+                                 default='../videos/test4.mp4',  # '../videos/MOT16-03.mp4'
                                  help='path to the input video')
         self.parser.add_argument('--output-format',
                                  type=str,
