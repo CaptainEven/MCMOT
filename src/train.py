@@ -32,7 +32,7 @@ def run(opt):
     print('Setting up data...')
     Dataset = get_dataset(opt.dataset, opt.task)  # if opt.task==mot -> JointDataset
 
-    f = open(opt.data_cfg)  # 选择什么数据集进行训练测试 '../src/lib/cfg/mot15.json',
+    f = open(opt.data_cfg)  # 选择哪一个数据集进行训练测试 '../src/lib/cfg/mot15.json',
     data_config = json.load(f)
     trainset_paths = data_config['train']  # 训练集路径
     dataset_root = data_config['root']  # 数据集所在目录

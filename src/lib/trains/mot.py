@@ -126,7 +126,10 @@ class McMotLoss(torch.nn.Module):
             # @even: 为每个需要ReID的类别定义一个分类器
             self.classifiers = nn.ModuleDict()  # 使用ModuleList或ModuleDict才可以自动注册参数
             for cls_id, nID in self.nID_dict.items():
+                # 使用普通的全连接层
                 self.classifiers[str(cls_id)] = nn.Linear(self.emb_dim, nID)  # 全连接层
+
+                # 使用Arc margin全连接层
                 # self.classifiers[str(cls_id)] = ArcMarginFc(in_features=self.emb_dim,  # 使用Arc margin全连接层
                 #                                             out_features=nID,
                 #                                             device=self.opt.device,
@@ -204,13 +207,13 @@ class McMotLoss(torch.nn.Module):
 
                     # --- 累加每一个检测类别的ReID loss
                     # 选择一: 使用交叉熵优化ReID
-                    # reid_loss += self.IDLoss(cls_id_output, cls_id_target)
+                    reid_loss += self.IDLoss(cls_id_output, cls_id_target)
 
                     # 选择二: 使用Circle loss优化ReID
-                    reid_loss += self.circle_loss(*convert_label_to_similarity(cls_id_output, cls_id_target))
+                    # reid_loss += self.circle_loss(*convert_label_to_similarity(cls_id_output, cls_id_target))
 
                     # 选择三: 使用triplet loss优化ReID
-                    # reid_loss += self.IDLoss(id_output, id_target) + self.TriLoss(id_head, id_target)
+                    # reid_loss += self.IDLoss(cls_id_output, cls_id_target) + self.TriLoss(cls_id_head, cls_id_target)
 
         # loss = opt.hm_weight * hm_loss + opt.wh_weight * wh_loss + opt.off_weight * off_loss + opt.id_weight * id_loss
 
