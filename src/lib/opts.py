@@ -174,7 +174,7 @@ class opts(object):
                                  help='filter out tiny boxes')
         self.parser.add_argument('--input-video',
                                  type=str,
-                                 default='../videos/test5.mp4',  # '../videos/MOT16-03.mp4'
+                                 default='../videos/test10.mp4',  # '../videos/MOT16-03.mp4'
                                  help='path to the input video')
         self.parser.add_argument('--output-format',
                                  type=str,
@@ -191,7 +191,7 @@ class opts(object):
         #                          default='../src/lib/cfg/detrac.json',  # 'mot15.json',
         #                          help='load data from cfg')
         self.parser.add_argument('--data_cfg', type=str,
-                                 default='../src/lib/cfg/mcmot_det.json',  # 'mot15.json',
+                                 default='../src/lib/cfg/mcmot.json',  # 'mot15.json',
                                  help='load data from cfg')
         self.parser.add_argument('--data_dir',
                                  type=str,
@@ -222,7 +222,7 @@ class opts(object):
                                  help='reid loss: ce | triplet')
         self.parser.add_argument('--id_weight',
                                  type=float,
-                                 default=0,  # 1
+                                 default=1,  # 0 or 1
                                  help='loss weight for id')  # 控制是否计算ReID
         self.parser.add_argument('--reid_dim',
                                  type=int,

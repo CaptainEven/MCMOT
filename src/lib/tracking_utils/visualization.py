@@ -3,10 +3,10 @@ import cv2
 from lib.tracker.multitracker import id2cls, cls2id
 
 cls_color_dict = {
-    'car': [0, 255, 0],
-    'bicycle': [255, 0, 0],
-    'person': [0, 0, 255],
-    'cyclist': [237, 149, 100],
+    'car': [180, 105, 255],        # hot pink
+    'bicycle': [219, 112, 147],    # MediumPurple
+    'person': [98, 130, 238],      # Salmon
+    'cyclist': [181, 228, 255],
     'tricycle': [211, 85, 186]
 }
 
@@ -73,13 +73,13 @@ def plot_detects(image,
             x1, y1, x2, y2, score, cls_id = obj
             cls_name = id2cls[cls_id]
             box_int = tuple(map(int, (x1, y1, x2, y2)))
-            color = cls_color_dict[cls_name]
+            cls_color = cls_color_dict[cls_name]
 
-            # draw bbox
+            # draw bbox for each object
             cv2.rectangle(img,
                           box_int[0:2],
                           box_int[2:4],
-                          color=color,
+                          color=cls_color,
                           thickness=line_thickness)
 
             # draw class name
@@ -143,7 +143,12 @@ def plot_tracks(image,
 
             _line_thickness = 1 if obj_id <= 0 else line_thickness
             color = get_color(abs(obj_id))
-            cv2.rectangle(img, int_box[0:2], int_box[2:4], color=color, thickness=line_thickness)  # bbox: 随机颜色
+            # cls_color = cls_color_dict[id2cls[cls_id]]
+
+            cv2.rectangle(img, int_box[0:2],
+                          int_box[2:4],
+                          color=color,
+                          thickness=line_thickness)  # bbox: 随机颜色
 
             # plot track id
             cv2.putText(img,
@@ -154,7 +159,7 @@ def plot_tracks(image,
                         (0, 255, 255),  # id: yellow
                         thickness=text_thickness)
 
-            # plot class id
+            # plot class name
             cv2.putText(img,
                         id2cls[cls_id],
                         (int(x1), int(y1)),

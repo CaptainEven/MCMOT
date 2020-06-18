@@ -4,6 +4,15 @@ from __future__ import print_function
 import sys
 import logging
 import os
+
+os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
+
+import torch
+
+my_visible_devs = '3'  # '0, 3'  # 设置可运行GPU编号
+os.environ['CUDA_VISIBLE_DEVICES'] = my_visible_devs
+device = torch.device('cuda: 0' if torch.cuda.is_available() else 'cpu')
+
 import os.path as osp
 from lib.opts import opts  # import opts
 from lib.tracking_utils.utils import mkdir_if_missing
@@ -24,15 +33,27 @@ def run_demo(opt):
     frame_rate = data_loader.frame_rate
 
     frame_dir = None if opt.output_format == 'text' else osp.join(result_root, 'frame')
+
+    opt.device = device
     try:  # 视频推断的入口函数
-        eval_seq(opt=opt,
-                 data_loader=data_loader,
-                 data_type='mot',
-                 result_f_name=result_file_name,
-                 save_dir=frame_dir,
-                 show_image=False,
-                 frame_rate=frame_rate,
-                 mode='detect')
+        if opt.id_weight > 0:
+            eval_seq(opt=opt,
+                     data_loader=data_loader,
+                     data_type='mot',
+                     result_f_name=result_file_name,
+                     save_dir=frame_dir,
+                     show_image=False,
+                     frame_rate=frame_rate,
+                     mode='track')
+        else:
+            eval_seq(opt=opt,
+                     data_loader=data_loader,
+                     data_type='mot',
+                     result_f_name=result_file_name,
+                     save_dir=frame_dir,
+                     show_image=False,
+                     frame_rate=frame_rate,
+                     mode='detect')
     except Exception as e:
         logger.info(e)
 

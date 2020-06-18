@@ -124,7 +124,8 @@ def eval_seq(opt,
 
         # --- run tracking
         timer.tic()
-        blob = torch.from_numpy(img).cuda().unsqueeze(0)
+        # blob = torch.from_numpy(img).cuda().unsqueeze(0)
+        blob = torch.from_numpy(img).to(opt.device).unsqueeze(0)
 
         if mode == 'track':  # process tracking
             # --- track updates of each frame
