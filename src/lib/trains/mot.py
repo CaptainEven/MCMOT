@@ -209,10 +209,10 @@ class McMotLoss(torch.nn.Module):
 
                     # --- 累加每一个检测类别的ReID loss
                     # 选择一: 使用交叉熵优化ReID
-                    # reid_loss += self.IDLoss(cls_id_output, cls_id_target)
+                    reid_loss += self.IDLoss(cls_id_output, cls_id_target)
 
                     # 选择二: 使用Circle loss优化ReID
-                    reid_loss += self.circle_loss(*convert_label_to_similarity(cls_id_output, cls_id_target))
+                    # reid_loss += self.circle_loss(*convert_label_to_similarity(cls_id_output, cls_id_target))
 
                     # 选择三: 使用triplet loss优化ReID
                     # reid_loss += self.IDLoss(cls_id_output, cls_id_target) + self.TriLoss(cls_id_head, cls_id_target)

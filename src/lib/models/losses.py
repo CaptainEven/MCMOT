@@ -316,6 +316,7 @@ class RegLoss(nn.Module):
     def forward(self, output, mask, ind, target):
         pred = _tranpose_and_gather_feat(output, ind)
         loss = _reg_loss(pred, target, mask)
+
         return loss
 
 
