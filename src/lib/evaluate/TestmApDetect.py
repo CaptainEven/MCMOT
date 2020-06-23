@@ -1,12 +1,14 @@
-import os
-import darknet as dn
+# encoding=utf-8
 
+import os
 import cv2
 import time
 import numpy
 import copy
 
+import lib.evaluate.darknet as dn
 import lib.evaluate.cmp_det_label_sf as cdl
+
 from lib.evaluate.readAndSaveDarknetDetRes import readDetRes, saveDetRes
 from lib.evaluate.readAnnotations import LoadLabel
 from lib.evaluate.voc_eval import voc_eval
@@ -87,6 +89,14 @@ def batch_detection():
 
 
 def batch_analysis(weights_list_file, image_list_file, thresh, iou_thresh, result_dir):
+    """
+    :param weights_list_file:
+    :param image_list_file:
+    :param thresh:
+    :param iou_thresh:
+    :param result_dir:
+    :return:
+    """
     image_list = LoadFileList(image_list_file)
     image_num = len(image_list)
     weights_list = LoadFileList(weights_list_file)
@@ -292,6 +302,8 @@ if __name__ == "__main__":
     data_path = "/users/duanyou/backup_c5/test_2"
     image_list_file = os.path.join(data_path, "test.txt")
     result_dir = os.path.join("/users/duanyou/backup_c5/test_2/result/")
+
     if not os.path.exists(result_dir):
         os.mkdir(result_dir)
+
     batch_analysis(weights_list_file, image_list_file, 0.20, 0.45, result_dir)
