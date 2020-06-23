@@ -110,7 +110,7 @@ def run(opt):
         if opt.val_intervals > 0 and epoch % opt.val_intervals == 0:
             save_model(os.path.join(opt.save_dir, 'model_{}.pth'.format(mark)),
                        epoch, model, optimizer)
-        else:  # mcmot_last or mcmot_det_last
+        else:  # mcmot_last_track or mcmot_last_det
             if opt.id_weight > 0:  # do tracking(detection and re-id)
                 save_model(os.path.join(opt.save_dir, 'mcmot_last_track.pth'),
                        epoch, model, optimizer)
