@@ -203,10 +203,10 @@ class STrack(BaseTrack):
 class JDETracker(object):
     def __init__(self, opt, frame_rate=30):
         self.opt = opt
-        if opt.gpus[0] >= 0:
-            opt.device = torch.device('cuda')
-        else:
-            opt.device = torch.device('cpu')
+        # if opt.gpus[0] >= 0:
+        #     opt.device = torch.device('cuda')
+        # else:
+        #     opt.device = torch.device('cpu')
 
         print('Creating model...')
         self.model = create_model(opt.arch, opt.heads, opt.head_conv)
@@ -277,8 +277,71 @@ class JDETracker(object):
 
         return results
 
+    def update_detections(self, im_blob, img_0):
+        """
+        更新视频序列或图片序列的检测结果
+        :rtype: dict
+        :param im_blob:
+        :param img_0:
+        :return:
+        """
+        width = img_0.shape[1]
+        height = img_0.shape[0]
+        inp_height = im_blob.shape[2]
+        inp_width = im_blob.shape[3]
+
+        c = np.array([width / 2., height / 2.], dtype=np.float32)
+        s = max(float(inp_width) / float(inp_height) * height, width) * 1.0
+        meta = {'c': c,
+                's': s,
+                'out_height': inp_height // self.opt.down_ratio,
+                'out_width': inp_width // self.opt.down_ratio}
+
+        # ----- get detections
+        with torch.no_grad():
+            dets_dict = defaultdict(list)
+
+            output = self.model.forward(im_blob)[-1]
+
+            # detect outputs
+            hm = output['hm'].sigmoid_()
+            wh = output['wh']
+            reg = output['reg'] if self.opt.reg_offset else None
+
+            # 检测和分类结果解析
+            dets, inds, cls_inds_mask = mot_decode(heatmap=hm,
+                                                   wh=wh,
+                                                   reg=reg,
+                                                   num_classes=self.opt.num_classes,
+                                                   cat_spec_wh=self.opt.cat_spec_wh,
+                                                   K=self.opt.K)
+
+            # 检测结果后处理
+            dets = self.post_process(dets, meta)
+            dets = self.merge_outputs([dets])
+            # dets = self.merge_outputs(dets)[1]
+
+            # ----- 解析每个检测类别
+            for cls_id in range(self.opt.num_classes):  # cls_id从0开始
+                cls_dets = dets[cls_id + 1]
+
+                # 过滤掉score得分太低的dets
+                remain_inds = cls_dets[:, 4] > self.opt.conf_thres
+                cls_dets = cls_dets[remain_inds]
+                # print(cls_dets)
+                dets_dict[cls_id] = cls_dets
+
+        return dets_dict
+
+
     # JDE跟踪器更新追踪状态
-    def update(self, im_blob, img0):
+    def update(self, im_blob, img_0):
+        """
+        :param im_blob:
+        :param img_0:
+        :return:
+        """
+        # update frame id
         self.frame_id += 1
 
         # 记录跟踪结果
@@ -290,8 +353,8 @@ class JDETracker(object):
         removed_stracks_dict = defaultdict(list)
         output_stracks_dict = defaultdict(list)
 
-        width = img0.shape[1]
-        height = img0.shape[0]
+        width = img_0.shape[1]
+        height = img_0.shape[0]
         inp_height = im_blob.shape[2]
         inp_width = im_blob.shape[3]
 
@@ -303,7 +366,7 @@ class JDETracker(object):
                 'out_width': inp_width // self.opt.down_ratio}
 
         ''' Step 1: Network forward, get detections & embeddings'''
-        with torch.no_grad():  # 前向推断过程不需要梯度反传
+        with torch.no_grad():
             output = self.model.forward(im_blob)[-1]
 
             hm = output['hm'].sigmoid_()
@@ -326,16 +389,16 @@ class JDETracker(object):
                                                    cat_spec_wh=self.opt.cat_spec_wh,
                                                    K=self.opt.K)
 
-            # ----- 按照每一个检测类别解析输出并保存中间结果
-            cls_id_feats = []  # topK每个类别的特征向量
-            for cls_id in range(self.opt.num_classes):  # cls_id从0开始
-                # 取每个检测类别
+            # ----- get ReID feature vector by object class
+            cls_id_feats = []  # topK feature vectors of each object class
+            for cls_id in range(self.opt.num_classes):  # cls_id starts from 0
+                # get inds of each object class
                 cls_inds = inds[:, cls_inds_mask[cls_id]]
 
-                # 组织用于Re-ID的特征向量
+                # gather feats for each object class
                 cls_id_feature = _tranpose_and_gather_feat(id_feature, cls_inds)  # inds: 1×128
                 cls_id_feature = cls_id_feature.squeeze(0)  # n × FeatDim
-                cls_id_feature = cls_id_feature.cpu().numpy()  # 最后传输到cpu端
+                cls_id_feature = cls_id_feature.cpu().numpy()
                 cls_id_feats.append(cls_id_feature)
 
         # 检测结果后处理

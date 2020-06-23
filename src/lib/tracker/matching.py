@@ -95,11 +95,14 @@ def iou_distance(atracks, btracks):
     else:
         atlbrs = [track.tlbr for track in atracks]
         btlbrs = [track.tlbr for track in btracks]
+
     _ious = ious(atlbrs, btlbrs)
     cost_matrix = 1 - _ious
 
     return cost_matrix
 
+
+# TODO: using GIOU, DIOU, CIOU... to replace IOU
 
 def embedding_distance(tracks, detections, metric='cosine'):
     """

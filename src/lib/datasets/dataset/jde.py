@@ -4,6 +4,7 @@ import os
 import os.path as osp
 import random
 import time
+import warnings
 from collections import OrderedDict, defaultdict
 
 import cv2
@@ -214,14 +215,16 @@ class LoadImagesAndLabels:  # for training
 
         # Load labels
         if os.path.isfile(label_path):
-            labels0 = np.loadtxt(label_path, dtype=np.float32).reshape(-1, 6)
+            with warnings.catch_warnings():  # 空的txt文件不报警告
+                warnings.simplefilter("ignore")
+                labels_0 = np.loadtxt(label_path, dtype=np.float32).reshape(-1, 6)
 
-            # Normalized xywh to pixel xyxy(x1, y1, x2, y2) format
-            labels = labels0.copy()  # deep copy
-            labels[:, 2] = ratio * w * (labels0[:, 2] - labels0[:, 4] / 2) + pad_w  # x1
-            labels[:, 3] = ratio * h * (labels0[:, 3] - labels0[:, 5] / 2) + pad_h  # y1
-            labels[:, 4] = ratio * w * (labels0[:, 2] + labels0[:, 4] / 2) + pad_w  # x2
-            labels[:, 5] = ratio * h * (labels0[:, 3] + labels0[:, 5] / 2) + pad_h  # y2
+                # reformat xywh to pixel xyxy(x1, y1, x2, y2) format
+                labels = labels_0.copy()  # deep copy
+                labels[:, 2] = ratio * w * (labels_0[:, 2] - labels_0[:, 4] / 2) + pad_w  # x1
+                labels[:, 3] = ratio * h * (labels_0[:, 3] - labels_0[:, 5] / 2) + pad_h  # y1
+                labels[:, 4] = ratio * w * (labels_0[:, 2] + labels_0[:, 4] / 2) + pad_w  # x2
+                labels[:, 5] = ratio * h * (labels_0[:, 3] + labels_0[:, 5] / 2) + pad_h  # y2
         else:
             labels = np.array([])
 
@@ -440,8 +443,9 @@ class JointDataset(LoadImagesAndLabels):  # for training
         self.label_files = OrderedDict()
         self.tid_num = OrderedDict()
         self.tid_start_index = OrderedDict()
-        self.num_classes = 5  # car, bicycle, person, cyclist, tricycle
+        self.num_classes = len(opt.reid_cls_ids.split(','))  # car, bicycle, person, cyclist, tricycle
 
+        # ----- generate img and label file path lists
         for ds, path in paths.items():
             with open(path, 'r') as file:
                 self.img_files[ds] = file.readlines()
@@ -453,36 +457,43 @@ class JointDataset(LoadImagesAndLabels):  # for training
                                         .replace('.jpg', '.txt')
                                     for x in self.img_files[ds]]
 
-        # @even: for MCMOT training
-        for ds, label_paths in self.label_files.items():  # 每个子数据集
-            max_ids_dict = defaultdict(int)  # cls_id => max track id
+        if opt.id_weight > 0:  # If do ReID calculation
+            # @even: for MCMOT training
+            for ds, label_paths in self.label_files.items():  # 每个子数据集
+                max_ids_dict = defaultdict(int)  # cls_id => max track id
 
-            for lp in label_paths:  # 子数据集中每个label
-                lb = np.loadtxt(lp)
+                for lp in label_paths:  # 子数据集中每个label
+                    if not os.path.isfile(lp):
+                        print('[Warning]: invalid label file.')
+                        continue
 
-                if len(lb) < 1:  # 空标签
-                    continue
+                    with warnings.catch_warnings():
+                        warnings.simplefilter("ignore")
 
-                lb = lb.reshape(-1, 6)
-                for item in lb:  # label中每一个item(检测目标)
-                    if item[1] > max_ids_dict[int(item[0])]:  # item[0]: cls_id, item[1]: track id
-                        max_ids_dict[int(item[0])] = item[1]
+                        lb = np.loadtxt(lp)
+                        if len(lb) < 1:  # 空标签文件
+                            continue
 
-            # track id number
-            self.tid_num[ds] = max_ids_dict  # 每个子数据集按照需要reid的cls_id组织成dict
+                        lb = lb.reshape(-1, 6)
+                        for item in lb:  # label中每一个item(检测目标)
+                            if item[1] > max_ids_dict[int(item[0])]:  # item[0]: cls_id, item[1]: track id
+                                max_ids_dict[int(item[0])] = item[1]
 
-        # @even: for MCMOT training
-        self.tid_start_idx_of_cls_ids = defaultdict(dict)
-        last_idx_dict = defaultdict(int)  # 从0开始
-        for k, v in self.tid_num.items():  # 统计每一个子数据集
-            for cls_id, id_num in v.items():  # 统计这个子数据集的每一个类别, v是一个max_ids_dict
-                self.tid_start_idx_of_cls_ids[k][cls_id] = last_idx_dict[cls_id]
-                last_idx_dict[cls_id] += id_num
+                # track id number
+                self.tid_num[ds] = max_ids_dict  # 每个子数据集按照需要reid的cls_id组织成dict
 
-        # @even: for MCMOT training
-        self.nID_dict = defaultdict(int)
-        for k, v in last_idx_dict.items():
-            self.nID_dict[k] = int(v)  # 每个类别的tack ids数量
+            # @even: for MCMOT training
+            self.tid_start_idx_of_cls_ids = defaultdict(dict)
+            last_idx_dict = defaultdict(int)  # 从0开始
+            for k, v in self.tid_num.items():  # 统计每一个子数据集
+                for cls_id, id_num in v.items():  # 统计这个子数据集的每一个类别, v是一个max_ids_dict
+                    self.tid_start_idx_of_cls_ids[k][cls_id] = last_idx_dict[cls_id]
+                    last_idx_dict[cls_id] += id_num
+
+            # @even: for MCMOT training
+            self.nID_dict = defaultdict(int)
+            for k, v in last_idx_dict.items():
+                self.nID_dict[k] = int(v)  # 每个类别的tack ids数量
 
         self.nds = [len(x) for x in self.img_files.values()]  # 每个子训练集(MOT15, MOT20...)的图片数
         self.cds = [sum(self.nds[:i]) for i in range(len(self.nds))]  # 当前子数据集前面累计图片总数?
@@ -494,21 +505,19 @@ class JointDataset(LoadImagesAndLabels):  # for training
         self.augment = augment
         self.transforms = transforms
 
-        print('=' * 80)
         print('dataset summary')
         print(self.tid_num)
 
-        # print('total # identities:', self.nID)
-        for k, v in self.nID_dict.items():
-            print('Total {:d} IDs of class {:d}'.format(v, k))
+        if opt.id_weight > 0:  # If do ReID calculation
+            # print('total # identities:', self.nID)
+            for k, v in self.nID_dict.items():
+                print('Total {:d} IDs of class {:d}'.format(v, k))
 
-        # print('start index', self.tid_start_index)
-        for k, v in self.tid_start_idx_of_cls_ids.items():
-            for cls_id, start_idx in v.items():
-                print('Start index of dataset {} class {:d} is {:d}'
-                      .format(k, cls_id, start_idx))
-
-        print('=' * 80)
+            # print('start index', self.tid_start_index)
+            for k, v in self.tid_start_idx_of_cls_ids.items():
+                for cls_id, start_idx in v.items():
+                    print('Start index of dataset {} class {:d} is {:d}'
+                          .format(k, cls_id, start_idx))
 
     def __getitem__(self, f_idx):
         # 为子训练集计算起始index
@@ -524,40 +533,40 @@ class JointDataset(LoadImagesAndLabels):  # for training
         # print('input_h, input_w: %d %d' % (input_h, input_w))
 
         # 存在多个子训练集时, 为每个子训练集合(视频seq)计算正确的起始index
-        # for i, _ in enumerate(labels):
-        #     if labels[i, 1] > -1:
-        #         labels[i, 1] += self.tid_start_index[ds]
-
         # @even: for MCMOT training
-        for i, _ in enumerate(labels):
-            if labels[i, 1] > -1:
-                cls_id = int(labels[i][0])
-                start_idx = self.tid_start_idx_of_cls_ids[ds][cls_id]
-                labels[i, 1] += start_idx
+        if self.opt.id_weight > 0:
+            for i, _ in enumerate(labels):
+                if labels[i, 1] > -1:
+                    cls_id = int(labels[i][0])
+                    start_idx = self.tid_start_idx_of_cls_ids[ds][cls_id]
+                    labels[i, 1] += start_idx
 
         output_h = imgs.shape[1] // self.opt.down_ratio  # 向下取整除法
         output_w = imgs.shape[2] // self.opt.down_ratio
         # print('output_h, output_w: %d %d' % (output_h, output_w))
 
         num_classes = self.num_classes
-        # print('{:d} classes of objects need to be classified'.format(self.num_classes))
 
         # 图片中实际标注的目标数
         num_objs = labels.shape[0]
 
+        # --- GT of detection
         hm = np.zeros((num_classes, output_h, output_w), dtype=np.float32)  # C×H×W: heat-map通道数即类别数
         wh = np.zeros((self.max_objs, 2), dtype=np.float32)
         reg = np.zeros((self.max_objs, 2), dtype=np.float32)
         ind = np.zeros((self.max_objs,), dtype=np.int64)  # K个object
         reg_mask = np.zeros((self.max_objs,),
                             dtype=np.uint8)  # 只计算feature map有目标的像素的reg loss
-        ids = np.zeros((self.max_objs,), dtype=np.int64)  # 一张图最多检测并ReID K个目标, 都初始化id为0
 
-        # @even: 每个目标类别都对应一组track ids
-        cls_tr_ids = np.zeros((self.num_classes, output_h, output_w), dtype=np.int64)
+        if self.opt.id_weight > 0:
+            # --- GT of ReID
+            ids = np.zeros((self.max_objs,), dtype=np.int64)  # 一张图最多检测并ReID K个目标, 都初始化id为0
 
-        # @even, class id map: 每个(x, y)处的目标类别, 都初始化为-1
-        cls_id_map = np.full((1, output_h, output_w), -1, dtype=np.int64)  # 1×H×W
+            # @even: 每个目标类别都对应一组track ids
+            cls_tr_ids = np.zeros((self.num_classes, output_h, output_w), dtype=np.int64)
+
+            # @even, class id map: 每个(x, y)处的目标类别, 都初始化为-1
+            cls_id_map = np.full((1, output_h, output_w), -1, dtype=np.int64)  # 1×H×W
 
         # 设置用于heat-map初始化的高斯函数
         draw_gaussian = draw_msra_gaussian if self.opt.mse_loss else draw_umich_gaussian
@@ -593,31 +602,44 @@ class JointDataset(LoadImagesAndLabels):  # for training
                 # draw gauss weight for heat-map
                 draw_gaussian(hm[cls_id], ct_int, radius)  # hm
 
-                # @even: 取output feature map的每个(y, x)处的目标类别
-                cls_id_map[0][ct_int[1], ct_int[0]] = cls_id  # 1×H×W
-
-                # @even: 记录该类别对应的track ids
-                cls_tr_ids[cls_id][ct_int[1]][ct_int[0]] = label[1] - 1  # track id从1开始的, 转换成从0开始
-
+                # --- GT of detection
                 wh[k] = 1. * w, 1. * h
 
                 # 记录feature map上有目标的坐标索引
                 ind[k] = ct_int[1] * output_w + ct_int[0]  # feature map index:y*w+x
 
+                # offset regression
                 reg[k] = ct - ct_int
                 reg_mask[k] = 1
-                # ids[k] = label[1]  # track id的ground truth: 这里是不是应该-1(因为track id从1开始)?
-                ids[k] = label[1] - 1  # 分类的idx: track id - 1
 
-        ret = {'input': imgs,
-               'hm': hm,
-               'reg_mask': reg_mask,
-               'ind': ind,
-               'wh': wh,
-               'reg': reg,
-               'ids': ids,
-               'cls_id_map': cls_id_map,  # feature map上每个(x, y)处的目标类别id(背景为0)
-               'cls_tr_ids': cls_tr_ids}
+                # --- GT of ReID
+                if self.opt.id_weight > 0:
+                    # @even: 取output feature map的每个(y, x)处的目标类别
+                    cls_id_map[0][ct_int[1], ct_int[0]] = cls_id  # 1×H×W
+
+                    # @even: 记录该类别对应的track ids
+                    cls_tr_ids[cls_id][ct_int[1]][ct_int[0]] = label[1] - 1  # track id从1开始的, 转换成从0开始
+
+                    ids[k] = label[1] - 1  # 分类的idx: track id - 1
+
+        if self.opt.id_weight > 0:
+            ret = {'input': imgs,
+                   'hm': hm,
+                   'reg_mask': reg_mask,
+                   'ind': ind,
+                   'wh': wh,
+                   'reg': reg,
+                   'ids': ids,
+                   'cls_id_map': cls_id_map,  # feature map上每个(x, y)处的目标类别id(背景为0)
+                   'cls_tr_ids': cls_tr_ids}
+        else:  # only for detection
+            ret = {'input': imgs,
+                   'hm': hm,
+                   'reg_mask': reg_mask,
+                   'ind': ind,
+                   'wh': wh,
+                   'reg': reg}
+
 
         return ret  # 返回一个字典(第一次见识这样的getitem)
 

@@ -10,7 +10,7 @@ os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
 
 import torch
 
-my_visible_devs = '3'  # '0, 3'  # 设置可运行GPU编号
+my_visible_devs = '0'  # '0, 3'  # 设置可运行GPU编号
 os.environ['CUDA_VISIBLE_DEVICES'] = my_visible_devs
 device = torch.device('cuda: 0' if torch.cuda.is_available() else 'cpu')
 
@@ -32,7 +32,7 @@ def run(opt):
     print('Setting up data...')
     Dataset = get_dataset(opt.dataset, opt.task)  # if opt.task==mot -> JointDataset
 
-    f = open(opt.data_cfg)  # 选择什么数据集进行训练测试 '../src/lib/cfg/mot15.json',
+    f = open(opt.data_cfg)  # 选择哪一个数据集进行训练测试 '../src/lib/cfg/mot15.json',
     data_config = json.load(f)
     trainset_paths = data_config['train']  # 训练集路径
     dataset_root = data_config['root']  # 数据集所在目录
@@ -79,7 +79,6 @@ def run(opt):
         train_loader = torch.utils.data.DataLoader(dataset=dataset,
                                                    batch_size=opt.batch_size,
                                                    shuffle=True,
-                                                   num_workers=opt.num_workers,
                                                    pin_memory=True,
                                                    drop_last=True)  # debug时不设置线程数(即默认为0)
     else:
@@ -111,19 +110,26 @@ def run(opt):
         if opt.val_intervals > 0 and epoch % opt.val_intervals == 0:
             save_model(os.path.join(opt.save_dir, 'model_{}.pth'.format(mark)),
                        epoch, model, optimizer)
-        else:
-            save_model(os.path.join(opt.save_dir, 'model_last.pth'),
+        else:  # mcmot_last or mcmot_det_last
+            if opt.id_weight > 0:  # do tracking(detection and re-id)
+                save_model(os.path.join(opt.save_dir, 'mcmot_last_track.pth'),
+                       epoch, model, optimizer)
+            else:  # only do detection
+                save_model(os.path.join(opt.save_dir, 'mcmot_last_det.pth'),
                        epoch, model, optimizer)
         logger.write('\n')
 
         if epoch in opt.lr_step:
             save_model(os.path.join(opt.save_dir, 'model_{}.pth'.format(epoch)),
                        epoch, model, optimizer)
+
             lr = opt.lr * (0.1 ** (opt.lr_step.index(epoch) + 1))
             print('Drop LR to', lr)
+
             for param_group in optimizer.param_groups:
                 param_group['lr'] = lr
-        if epoch % 5 == 0:
+
+        if epoch % 10 == 0:
             save_model(os.path.join(opt.save_dir, 'model_{}.pth'.format(epoch)),
                        epoch, model, optimizer)
     logger.close()

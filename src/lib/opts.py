@@ -16,7 +16,7 @@ class opts(object):
         self.parser.add_argument('--exp_id', default='default')
         self.parser.add_argument('--test', action='store_true')
         self.parser.add_argument('--load_model',
-                                 default='../exp/mot/default/model_last.pth',  # ctdet_coco_dla_2x.pth
+                                 default='../exp/mot/default/mcmot_last.pth',  # ctdet_coco_dla_2x.pth
                                  help='path to pretrained model')
         # self.parser.add_argument('--load_model',
         #                          default='../models/all_dla34.pth',
@@ -42,7 +42,7 @@ class opts(object):
                                  help='random seed')  # from CornerNet
         self.parser.add_argument('--is_debug',
                                  type=bool,
-                                 default=True,  # False
+                                 default=False,  # 是否使用多线程加载数据, default: False
                                  help='whether in debug mode or not')
 
         # log
@@ -155,7 +155,7 @@ class opts(object):
             '--conf_thres',
             type=float,
             default=0.4,  # 0.6
-            help='confidence thresh for tracking')
+            help='confidence thresh for tracking')  # heat-map置信度阈值
         self.parser.add_argument('--det_thres',
                                  type=float,
                                  default=0.3,
@@ -174,7 +174,7 @@ class opts(object):
                                  help='filter out tiny boxes')
         self.parser.add_argument('--input-video',
                                  type=str,
-                                 default='../videos/test4.mp4',  # '../videos/MOT16-03.mp4'
+                                 default='../videos/test5.mp4',  # '../videos/MOT16-03.mp4'
                                  help='path to the input video')
         self.parser.add_argument('--output-format',
                                  type=str,
@@ -186,7 +186,7 @@ class opts(object):
             default='../results',
             help='expected output root path')
 
-        # mot
+        # mot: 选择数据集的配置文件
         # self.parser.add_argument('--data_cfg', type=str,
         #                          default='../src/lib/cfg/detrac.json',  # 'mot15.json',
         #                          help='load data from cfg')
@@ -217,12 +217,13 @@ class opts(object):
                                  type=float,
                                  default=0.1,
                                  help='loss weight for bounding box size.')
-        self.parser.add_argument('--id_loss', default='ce',
+        self.parser.add_argument('--id_loss',
+                                 default='ce',
                                  help='reid loss: ce | triplet')
         self.parser.add_argument('--id_weight',
                                  type=float,
-                                 default=1,
-                                 help='loss weight for id')
+                                 default=1,  # 0for detection only and 1 for detection and re-id
+                                 help='loss weight for id')  # 控制是否计算ReID
         self.parser.add_argument('--reid_dim',
                                  type=int,
                                  default=128,  # 512
@@ -321,7 +322,8 @@ class opts(object):
             # opt.nID = dataset.nID
 
             # @even: 用nID_dict取代nID
-            opt.nID_dict = dataset.nID_dict
+            if opt.id_weight > 0:
+                opt.nID_dict = dataset.nID_dict
 
             opt.img_size = (1088, 608)
         else:

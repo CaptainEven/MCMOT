@@ -61,6 +61,7 @@ class BaseTrainer(object):
         else:
             if len(self.opt.gpus) > 1:
                 model_with_loss = self.model_with_loss.module
+
             model_with_loss.eval()  # 测试模式
             torch.cuda.empty_cache()
 
@@ -74,6 +75,7 @@ class BaseTrainer(object):
         for iter_id, batch in enumerate(data_loader):
             if iter_id >= num_iters:
                 break
+
             data_time.update(time.time() - end)
 
             for k in batch:
@@ -97,8 +99,7 @@ class BaseTrainer(object):
                 epoch, iter_id, num_iters, phase=phase,
                 total=bar.elapsed_td, eta=bar.eta_td)
             for l in avg_loss_stats:
-                avg_loss_stats[l].update(
-                    loss_stats[l].mean().item(), batch['input'].size(0))
+                avg_loss_stats[l].update(loss_stats[l].mean().item(), batch['input'].size(0))
                 Bar.suffix = Bar.suffix + '|{} {:.4f} '.format(l, avg_loss_stats[l].avg)
             if not opt.hide_data_time:
                 Bar.suffix = Bar.suffix + '|Data {dt.val:.3f}s({dt.avg:.3f}s) ' \
