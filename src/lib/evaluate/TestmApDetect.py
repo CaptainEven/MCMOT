@@ -6,10 +6,10 @@ import time
 import numpy
 import copy
 
-import cmp_det_label_sf as cdl
-from readAndSaveDarknetDetRes import readDetRes, saveDetRes
-from readAnnotations import LoadLabel
-from voc_eval import voc_eval
+import lib.evaluate.cmp_det_label_sf as cdl
+from lib.evaluate.readAndSaveDarknetDetRes import readDetRes, saveDetRes
+from lib.evaluate.readAnnotations import LoadLabel
+from lib.evaluate.voc_eval import voc_eval
 
 
 # 读取文件列表
