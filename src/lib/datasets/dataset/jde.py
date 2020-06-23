@@ -622,7 +622,7 @@ class JointDataset(LoadImagesAndLabels):  # for training
 
                     ids[k] = label[1] - 1  # 分类的idx: track id - 1
 
-        if self.opt.id_weight > 0:  # for detection and re-id
+        if self.opt.id_weight > 0:
             ret = {'input': imgs,
                    'hm': hm,
                    'reg_mask': reg_mask,

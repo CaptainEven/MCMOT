@@ -336,6 +336,11 @@ class JDETracker(object):
 
     # JDE跟踪器更新追踪状态
     def update(self, im_blob, img_0):
+        """
+        :param im_blob:
+        :param img_0:
+        :return:
+        """
         # update frame id
         self.frame_id += 1
 
