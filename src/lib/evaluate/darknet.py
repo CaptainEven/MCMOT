@@ -326,19 +326,31 @@ def detect(net, meta, image, thresh=.5, hier_thresh=.5, nms=.45, debug=False):
 
 
 def detect_ext(net, meta, image, thresh=.2, hier_thresh=.5, nms=.45):
+    """
+    :param net:
+    :param meta:
+    :param image:
+    :param thresh:
+    :param hier_thresh:
+    :param nms:
+    :return:
+    """
     im = load_image(image, 0, 0)
     num = c_int(0)
-    pnum = pointer(num)
-    starttime = time.time()
+    p_num = pointer(num)
+    start_time = time.time()
     predict_image(net, im)
     endtime = time.time()
     letter_box = 0
-    print('xxxxxxxxxxxxxxxxxxxx ', endtime - starttime)
+
+    print('xxxxxxxxxxxxxxxxxxxx ', endtime - start_time)
     # dets = get_network_boxes(net, im.w, im.h, thresh, hier_thresh, None, 0, pnum)
-    dets = get_network_boxes(net, im.w, im.h, thresh, hier_thresh, None, 0, pnum, letter_box)
-    num = pnum[0]
+    dets = get_network_boxes(net, im.w, im.h, thresh, hier_thresh, None, 0, p_num, letter_box)
+    num = p_num[0]
+
     # if (nms): do_nms_obj(dets, num, meta.classes, nms)
-    if (nms): do_nms_sort(dets, num, meta.classes, nms)
+    if (nms):
+        do_nms_sort(dets, num, meta.classes, nms)
 
     res = []
     for j in range(num):
@@ -350,10 +362,13 @@ def detect_ext(net, meta, image, thresh=.2, hier_thresh=.5, nms=.45):
                 b.w /= im.w
                 b.h /= im.h
                 res.append([meta.names[i].decode('utf-8').strip(), dets[j].prob[i], b.x, b.y, b.w, b.h])
+
     res = sorted(res, key=lambda x: -x[1])
+
     free_image(im)
     free_detections(dets, num)
-    return res, endtime - starttime
+
+    return res, endtime - start_time
 
 
 netMain = None
@@ -361,8 +376,14 @@ metaMain = None
 altNames = None
 
 
-def performDetect(imagePath="data/dog.jpg", thresh=0.25, configPath="./cfg/yolov3.cfg", weightPath="yolov3.weights",
-                  metaPath="./cfg/coco.data", showImage=True, makeImageOnly=False, initOnly=False):
+def performDetect(imagePath="data/dog.jpg",
+                  thresh=0.25,
+                  configPath="./cfg/yolov3.cfg",
+                  weightPath="yolov3.weights",
+                  metaPath="./cfg/coco.data",
+                  showImage=True,
+                  makeImageOnly=False,
+                  initOnly=False):
     """
     Convenience function to handle the detection and returns of objects.
 

@@ -1,3 +1,5 @@
+# encoding=utf-8
+
 import os
 import cv2
 import xlwt
@@ -16,8 +18,10 @@ def overlap(x1, w1, x2, w2):
 def box_intersection(box1, box2):
     w = overlap(box1[0], box1[2], box2[0], box2[2])
     h = overlap(box1[1], box1[3], box2[1], box2[3])
+
     if w < 0 or h < 0:
         return 0
+
     area = w * h
     return area
 

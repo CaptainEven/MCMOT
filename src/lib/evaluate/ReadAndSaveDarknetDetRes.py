@@ -1,41 +1,54 @@
 import os
+
+
 # import darknet as dn
 
-def readDetRes(res_path):
-    fr = open(res_path,'r')
+def read_det_res(res_path):
+    fr = open(res_path, 'r')
     if fr is None:
         return -1
     cn = 0
     num = 0
     detect_objs = []
-    for line in fr.readlines():                          #依次读取每行
-        line = line.strip()                             #去掉每行头尾空白
+    for line in fr.readlines():  # 依次读取每行
+        line = line.strip()  # 去掉每行头尾空白
         if cn == 0:
-            tmp,num = [str(i) for i in line.split("=")]
+            tmp, num = [str(i) for i in line.split("=")]
             # print("object num: ", int(num))
         else:
             obj = [float(i) for i in line.split()]
             obj[0] = int(obj[0])
             detect_objs.append(obj)
-            #print(obj)
+            # print(obj)
         cn += 1
+
     return detect_objs
 
-def saveDetRes(det, det_save_path, cls_names):
+
+def save_det_res(det, det_save_path, cls_names):
+    """
+    :param det:
+    :param det_save_path:
+    :param cls_names:
+    :return:
+    """
     res = 0
-    f = open(det_save_path,'w')
+    f = open(det_save_path, 'w')
     if f is None:
         res = -1
         return res
-    f.write('class prob x y w h total='+str(len(det))+'\n')
+
+    f.write('class prob x y w h total=' + str(len(det)) + '\n')
     for d in det:
         if d[0] not in cls_names:
             res = -2
             continue
         obj_cls = cls_names.index(d[0])
-        f.write('%d %f %f %f %f %f\n'%(obj_cls,d[1],d[2],d[3],d[4],d[5]))
+        f.write('%d %f %f %f %f %f\n' % (obj_cls, d[1], d[2], d[3], d[4], d[5]))
         # print(obj_cls,d[2],d[3],d[4],d[5])
+
     return res
+
 
 if __name__ == "__main__":
     # detect
