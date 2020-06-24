@@ -82,6 +82,14 @@ def voc_eval(detpath,
              imagesetfile,
              classname,
              ovthresh=0.5):
+    """
+    :param detpath:
+    :param annopath:
+    :param imagesetfile:
+    :param classname:
+    :param ovthresh:
+    :return:
+    """
     # 主函数，计算当前类别的recall和precision
     # #detpath检测结果txt文件，路径VOCdevkit/results/VOC20xx/Main/<comp_id>_det_test_aeroplane.txt。
     # 该文件格式：imagename1 type confidence xmin ymin xmax ymax  (图像1的第一个结果)

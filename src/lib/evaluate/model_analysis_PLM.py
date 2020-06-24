@@ -127,9 +127,9 @@ def batch_analysis(weights_list_file, cfg_file, meta_file, image_list_file, thre
                 if img is None:
                     print("load image error&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
                 # print(img.shape)
-                cmp_res = cdl.CmpData(objtype,det,label,thresh,iou_thresh,img)
+                cmp_res = cdl.cmp_data(objtype, det, label, thresh, iou_thresh, img)
 
-                cmp_res.update({'image_name':image_name})
+                cmp_res.update_tracking({'image_name':image_name})
                 total_corr += cmp_res['correct']
                 total_iou += cmp_res['avg_iou']*cmp_res['label_num']
 

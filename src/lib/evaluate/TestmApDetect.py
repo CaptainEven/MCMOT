@@ -122,28 +122,31 @@ def batch_analysis(weights_list_file, img_list_file, thresh, iou_thresh, result_
 
         object_type = [meta.names[i].decode('utf-8').strip() for i in range(meta.classes)]
 
+        # @even: tmp modification
+        weights_name = 'mcmot'
+
         result_path = os.path.join(result_dir, weights_name)
         if not os.path.exists(result_path):
             os.mkdir(result_path)
 
-        # detect result and save to text
-        time_all = 0
-        for j, img_path in enumerate(image_list):
-            print('detect: ' + str(j + 1) + '/' + str(len(image_list)))
-            label_path = img_path2label_path(img_path)
-            image_name = get_file_name(img_path)
-            det_save_path = os.path.join(result_path, image_name + '.txt')
-            # det = dn.detect_ext(net, meta, bytes(image_path,'utf-8'),thresh)
-
-            # 选择对应的dn
-            det, time_1 = dn.detect_ext(net, meta, bytes(img_path, 'utf-8'), thresh)
-            time_all = time_all + time_1
-
-            # save detection result to text
-            save_det_res(det, det_save_path, object_type)
-            time.sleep(0.001)
-        print('xxxxxxxxxxx', 'FPS, ', len(image_list) / time_all)
-        # dn.free_net(net)
+        # # detect result and save to text
+        # time_all = 0
+        # for j, img_path in enumerate(image_list):
+        #     print('detect: ' + str(j + 1) + '/' + str(len(image_list)))
+        #     label_path = img_path2label_path(img_path)
+        #     image_name = get_file_name(img_path)
+        #     det_save_path = os.path.join(result_path, image_name + '.txt')
+        #     # det = dn.detect_ext(net, meta, bytes(image_path,'utf-8'),thresh)
+        #
+        #     # 选择对应的dn
+        #     det, time_1 = dn.detect_ext(net, meta, bytes(img_path, 'utf-8'), thresh)
+        #     time_all = time_all + time_1
+        #
+        #     # save detection result to text
+        #     save_det_res(det, det_save_path, object_type)
+        #     time.sleep(0.001)
+        # print('xxxxxxxxxxx', 'FPS, ', len(image_list) / time_all)
+        # # dn.free_net(net)
 
         # compare label and detection result
         for i, obj_type in enumerate(object_type):
@@ -183,7 +186,7 @@ def batch_analysis(weights_list_file, img_list_file, thresh, iou_thresh, result_
                         d[0] = ' '
                         continue
 
-                    d[0] = object_type[d[0]]
+                    d[0] = object_type[d[0]]  # 类别编号 -> 类别名称
 
                 for d in det:
                     x_min = float(copy.deepcopy(d[2])) - float(copy.deepcopy(d[4])) / 2.0
@@ -191,7 +194,7 @@ def batch_analysis(weights_list_file, img_list_file, thresh, iou_thresh, result_
                     x_max = float(copy.deepcopy(d[2])) + float(copy.deepcopy(d[4])) / 2.0
                     y_max = float(copy.deepcopy(d[3])) + float(copy.deepcopy(d[5])) / 2.0
 
-                    # ----- img_name  type  conf  x_min y_min x_max y_max
+                    # ----- img_name  type  conf  x_min  y_min  x_max  y_max
                     d_ = [image_name, d[0], d[1], x_min, y_min, x_max, y_max]
                     det_.append(d_)
 
@@ -208,7 +211,7 @@ def batch_analysis(weights_list_file, img_list_file, thresh, iou_thresh, result_
                     print("load image error&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
                     continue
 
-                cmp_res = cdl.CmpData(obj_type, det, label, thresh, iou_thresh, img)
+                cmp_res = cdl.cmp_data(obj_type, det, label, thresh, iou_thresh, img)
 
                 cmp_res.update({'image_name': image_name})
                 total_corr += cmp_res['correct']
@@ -216,9 +219,9 @@ def batch_analysis(weights_list_file, img_list_file, thresh, iou_thresh, result_
 
                 cmp_result.append(cmp_res)
                 print(
-                    "%s: %d/%d  label: %d   detect: %d   correct: %d   recall: %f   avg_iou: %f   accuracy: %f   precision: %f\n" % \
-                    (str(obj_type), j + 1, image_num, cmp_res['label_num'], cmp_res['detect_num'], \
-                     cmp_res['correct'], cmp_res['recall'], cmp_res['avg_iou'], \
+                    "%s: %d/%d  label: %d   detect: %d   correct: %d   recall: %f   avg_iou: %f   accuracy: %f   precision: %f\n" %
+                    (str(obj_type), j + 1, image_num, cmp_res['label_num'], cmp_res['detect_num'],
+                     cmp_res['correct'], cmp_res['recall'], cmp_res['avg_iou'],
                      cmp_res['accuracy'], cmp_res['precision']))
                 total_label += cmp_res['label_num']
                 total_detect += cmp_res['detect_num']
@@ -229,11 +232,11 @@ def batch_analysis(weights_list_file, img_list_file, thresh, iou_thresh, result_
             # 求出AP值
             # ap=0
             det_all = numpy.delete(det_all, 0, axis=0)
-            det_objtype = [obj for obj in det_all if obj[1] == obj_type]
-            if len(det_objtype) == 0:
+            det_obj_type = [obj for obj in det_all if obj[1] == obj_type]
+            if len(det_obj_type) == 0:
                 ap = 0
             else:
-                ap = voc_eval(det_objtype, anno_path, img_set_file, obj_type, iou_thresh)
+                ap = voc_eval(det_obj_type, anno_path, img_set_file, obj_type, iou_thresh)
             det_all = []
 
             # 数据集分析结果
@@ -257,6 +260,8 @@ def batch_analysis(weights_list_file, img_list_file, thresh, iou_thresh, result_
                  total_result[6], ap))
 
             result.append([weights_name] + [obj_type] + total_result + [float(ap)])
+
+        # 输出所有类别总的结果
         cdl.ExportAnaResAll(result, result_dir)
         time.sleep(0.001)
 

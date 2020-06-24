@@ -18,17 +18,36 @@ from lib.opts import opts  # import opts
 from lib.tracking_utils.utils import mkdir_if_missing
 from lib.tracking_utils.log import logger
 import lib.datasets.dataset.jde as datasets
-from track import eval_seq
+from track import eval_seq, eval_seq_and_output_dets
+
 
 logger.setLevel(logging.INFO)
 
 
 def run_demo(opt):
+    """
+    :param opt:
+    :return:
+    """
     result_root = opt.output_root if opt.output_root != '' else '.'
     mkdir_if_missing(result_root)
 
-    logger.info('Starting tracking...')
-    data_loader = datasets.LoadVideo(opt.input_video, opt.img_size)
+    if opt.input_mode == 'video':
+        logger.info('Starting tracking...')
+        data_loader = datasets.LoadVideo(opt.input_video, opt.img_size)
+    elif opt.input_mode == 'image_dir':
+        logger.info('Starting detection...')
+        data_loader = datasets.LoadImages(opt.input_img, opt.img_size)
+    elif opt.input_mode == 'img_path_list_txt':
+        if not os.path.isfile(opt.input_img):
+            print('[Err]: invalid image file path list.')
+            return
+
+        with open(opt.input_img, 'r', encoding='utf-8') as r_h:
+            logger.info('Starting detection...')
+            paths = [x.strip() for x in r_h.readlines()]
+            data_loader = datasets.LoadImages(path=paths, img_size=opt.img_size)
+
     result_file_name = os.path.join(result_root, 'results.txt')
     frame_rate = data_loader.frame_rate
 
@@ -46,14 +65,23 @@ def run_demo(opt):
                      frame_rate=frame_rate,
                      mode='track')
         else:
-            eval_seq(opt=opt,
-                     data_loader=data_loader,
-                     data_type='mot',
-                     result_f_name=result_file_name,
-                     save_dir=frame_dir,
-                     show_image=False,
-                     frame_rate=frame_rate,
-                     mode='detect')
+            # eval_seq(opt=opt,
+            #          data_loader=data_loader,
+            #          data_type='mot',
+            #          result_f_name=result_file_name,
+            #          save_dir=frame_dir,
+            #          show_image=False,
+            #          frame_rate=frame_rate,
+            #          mode='detect')
+
+            # only for tmp detection evaluation...
+            eval_seq_and_output_dets(opt=opt,
+                                     data_loader=data_loader,
+                                     data_type='mot',
+                                     result_f_name=result_file_name,
+                                     out_dir='/users/duanyou/c5/results_new/results_puer/mcmot',
+                                     save_dir=frame_dir,
+                                     show_image=False)
     except Exception as e:
         logger.info(e)
 

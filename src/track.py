@@ -7,6 +7,7 @@ from numpy.core._multiarray_umath import ndarray
 import _init_paths
 import os
 import os.path as osp
+import shutil
 import cv2
 import logging
 import argparse
@@ -15,7 +16,7 @@ import numpy as np
 import torch
 
 from collections import defaultdict
-from lib.tracker.multitracker import JDETracker
+from lib.tracker.multitracker import JDETracker, id2cls
 from lib.tracking_utils import visualization as vis
 from lib.tracking_utils.log import logger
 from lib.tracking_utils.timer import Timer
@@ -88,6 +89,112 @@ def write_results_dict(file_name, results_dict, data_type, num_classes=2):
     logger.info('save results to {}'.format(file_name))
 
 
+def format_dets_dict2dets_list(dets_dict, w, h):
+    """
+    :param dets_dict:
+    :param w: input image width
+    :param h: input image height
+    :return:
+    """
+    dets_list = []
+    for k, v in dets_dict.items():
+        for det_obj in v:
+            x1, y1, x2, y2, score, cls_id = det_obj
+            center_x = (x1 + x2) * 0.5 / float(w)
+            center_y = (y1 + y2) * 0.5 / float(h)
+            bbox_w = (x2 - x1) / float(w)
+            bbox_h = (y2 - y1) / float(h)
+
+            dets_list.append([int(cls_id), score, center_x, center_y, bbox_w, bbox_h])
+
+    return dets_list
+
+
+def eval_seq_and_output_dets(opt,
+                             data_loader,
+                             data_type,
+                             result_f_name,
+                             out_dir,
+                             save_dir=None,
+                             show_image=True):
+    """
+    :param opt:
+    :param data_loader:
+    :param data_type:
+    :param result_f_name:
+    :param out_dir:
+    :param save_dir:
+    :param show_image:
+    :return:
+    """
+    if save_dir:
+        mkdir_if_missing(save_dir)
+
+    if not os.path.isdir(out_dir):
+        os.makedirs(out_dir)
+    else:
+        shutil.rmtree(out_dir)
+        os.makedirs(out_dir)
+
+    tracker = JDETracker(opt, frame_rate=30)
+
+    timer = Timer()
+
+    results_dict = defaultdict(list)
+
+    frame_id = 0  # 帧编号
+    for path, img, img_0 in data_loader:
+        if frame_id % 20 == 0:
+            logger.info('Processing frame {} ({:.2f} fps)'.format(frame_id, 1. / max(1e-5, timer.average_time)))
+
+        # --- run tracking
+        timer.tic()
+        blob = torch.from_numpy(img).to(opt.device).unsqueeze(0)
+
+        # update detection results of this frame(or image)
+        dets_dict = tracker.update_detection(blob, img_0)
+
+        timer.toc()
+
+        # plot detection results
+        if show_image or save_dir is not None:
+            online_im = vis.plot_detects(image=img_0,
+                                         dets_dict=dets_dict,
+                                         num_classes=opt.num_classes,
+                                         frame_id=frame_id,
+                                         fps=1.0 / max(1e-5, timer.average_time))
+
+        if frame_id > 0:
+            # 是否显示中间结果
+            if show_image:
+                cv2.imshow('online_im', online_im)
+            if save_dir is not None:
+                cv2.imwrite(os.path.join(save_dir, '{:05d}.jpg'.format(frame_id)), online_im)
+
+        # ----- 格式化并输出detection结果(txt)到指定目录
+        # 格式化
+        dets_list = format_dets_dict2dets_list(dets_dict, w=img_0.shape[1], h=img_0.shape[0])
+
+        # 输出到指定目录
+        out_f_name = os.path.split(path)[-1].replace('.jpg', '.txt')
+        out_f_path = out_dir + '/' + out_f_name
+        with open(out_f_path, 'w', encoding='utf-8') as w_h:
+            w_h.write('class prob x y w h total=' + str(len(dets_list)) + '\n')
+
+            for det in dets_list:
+                w_h.write('%d %f %f %f %f %f\n' % (det[0], det[1], det[2], det[3], det[4], det[5]))
+        print('{} written'.format(out_f_path))
+
+        # 处理完一帧, 更新frame_id
+        frame_id += 1
+
+    # 写入最终结果save results
+    write_results_dict(result_f_name, results_dict, data_type)
+
+    # 返回结果
+    return frame_id, timer.average_time, timer.calls
+
+
 def eval_seq(opt,
              data_loader,
              data_type,
@@ -129,7 +236,7 @@ def eval_seq(opt,
 
         if mode == 'track':  # process tracking
             # --- track updates of each frame
-            online_targets_dict = tracker.update(blob, img_0)
+            online_targets_dict = tracker.update_tracking(blob, img_0)
 
             # 聚合每一帧的结果
             online_tlwhs_dict = defaultdict(list)
@@ -163,7 +270,7 @@ def eval_seq(opt,
 
         elif mode == 'detect':  # process detections
             # update detection results of this frame(or image)
-            dets_dict = tracker.update_detections(blob, img_0)
+            dets_dict = tracker.update_detection(blob, img_0)
 
             timer.toc()
 
@@ -176,7 +283,6 @@ def eval_seq(opt,
                                              fps=1.0 / max(1e-5, timer.average_time))
         else:
             print('[Err]: un-recognized mode.')
-
 
         # # 可视化中间结果
         # if frame_id > 0:

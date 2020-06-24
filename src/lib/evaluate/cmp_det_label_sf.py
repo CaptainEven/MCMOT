@@ -49,107 +49,114 @@ def box_to_rect(box, width, height):
 
 
 # 比较每张图片的检测结果和标记数据
-def CmpData(cmp_type, detect_objs, label_objs, thresh, iou_thresh, img):
+def cmp_data(cmp_type, detect_objs, label_objs, thresh, iou_thresh, img):
     # img = cv2.imread("%s/%s.jpg" % (image_path,file_name))
 
     df = [False for n in range(0, len(detect_objs))]
     correct = 0
     iou = 0
     label_num = 0
-    for lobj in label_objs:
-        if lobj[0] != cmp_type:
+    for l_obj in label_objs:
+        if l_obj[0] != cmp_type:
             continue
+
         label_num += 1
-        box1 = [lobj[1], lobj[2], lobj[3], lobj[4]]
-        rect1 = box_to_rect(box1, img.shape[1], img.shape[0])
+        box_1 = [l_obj[1], l_obj[2], l_obj[3], l_obj[4]]
+        rect_1 = box_to_rect(box_1, img.shape[1], img.shape[0])
         best_iou = 0
-        rect2 = []
+        rect_2 = []
         best_no = -1
-        for dno, dobj in enumerate(detect_objs):
-            if lobj[0] != dobj[0]:
+        for d_no, d_obj in enumerate(detect_objs):
+            if l_obj[0] != d_obj[0]:
                 continue
-            box2 = [dobj[2], dobj[3], dobj[4], dobj[5]]
-            biou = box_iou(box1, box2)
-            if dobj[1] > thresh and biou > best_iou:
-                best_no = dno
+
+            box_2 = [d_obj[2], d_obj[3], d_obj[4], d_obj[5]]
+            biou = box_iou(box_1, box_2)
+            if d_obj[1] > thresh and biou > best_iou:
+                best_no = d_no
                 best_iou = biou
-                rect2 = box_to_rect(box2, img.shape[1], img.shape[0])
+                rect_2 = box_to_rect(box_2, img.shape[1], img.shape[0])
         iou += best_iou
+
         # if best_iou > iou_thresh:
-        if best_iou > iou_thresh and not df[best_no]:  #### 若df[best_no]已经是true了，则证明这个检测结果没有匹配的GT，且置信度大于thresh，则算虚警
+        if best_iou > iou_thresh and not df[best_no]:  # 若df[best_no]已经是true了，则证明这个检测结果没有匹配的GT，且置信度大于thresh，则算虚警
             correct += 1
             df[best_no] = True  # df相当于该gt被置为已检测到，下一次若还有另一个检测结果与之重合率满足阈值，则不能认为多检测到一个目标
             # cv2.rectangle(img,(rect1[0],rect1[1]),(rect1[2],rect1[3]),(0,255,0),3)# 绿色 label
             if cmp_type == 'car':
-                cv2.rectangle(img, (rect2[0], rect2[1]), (rect2[2], rect2[3]), (255, 0, 0), 3)
+                cv2.rectangle(img, (rect_2[0], rect_2[1]), (rect_2[2], rect_2[3]), (255, 0, 0), 3)
                 txt = cmp_type + ':' + str(round(detect_objs[best_no][1], 2))
-                cv2.putText(img, txt, (rect2[0], rect2[1]), 0, 1, (255, 0, 0), 2)
+                cv2.putText(img, txt, (rect_2[0], rect_2[1]), 0, 1, (255, 0, 0), 2)
             elif cmp_type == 'bicycle':
-                cv2.rectangle(img, (rect2[0], rect2[1]), (rect2[2], rect2[3]), (255, 255, 0), 3)
+                cv2.rectangle(img, (rect_2[0], rect_2[1]), (rect_2[2], rect_2[3]), (255, 255, 0), 3)
                 txt = cmp_type + ':' + str(round(detect_objs[best_no][1], 2))
-                cv2.putText(img, txt, (rect2[0], rect2[1]), 0, 1, (255, 255, 0), 2)
+                cv2.putText(img, txt, (rect_2[0], rect_2[1]), 0, 1, (255, 255, 0), 2)
             elif cmp_type == 'person':
-                cv2.rectangle(img, (rect2[0], rect2[1]), (rect2[2], rect2[3]), (0, 255, 255), 3)
+                cv2.rectangle(img, (rect_2[0], rect_2[1]), (rect_2[2], rect_2[3]), (0, 255, 255), 3)
                 txt = cmp_type + ':' + str(round(detect_objs[best_no][1], 2))
-                cv2.putText(img, txt, (rect2[0], rect2[1]), 0, 1, (0, 255, 255), 2)
+                cv2.putText(img, txt, (rect_2[0], rect_2[1]), 0, 1, (0, 255, 255), 2)
             elif cmp_type == 'cyclist':
-                cv2.rectangle(img, (rect2[0], rect2[1]), (rect2[2], rect2[3]), (0, 255, 0), 3)
+                cv2.rectangle(img, (rect_2[0], rect_2[1]), (rect_2[2], rect_2[3]), (0, 255, 0), 3)
                 txt = cmp_type + ':' + str(round(detect_objs[best_no][1], 2))
-                cv2.putText(img, txt, (rect2[0], rect2[1]), 0, 1, (0, 255, 0), 2)
+                cv2.putText(img, txt, (rect_2[0], rect_2[1]), 0, 1, (0, 255, 0), 2)
             elif cmp_type == 'tricycle':
-                cv2.rectangle(img, (rect2[0], rect2[1]), (rect2[2], rect2[3]), (0, 0, 255), 3)
+                cv2.rectangle(img, (rect_2[0], rect_2[1]), (rect_2[2], rect_2[3]), (0, 0, 255), 3)
                 txt = cmp_type + ':' + str(round(detect_objs[best_no][1], 2))
-                cv2.putText(img, txt, (rect2[0], rect2[1]), 0, 1, (0, 0, 255), 2)
+                cv2.putText(img, txt, (rect_2[0], rect_2[1]), 0, 1, (0, 0, 255), 2)
             elif cmp_type == 'fr':
-                cv2.rectangle(img, (rect2[0], rect2[1]), (rect2[2], rect2[3]), (255, 0, 255), 3)
+                cv2.rectangle(img, (rect_2[0], rect_2[1]), (rect_2[2], rect_2[3]), (255, 0, 255), 3)
                 txt = 'fr' + ':' + str(round(detect_objs[best_no][1], 2))
-                cv2.putText(img, txt, (rect2[0], rect2[1]), 0, 1, (255, 0, 255), 2)
+                cv2.putText(img, txt, (rect_2[0], rect_2[1]), 0, 1, (255, 0, 255), 2)
         # else:
         #     cv2.rectangle(img,(rect1[0],rect1[1]),(rect1[2],rect1[3]),(0,255,255),3) # 黄色，未检测到的GT
 
     detect_num = 0
-    for i, dobj in enumerate(detect_objs):
-        if dobj[0] != cmp_type:
+    for i, d_obj in enumerate(detect_objs):
+        if d_obj[0] != cmp_type:
             continue
-        if dobj[1] > thresh:
+
+        if d_obj[1] > thresh:
             detect_num += 1
-        box2 = [dobj[2], dobj[3], dobj[4], dobj[5]]
-        if not df[i]:  # 如果df[i]=False，则表明这个检测结果没有匹配的GT，且置信度大于thresh，则算虚警，相当于R['det'][jmax]
-            if dobj[1] > thresh:
-                rect2 = box_to_rect(box2, img.shape[1], img.shape[0])
-                # cv2.rectangle(img,(rect2[0],rect2[1]),(rect2[2],rect2[3]),(255,0,0),3) # 红色 虚警
+
+        box_2 = [d_obj[2], d_obj[3], d_obj[4], d_obj[5]]
+        if not df[i]:  # 如果df[i]=False，则表明这个检测结果没有匹配的GT, 且置信度大于thresh，则算虚警，相当于R['det'][jmax]
+            if d_obj[1] > thresh:
+                rect_2 = box_to_rect(box_2, img.shape[1], img.shape[0])
+
+                # cv2.rectangle(img, (rect_2[0], rect_2[1]), (rect_2[2], rect_2[3]), (255,0,0), 3) # 红色 虚警
                 # if cmp_type == 'fr':
                 #     cmp_type1 = 'shangfan'
                 # else:
                 #     cmp_type1 = cmp_type
-                # txt = cmp_type1+':'+str(round(dobj[1],2))
-                # cv2.putText(img,txt,(rect2[0],rect2[1]), 0, 1, (255,0,0),2)
-                if cmp_type == 'car':
-                    cv2.rectangle(img, (rect2[0], rect2[1]), (rect2[2], rect2[3]), (255, 0, 0), 3)
-                    txt = cmp_type + ':' + str(round(dobj[1], 2))
-                    cv2.putText(img, txt, (rect2[0], rect2[1]), 0, 1, (255, 0, 0), 2)
-                elif cmp_type == 'bicycle':
-                    cv2.rectangle(img, (rect2[0], rect2[1]), (rect2[2], rect2[3]), (255, 255, 0), 3)
-                    txt = cmp_type + ':' + str(round(dobj[1], 2))
-                    cv2.putText(img, txt, (rect2[0], rect2[1]), 0, 1, (255, 255, 0), 2)
-                elif cmp_type == 'person':
-                    cv2.rectangle(img, (rect2[0], rect2[1]), (rect2[2], rect2[3]), (0, 255, 255), 3)
-                    txt = cmp_type + ':' + str(round(dobj[1], 2))
-                    cv2.putText(img, txt, (rect2[0], rect2[1]), 0, 1, (0, 255, 255), 2)
-                elif cmp_type == 'cyclist':
-                    cv2.rectangle(img, (rect2[0], rect2[1]), (rect2[2], rect2[3]), (0, 255, 0), 3)
-                    txt = cmp_type + ':' + str(round(dobj[1], 2))
-                    cv2.putText(img, txt, (rect2[0], rect2[1]), 0, 1, (0, 255, 0), 2)
-                elif cmp_type == 'tricycle':
-                    cv2.rectangle(img, (rect2[0], rect2[1]), (rect2[2], rect2[3]), (0, 0, 255), 3)
-                    txt = cmp_type + ':' + str(round(dobj[1], 2))
-                    cv2.putText(img, txt, (rect2[0], rect2[1]), 0, 1, (0, 0, 255), 2)
-                elif cmp_type == 'fr':
-                    cv2.rectangle(img, (rect2[0], rect2[1]), (rect2[2], rect2[3]), (255, 0, 255), 3)
-                    txt = 'fr' + ':' + str(round(dobj[1], 2))
-                    cv2.putText(img, txt, (rect2[0], rect2[1]), 0, 1, (255, 0, 255), 2)
+                # txt = cmp_type1+':'+str(round(d_obj[1],2))
+                # cv2.putText(img,txt,(rect_2[0],rect_2[1]), 0, 1, (255,0,0),2)
 
-    # cv2.imwrite("%s/show_result/%s_r.jpg" % (result_path,file_name),img)
+                if cmp_type == 'car':
+                    cv2.rectangle(img, (rect_2[0], rect_2[1]), (rect_2[2], rect_2[3]), (255, 0, 0), 3)
+                    txt = cmp_type + ':' + str(round(d_obj[1], 2))
+                    cv2.putText(img, txt, (rect_2[0], rect_2[1]), 0, 1, (255, 0, 0), 2)
+                elif cmp_type == 'bicycle':
+                    cv2.rectangle(img, (rect_2[0], rect_2[1]), (rect_2[2], rect_2[3]), (255, 255, 0), 3)
+                    txt = cmp_type + ':' + str(round(d_obj[1], 2))
+                    cv2.putText(img, txt, (rect_2[0], rect_2[1]), 0, 1, (255, 255, 0), 2)
+                elif cmp_type == 'person':
+                    cv2.rectangle(img, (rect_2[0], rect_2[1]), (rect_2[2], rect_2[3]), (0, 255, 255), 3)
+                    txt = cmp_type + ':' + str(round(d_obj[1], 2))
+                    cv2.putText(img, txt, (rect_2[0], rect_2[1]), 0, 1, (0, 255, 255), 2)
+                elif cmp_type == 'cyclist':
+                    cv2.rectangle(img, (rect_2[0], rect_2[1]), (rect_2[2], rect_2[3]), (0, 255, 0), 3)
+                    txt = cmp_type + ':' + str(round(d_obj[1], 2))
+                    cv2.putText(img, txt, (rect_2[0], rect_2[1]), 0, 1, (0, 255, 0), 2)
+                elif cmp_type == 'tricycle':
+                    cv2.rectangle(img, (rect_2[0], rect_2[1]), (rect_2[2], rect_2[3]), (0, 0, 255), 3)
+                    txt = cmp_type + ':' + str(round(d_obj[1], 2))
+                    cv2.putText(img, txt, (rect_2[0], rect_2[1]), 0, 1, (0, 0, 255), 2)
+                elif cmp_type == 'fr':
+                    cv2.rectangle(img, (rect_2[0], rect_2[1]), (rect_2[2], rect_2[3]), (255, 0, 255), 3)
+                    txt = 'fr' + ':' + str(round(d_obj[1], 2))
+                    cv2.putText(img, txt, (rect_2[0], rect_2[1]), 0, 1, (255, 0, 255), 2)
+
+    # cv2.imwrite("%s/show_result/%s_r.jpg" % (result_path, file_name), img)
 
     tp = correct
     fp = detect_num - tp
@@ -171,8 +178,13 @@ def CmpData(cmp_type, detect_objs, label_objs, thresh, iou_thresh, img):
         corr = (correct if correct < detect_num else detect_num)  # 检测正确数大于检测结果数的情况，即同一个目标多次标记
         precision = 0 if detect_num == 0 else corr / float(detect_num)
 
-    cmp_res = {'label_num': label_num, 'detect_num': detect_num, 'correct': correct, \
-               'recall': recall, 'avg_iou': avg_iou, 'accuracy': accuracy, 'precision': precision}
+    cmp_res = {'label_num': label_num,
+               'detect_num': detect_num,
+               'correct': correct,
+               'recall': recall,
+               'avg_iou': avg_iou,
+               'accuracy': accuracy,
+               'precision': precision}
 
     return cmp_res
 

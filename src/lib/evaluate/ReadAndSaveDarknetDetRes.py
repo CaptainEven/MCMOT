@@ -43,9 +43,12 @@ def save_det_res(det, det_save_path, cls_names):
         if d[0] not in cls_names:
             res = -2
             continue
+
         obj_cls = cls_names.index(d[0])
         f.write('%d %f %f %f %f %f\n' % (obj_cls, d[1], d[2], d[3], d[4], d[5]))
         # print(obj_cls,d[2],d[3],d[4],d[5])
+
+    f.close()
 
     return res
 

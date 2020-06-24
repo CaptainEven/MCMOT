@@ -20,15 +20,25 @@ from lib.utils.image import gaussian_radius, draw_umich_gaussian, draw_msra_gaus
 from lib.utils.utils import xyxy2xywh, generate_anchors, xywh2xyxy, encode_delta
 
 
-class LoadImages:  # for inference
+# for inference
+class LoadImages:
     def __init__(self, path, img_size=(1088, 608)):
-        if os.path.isdir(path):
-            image_format = ['.jpg', '.jpeg', '.png', '.tif']
-            self.files = sorted(glob.glob('%s/*.*' % path))
-            self.files = list(filter(lambda x: os.path.splitext(x)[
-                                                   1].lower() in image_format, self.files))
-        elif os.path.isfile(path):
-            self.files = [path]
+        """
+        :param path:
+        :param img_size:
+        """
+        self.frame_rate = 10  #
+
+        if type(path) == str:
+            if os.path.isdir(path):
+                image_format = ['.jpg', '.jpeg', '.png', '.tif']
+                self.files = sorted(glob.glob('%s/*.*' % path))
+                self.files = list(filter(lambda x: os.path.splitext(x)[
+                                                       1].lower() in image_format, self.files))
+            elif os.path.isfile(path):
+                self.files = [path]
+        elif type(path) == list:
+            self.files = path
 
         self.nF = len(self.files)  # number of image files
         self.width = img_size[0]
@@ -43,16 +53,18 @@ class LoadImages:  # for inference
 
     def __next__(self):
         self.count += 1
+
         if self.count == self.nF:
             raise StopIteration
+
         img_path = self.files[self.count]
 
         # Read image
-        img0 = cv2.imread(img_path)  # BGR
-        assert img0 is not None, 'Failed to load ' + img_path
+        img_0 = cv2.imread(img_path)  # BGR
+        assert img_0 is not None, 'Failed to load ' + img_path
 
         # Padded resize
-        img, _, _, _ = letterbox(img0, height=self.height, width=self.width)
+        img, _, _, _ = letterbox(img_0, height=self.height, width=self.width)
 
         # Normalize RGB
         img = img[:, :, ::-1].transpose(2, 0, 1)
@@ -60,7 +72,7 @@ class LoadImages:  # for inference
         img /= 255.0
 
         # cv2.imwrite(img_path + '.letterbox.jpg', 255 * img.transpose((1, 2, 0))[:, :, ::-1])  # save letterbox image
-        return img_path, img, img0
+        return img_path, img, img_0
 
     def __getitem__(self, idx):
         idx = idx % self.nF
@@ -120,12 +132,12 @@ class LoadVideo:  # for inference
             raise StopIteration
 
         # Read image
-        res, img0 = self.cap.read()  # BGR
-        assert img0 is not None, 'Failed to load frame {:d}'.format(self.count)
-        img0 = cv2.resize(img0, (self.w, self.h))
+        res, img_0 = self.cap.read()  # BGR
+        assert img_0 is not None, 'Failed to load frame {:d}'.format(self.count)
+        img_0 = cv2.resize(img_0, (self.w, self.h))
 
         # Padded resize
-        img, _, _, _ = letterbox(img0, height=self.height, width=self.width)
+        img, _, _, _ = letterbox(img_0, height=self.height, width=self.width)
 
         # Normalize RGB
         img = img[:, :, ::-1].transpose(2, 0, 1)  # BGR->RGB and HWC->CHW
@@ -134,7 +146,7 @@ class LoadVideo:  # for inference
 
         # save letterbox image
         # cv2.imwrite(img_path + '.letterbox.jpg', 255 * img.transpose((1, 2, 0))[:, :, ::-1])
-        return self.count, img, img0
+        return self.count, img, img_0
 
     def __len__(self):
         return self.vn  # number of files
@@ -639,7 +651,6 @@ class JointDataset(LoadImagesAndLabels):  # for training
                    'ind': ind,
                    'wh': wh,
                    'reg': reg}
-
 
         return ret  # 返回一个字典(第一次见识这样的getitem)
 

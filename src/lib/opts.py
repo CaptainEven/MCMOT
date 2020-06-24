@@ -172,10 +172,25 @@ class opts(object):
                                  type=float,
                                  default=200,
                                  help='filter out tiny boxes')
+
+        # 输入数据模式: video or image dir
+        self.parser.add_argument('--input-mode',
+                                 type=str,
+                                 default='img_path_list_txt',  # video or image_dir or img_path_list_txt
+                                 help='input data type(video or image dir)')
+
+        # 输入的video文件路径
         self.parser.add_argument('--input-video',
                                  type=str,
                                  default='../videos/test5.mp4',  # '../videos/MOT16-03.mp4'
                                  help='path to the input video')
+
+        # 输入的image目录
+        self.parser.add_argument('--input-img',
+                                 type=str,
+                                 default='/users/duanyou/c5/puer/test.txt',  # ../images/
+                                 help='path to the input image directory or image file list(.txt)')
+
         self.parser.add_argument('--output-format',
                                  type=str,
                                  default='video',
@@ -222,7 +237,7 @@ class opts(object):
                                  help='reid loss: ce | triplet')
         self.parser.add_argument('--id_weight',
                                  type=float,
-                                 default=1,  # 0for detection only and 1 for detection and re-id
+                                 default=0,  # 0for detection only and 1 for detection and re-id
                                  help='loss weight for id')  # 控制是否计算ReID
         self.parser.add_argument('--reid_dim',
                                  type=int,

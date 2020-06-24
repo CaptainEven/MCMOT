@@ -109,9 +109,9 @@ class STrack(BaseTrack):
         self.start_frame = frame_id
 
     def re_activate(self, new_track, frame_id, new_id=False):
-        self.mean, self.covariance = self.kalman_filter.update(self.mean,
-                                                               self.covariance,
-                                                               self.tlwh_to_xyah(new_track.tlwh))
+        self.mean, self.covariance = self.kalman_filter.update_tracking(self.mean,
+                                                                        self.covariance,
+                                                                        self.tlwh_to_xyah(new_track.tlwh))
 
         self.update_features(new_track.curr_feat)
         self.tracklet_len = 0
@@ -134,9 +134,9 @@ class STrack(BaseTrack):
         self.tracklet_len += 1
 
         new_tlwh = new_track.tlwh
-        self.mean, self.covariance = self.kalman_filter.update(self.mean,
-                                                               self.covariance,
-                                                               self.tlwh_to_xyah(new_tlwh))
+        self.mean, self.covariance = self.kalman_filter.update_tracking(self.mean,
+                                                                        self.covariance,
+                                                                        self.tlwh_to_xyah(new_tlwh))
         self.state = TrackState.Tracked
         self.is_activated = True
 
@@ -219,7 +219,7 @@ class JDETracker(object):
         # self.removed_stracks = []  # type: list[STrack]
 
         self.tracked_stracks_dict = defaultdict(list)  # value type: list[STrack]
-        self.lost_stracks_dict = defaultdict(list)     # value type: list[STrack]
+        self.lost_stracks_dict = defaultdict(list)  # value type: list[STrack]
         self.removed_stracks_dict = defaultdict(list)  # value type: list[STrack]
 
         self.frame_id = 0
@@ -277,7 +277,7 @@ class JDETracker(object):
 
         return results
 
-    def update_detections(self, im_blob, img_0):
+    def update_detection(self, im_blob, img_0):
         """
         更新视频序列或图片序列的检测结果
         :rtype: dict
@@ -290,7 +290,7 @@ class JDETracker(object):
         inp_height = im_blob.shape[2]
         inp_width = im_blob.shape[3]
 
-        c = np.array([width / 2., height / 2.], dtype=np.float32)
+        c = np.array([width * 0.5, height * 0.5], dtype=np.float32)  # center
         s = max(float(inp_width) / float(inp_height) * height, width) * 1.0
         meta = {'c': c,
                 's': s,
@@ -333,9 +333,8 @@ class JDETracker(object):
 
         return dets_dict
 
-
     # JDE跟踪器更新追踪状态
-    def update(self, im_blob, img_0):
+    def update_tracking(self, im_blob, img_0):
         """
         :param im_blob:
         :param img_0:
