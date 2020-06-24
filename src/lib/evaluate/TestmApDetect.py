@@ -129,6 +129,7 @@ def batch_analysis(weights_list_file, img_list_file, thresh, iou_thresh, result_
         if not os.path.exists(result_path):
             os.mkdir(result_path)
 
+        # @even: comment detections now
         # # detect result and save to text
         # time_all = 0
         # for j, img_path in enumerate(image_list):

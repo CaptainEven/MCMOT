@@ -127,7 +127,7 @@ class McMotLoss(torch.nn.Module):
             self.classifiers = nn.ModuleDict()  # 使用ModuleList或ModuleDict才可以自动注册参数
             for cls_id, nID in self.nID_dict.items():
                 # 选择一: 使用普通的全连接层
-                self.classifiers[str(cls_id)] = nn.Linear(self.emb_dim, nID)  # 全连接层
+                self.classifiers[str(cls_id)] = nn.Linear(self.emb_dim, nID)  # FC layers
 
                 # 选择二: 使用Arc margin全连接层
                 # self.classifiers[str(cls_id)] = ArcMarginFc(in_features=self.emb_dim,
@@ -135,7 +135,8 @@ class McMotLoss(torch.nn.Module):
                 #                                             device=self.opt.device,
                 #                                             m=0.4)
 
-            self.IDLoss = nn.CrossEntropyLoss(ignore_index=-1)  # 不同的track id分类用交叉熵损失
+            # using CE loss to do ReID classification
+            self.IDLoss = nn.CrossEntropyLoss(ignore_index=-1)
             # self.TriLoss = TripletLoss()
 
             # @even: 为每个需要ReID的类别定义一个embedding scale
@@ -145,7 +146,8 @@ class McMotLoss(torch.nn.Module):
 
             self.s_id = nn.Parameter(-1.05 * torch.ones(1))  # track reid分类的损失缩放系数
 
-        self.s_det = nn.Parameter(-1.85 * torch.ones(1))  # 检测的损失缩放系数
+        # scale factor of detection loss
+        self.s_det = nn.Parameter(-1.85 * torch.ones(1))
 
     def forward(self, outputs, batch):
         """
@@ -255,9 +257,9 @@ class MotTrainer(BaseTrainer):
         super(MotTrainer, self).__init__(opt, model, optimizer=optimizer)
 
     def _get_losses(self, opt):
-        if opt.id_weight > 0:
+        if opt.id_weight > 0:  # tracking loss including det loss and re-id loss
             loss_states = ['loss', 'hm_loss', 'wh_loss', 'off_loss', 'id_loss']
-        else:
+        else:  # only det loss
             loss_states = ['loss', 'hm_loss', 'wh_loss', 'off_loss']
 
         # loss = MotLoss(opt)
@@ -274,9 +276,11 @@ class MotTrainer(BaseTrainer):
                           K=self.opt.K)
         dets = dets.detach().cpu().numpy().reshape(1, -1, dets.shape[2])
 
-        dets_out = ctdet_post_process(
-            dets.copy(), batch['meta']['c'].cpu().numpy(),
-            batch['meta']['s'].cpu().numpy(),
-            output['hm'].shape[2], output['hm'].shape[3], output['hm'].shape[1])
+        dets_out = ctdet_post_process(dets.copy(),
+                                      batch['meta']['c'].cpu().numpy(),  # center
+                                      batch['meta']['s'].cpu().numpy(),  # scale
+                                      output['hm'].shape[2],             # height
+                                      output['hm'].shape[3],             # width
+                                      output['hm'].shape[1])             # num_classes
 
         results[batch['meta']['img_id'].cpu().numpy()[0]] = dets_out[0]
