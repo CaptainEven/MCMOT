@@ -312,6 +312,7 @@ def dla34(pretrained=True, **kwargs):  # DLA-34
                 block=BasicBlock, **kwargs)
     if pretrained:
         model.load_pretrained_model(data='imagenet', name='dla34', hash='ba72cf86')
+
     return model
 
 
@@ -388,13 +389,23 @@ class IDAUp(nn.Module):
 
 class DLAUp(nn.Module):
     def __init__(self, startp, channels, scales, in_channels=None):
+        """
+        :param startp:
+        :param channels:
+        :param scales:
+        :param in_channels:
+        """
         super(DLAUp, self).__init__()
-        self.startp = startp
+
+        self.start_p = startp
+
         if in_channels is None:
             in_channels = channels
+
         self.channels = channels
         channels = list(channels)
         scales = np.array(scales, dtype=int)
+
         for i in range(len(channels) - 1):
             j = -i - 2
             setattr(self, 'ida_{}'.format(i),
@@ -405,7 +416,7 @@ class DLAUp(nn.Module):
 
     def forward(self, layers):
         out = [layers[-1]]  # start with 32
-        for i in range(len(layers) - self.startp - 1):
+        for i in range(len(layers) - self.start_p - 1):
             ida = getattr(self, 'ida_{}'.format(i))
             ida(layers, len(layers) - i - 2, len(layers))
             out.insert(0, layers[-1])
@@ -444,6 +455,7 @@ class DLASeg(nn.Module):
         :param out_channel:
         """
         super(DLASeg, self).__init__()
+
         assert down_ratio in [2, 4, 8, 16]
 
         self.first_level = int(np.log2(down_ratio))
