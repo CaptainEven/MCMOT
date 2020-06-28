@@ -42,22 +42,17 @@ def _topk(heatmap, K=40, num_classes=1):
     scores=heatmap by default
     """
     N, C, H, W = heatmap.size()
-    # print("b_s, channels, h, w: ", batch, cat, height, width)
 
     # 2d feature map -> 1d feature map
     topk_scores, topk_inds = torch.topk(heatmap.view(N, C, -1), K)
-    # print("topk_scores.shape: ", topk_scores.shape, ", topk_inds.shape: ", topk_inds.shape)  # 1×1×128
 
     topk_inds = topk_inds % (H * W)  # 这一步貌似没必要...
     # print("topk_inds.shape: ", topk_inds.shape)  # 1×1×128
 
     topk_ys = (topk_inds / W).int().float()
     topk_xs = (topk_inds % W).int().float()
-    # print("topk_ys.shape: ", topk_ys.shape, ", topk_xs.shape: ", topk_xs.shape)
 
     topk_score, topk_ind = torch.topk(topk_scores.view(N, -1), K)
-    # print("topk_score.shape: ", topk_score.shape, ", topk_ind.shape: ", topk_ind.shape)  # 1×128
-    # print("after view, topk_ind.shape:", topk_inds.view(batch, -1, 1).shape)
 
     topk_clses = (topk_ind / K).int()
     # print("topk_clses.shape", topk_clses.shape)  # 1×128
@@ -76,7 +71,7 @@ def _topk(heatmap, K=40, num_classes=1):
     return topk_score, topk_inds, topk_clses, topk_ys, topk_xs, cls_inds_masks
 
 
-def mot_decode(heatmap,
+def mot_decode(heat_map,
                wh,
                reg=None,
                num_classes=2,
@@ -84,7 +79,7 @@ def mot_decode(heatmap,
                K=100):
     """
     多目标检测结果解析
-    :param heatmap:
+    :param heat_map:
     :param wh:
     :param reg:
     :param num_classes:
@@ -92,14 +87,14 @@ def mot_decode(heatmap,
     :param K:
     :return:
     """
-    N, C, H, W = heatmap.size()  # N×C×H×W
+    N, C, H, W = heat_map.size()  # N×C×H×W
 
     # heat = torch.sigmoid(heat)
-    # perform nms(max pool) on heatmaps
-    heatmap = _max_pool(heatmap)  # 默认应用3×3max pooling操作, 检测目标数变为feature map的1/9
+    # perform nms(max pool) on heat-map
+    heat_map = _max_pool(heat_map)  # 默认应用3×3max pooling操作, 检测目标数变为feature map的1/9
 
-    # 根据heatmap取topK
-    scores, inds, classes, ys, xs, cls_inds_masks = _topk(heatmap=heatmap, K=K, num_classes=num_classes)
+    # 根据heat-map取topK
+    scores, inds, classes, ys, xs, cls_inds_masks = _topk(heatmap=heat_map, K=K, num_classes=num_classes)
 
     if reg is not None:
         reg = _tranpose_and_gather_feat(reg, inds)

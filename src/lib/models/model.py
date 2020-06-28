@@ -37,9 +37,13 @@ def load_model(model,
     """
     start_epoch = 0
     checkpoint = torch.load(model_path, map_location=lambda storage, loc: storage)
-    print('loaded {}, epoch {}'.format(model_path, checkpoint['epoch']))
+    if 'epoch' in checkpoint.keys():
+        print('loaded {}, epoch {}'.format(model_path, checkpoint['epoch']))
 
-    state_dict_ = checkpoint['state_dict']
+    if 'state_dict' in checkpoint.keys():
+        state_dict_ = checkpoint['state_dict']
+    else:
+        state_dict_ = checkpoint
     state_dict = {}
 
     # convert data_parallal to model
