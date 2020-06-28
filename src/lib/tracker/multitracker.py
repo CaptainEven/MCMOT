@@ -309,7 +309,7 @@ class JDETracker(object):
             reg = output['reg'] if self.opt.reg_offset else None
 
             # 检测和分类结果解析
-            dets, inds, cls_inds_mask = mot_decode(heat_map=hm,
+            dets, inds, cls_inds_mask = mot_decode(heatmap=hm,
                                                    wh=wh,
                                                    reg=reg,
                                                    num_classes=self.opt.num_classes,
@@ -381,7 +381,7 @@ class JDETracker(object):
             # print("reg shape ", reg.shape, "reg:\n", reg)
 
             #  检测和分类结果解析
-            dets, inds, cls_inds_mask = mot_decode(heat_map=hm,
+            dets, inds, cls_inds_mask = mot_decode(heatmap=hm,
                                                    wh=wh,
                                                    reg=reg,
                                                    num_classes=self.opt.num_classes,

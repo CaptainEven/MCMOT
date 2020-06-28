@@ -127,7 +127,7 @@ def convert_annotation(img_path, xml_path, label_path, file_name):
 
     try:
         root = ET.fromstring(xml_info)
-    except Exception as e:
+    except(Exception, e):
         print("Error: cannot parse file")
         # n = raw_input()
         out_file.close()

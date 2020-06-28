@@ -158,7 +158,7 @@ def batch_analysis(weights_list_file,
 
             # if obj_type != 'fr':
             #     continue
-
+            
             total_label = 0
             total_detect = 0
             total_corr = 0
