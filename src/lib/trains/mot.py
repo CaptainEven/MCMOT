@@ -279,8 +279,8 @@ class MotTrainer(BaseTrainer):
         dets_out = ctdet_post_process(dets.copy(),
                                       batch['meta']['c'].cpu().numpy(),  # center
                                       batch['meta']['s'].cpu().numpy(),  # scale
-                                      output['hm'].shape[2],             # height
-                                      output['hm'].shape[3],             # width
-                                      output['hm'].shape[1])             # num_classes
+                                      output['hm'].shape[2],  # height
+                                      output['hm'].shape[3],  # width
+                                      output['hm'].shape[1])  # num_classes
 
         results[batch['meta']['img_id'].cpu().numpy()[0]] = dets_out[0]

@@ -75,11 +75,12 @@ def run_demo(opt):
             #          mode='detect')
 
             # only for tmp detection evaluation...
+            output_dir = '/users/duanyou/c5/results_new/results_puer/mcmot'
             eval_seq_and_output_dets(opt=opt,
                                      data_loader=data_loader,
                                      data_type='mot',
                                      result_f_name=result_file_name,
-                                     out_dir='/users/duanyou/c5/results_new/results_puer/mcmot',
+                                     out_dir=output_dir,
                                      save_dir=frame_dir,
                                      show_image=False)
     except Exception as e:
