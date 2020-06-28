@@ -269,7 +269,7 @@ class MotTrainer(BaseTrainer):
 
     def save_result(self, output, batch, results):
         reg = output['reg'] if self.opt.reg_offset else None
-        dets = mot_decode(heat_map=output['hm'],
+        dets = mot_decode(heatmap=output['hm'],
                           wh=output['wh'],
                           reg=reg,
                           cat_spec_wh=self.opt.cat_spec_wh,
