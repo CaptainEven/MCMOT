@@ -39,6 +39,7 @@ def _slow_neg_loss(pred, gt):
         loss = loss - neg_loss
     else:
         loss = loss - (pos_loss + neg_loss) / num_pos
+
     return loss
 
 

@@ -94,7 +94,11 @@ def batch_detection():
     pass
 
 
-def batch_analysis(weights_list_file, img_list_file, thresh, iou_thresh, result_dir):
+def batch_analysis(weights_list_file,
+                   img_list_file,
+                   thresh,
+                   iou_thresh,
+                   result_dir):
     """
     :param weights_list_file:
     :param img_list_file:
@@ -190,10 +194,10 @@ def batch_analysis(weights_list_file, img_list_file, thresh, iou_thresh, result_
                     d[0] = object_type[d[0]]  # 类别编号 -> 类别名称
 
                 for d in det:
-                    x_min = float(copy.deepcopy(d[2])) - float(copy.deepcopy(d[4])) / 2.0
-                    y_min = float(copy.deepcopy(d[3])) - float(copy.deepcopy(d[5])) / 2.0
-                    x_max = float(copy.deepcopy(d[2])) + float(copy.deepcopy(d[4])) / 2.0
-                    y_max = float(copy.deepcopy(d[3])) + float(copy.deepcopy(d[5])) / 2.0
+                    x_min = float(copy.deepcopy(d[2])) - float(copy.deepcopy(d[4])) * 0.5
+                    y_min = float(copy.deepcopy(d[3])) - float(copy.deepcopy(d[5])) * 0.5
+                    x_max = float(copy.deepcopy(d[2])) + float(copy.deepcopy(d[4])) * 0.5
+                    y_max = float(copy.deepcopy(d[3])) + float(copy.deepcopy(d[5])) * 0.5
 
                     # ----- img_name  type  conf  x_min  y_min  x_max  y_max
                     d_ = [image_name, d[0], d[1], x_min, y_min, x_max, y_max]

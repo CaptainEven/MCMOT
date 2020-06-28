@@ -12,7 +12,6 @@ import torch.nn.functional as F
 
 from .config import cfg, update_config
 
-
 BN_MOMENTUM = 0.01
 logger = logging.getLogger(__name__)
 
@@ -138,7 +137,7 @@ class HighResolutionModule(nn.Module):
                          stride=1):
         downsample = None
         if stride != 1 or \
-           self.num_inchannels[branch_index] != num_channels[branch_index] * block.expansion:
+                self.num_inchannels[branch_index] != num_channels[branch_index] * block.expansion:
             downsample = nn.Sequential(
                 nn.Conv2d(
                     self.num_inchannels[branch_index],
@@ -195,42 +194,40 @@ class HighResolutionModule(nn.Module):
                 if j > i:
                     fuse_layer.append(
                         nn.Sequential(
-                            nn.Conv2d(
-                                num_inchannels[j],
+                            nn.Conv2d(num_inchannels[j],
                                 num_inchannels[i],
-                                1, 1, 0, bias=False
-                            ),
+                                1, 1, 0, bias=False),
                             nn.BatchNorm2d(num_inchannels[i]),
-                            nn.Upsample(scale_factor=2**(j-i), mode='nearest')
+                            nn.Upsample(scale_factor=2 ** (j - i), mode='nearest', align_corners=None)
                         )
                     )
                 elif j == i:
                     fuse_layer.append(None)
                 else:
                     conv3x3s = []
-                    for k in range(i-j):
+                    for k in range(i - j):
                         if k == i - j - 1:
-                            num_outchannels_conv3x3 = num_inchannels[i]
+                            num_out_channels_conv_3x3 = num_inchannels[i]
                             conv3x3s.append(
                                 nn.Sequential(
                                     nn.Conv2d(
                                         num_inchannels[j],
-                                        num_outchannels_conv3x3,
+                                        num_out_channels_conv_3x3,
                                         3, 2, 1, bias=False
                                     ),
-                                    nn.BatchNorm2d(num_outchannels_conv3x3)
+                                    nn.BatchNorm2d(num_out_channels_conv_3x3)
                                 )
                             )
                         else:
-                            num_outchannels_conv3x3 = num_inchannels[j]
+                            num_out_channels_conv_3x3 = num_inchannels[j]
                             conv3x3s.append(
                                 nn.Sequential(
                                     nn.Conv2d(
                                         num_inchannels[j],
-                                        num_outchannels_conv3x3,
+                                        num_out_channels_conv_3x3,
                                         3, 2, 1, bias=False
                                     ),
-                                    nn.BatchNorm2d(num_outchannels_conv3x3),
+                                    nn.BatchNorm2d(num_out_channels_conv_3x3),
                                     nn.ReLU(True)
                                 )
                             )
@@ -274,6 +271,7 @@ class PoseHighResolutionNet(nn.Module):
     """
     HRNet
     """
+
     def __init__(self, cfg, heads):
         self.inplanes = 64
         extra = cfg.MODEL.EXTRA
@@ -370,8 +368,7 @@ class PoseHighResolutionNet(nn.Module):
 
         self.pretrained_layers = cfg['MODEL']['EXTRA']['PRETRAINED_LAYERS']
 
-    def _make_transition_layer(
-            self, num_channels_pre_layer, num_channels_cur_layer):
+    def _make_transition_layer(self, num_channels_pre_layer, num_channels_cur_layer):
         num_branches_cur = len(num_channels_cur_layer)
         num_branches_pre = len(num_channels_pre_layer)
 
@@ -380,32 +377,24 @@ class PoseHighResolutionNet(nn.Module):
             if i < num_branches_pre:
                 if num_channels_cur_layer[i] != num_channels_pre_layer[i]:
                     transition_layers.append(
-                        nn.Sequential(
-                            nn.Conv2d(
-                                num_channels_pre_layer[i],
-                                num_channels_cur_layer[i],
-                                3, 1, 1, bias=False
-                            ),
-                            nn.BatchNorm2d(num_channels_cur_layer[i]),
-                            nn.ReLU(inplace=True)
-                        )
+                        nn.Sequential(nn.Conv2d(num_channels_pre_layer[i],
+                                                num_channels_cur_layer[i],
+                                                3, 1, 1, bias=False),
+                                      nn.BatchNorm2d(num_channels_cur_layer[i]),
+                                      nn.ReLU(inplace=True))
                     )
                 else:
                     transition_layers.append(None)
             else:
                 conv3x3s = []
-                for j in range(i+1-num_branches_pre):
-                    inchannels = num_channels_pre_layer[-1]
-                    outchannels = num_channels_cur_layer[i] \
-                        if j == i-num_branches_pre else inchannels
+                for j in range(i + 1 - num_branches_pre):
+                    in_channels = num_channels_pre_layer[-1]
+                    out_channels = num_channels_cur_layer[i] \
+                        if j == i - num_branches_pre else in_channels
                     conv3x3s.append(
-                        nn.Sequential(
-                            nn.Conv2d(
-                                inchannels, outchannels, 3, 2, 1, bias=False
-                            ),
-                            nn.BatchNorm2d(outchannels),
-                            nn.ReLU(inplace=True)
-                        )
+                        nn.Sequential(nn.Conv2d(in_channels, out_channels, 3, 2, 1, bias=False),
+                                      nn.BatchNorm2d(out_channels),
+                                      nn.ReLU(inplace=True))
                     )
                 transition_layers.append(nn.Sequential(*conv3x3s))
 
@@ -503,9 +492,9 @@ class PoseHighResolutionNet(nn.Module):
 
         # Upsampling
         x0_h, x0_w = x[0].size(2), x[0].size(3)
-        x1 = F.upsample(x[1], size=(x0_h, x0_w), mode='bilinear')
-        x2 = F.upsample(x[2], size=(x0_h, x0_w), mode='bilinear')
-        x3 = F.upsample(x[3], size=(x0_h, x0_w), mode='bilinear')
+        x1 = F.interpolate(x[1], size=(x0_h, x0_w), mode='bilinear', align_corners=False)  # up_sample
+        x2 = F.interpolate(x[2], size=(x0_h, x0_w), mode='bilinear', align_corners=False)
+        x3 = F.interpolate(x[3], size=(x0_h, x0_w), mode='bilinear', align_corners=False)
 
         x = torch.cat([x[0], x1, x2, x3], 1)
 
@@ -530,7 +519,7 @@ class PoseHighResolutionNet(nn.Module):
             need_init_state_dict = {}
             for name, m in pretrained_state_dict.items():
                 if name.split('.')[0] in self.pretrained_layers \
-                   or self.pretrained_layers[0] == '*':
+                        or self.pretrained_layers[0] == '*':
                     need_init_state_dict[name] = m
             self.load_state_dict(need_init_state_dict, strict=False)
         elif pretrained:
@@ -547,7 +536,15 @@ def fill_fc_weights(layers):
                 nn.init.constant_(m.bias, 0)
 
 
-def get_pose_net(num_layers, heads, head_conv):
+def get_pose_net(num_layers,
+                 heads,
+                 head_conv):
+    """
+    :param num_layers:
+    :param heads:
+    :param head_conv:
+    :return:
+    """
     if num_layers == 32:
         cfg_dir = '../src/lib/models/networks/config/hrnet_w32.yaml'
     elif num_layers == 18:  # 18层的HRNet

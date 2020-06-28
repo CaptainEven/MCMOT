@@ -15,12 +15,12 @@ class opts(object):
         self.parser.add_argument('--dataset', default='jde', help='jde')
         self.parser.add_argument('--exp_id', default='default')
         self.parser.add_argument('--test', action='store_true')
-        self.parser.add_argument('--load_model',
-                                 default='../exp/mot/default/mcmot_last.pth',  # ctdet_coco_dla_2x.pth
-                                 help='path to pretrained model')
         # self.parser.add_argument('--load_model',
-        #                          default='../models/all_dla34.pth',
+        #                          default='../exp/mot/default/mcmot_last.pth',  # ctdet_coco_dla_2x.pth
         #                          help='path to pretrained model')
+        self.parser.add_argument('--load_model',
+                                 default='../models/hrnetv2_w32_imagenet_pretrained.pth',  # all_dla34.pth
+                                 help='path to pretrained model')
         self.parser.add_argument('--resume',
                                  action='store_true',
                                  help='resume an experiment. '
@@ -42,7 +42,7 @@ class opts(object):
                                  help='random seed')  # from CornerNet
         self.parser.add_argument('--is_debug',
                                  type=bool,
-                                 default=False,  # 是否使用多线程加载数据, default: False
+                                 default=True,  # 是否使用多线程加载数据, default: False
                                  help='whether in debug mode or not')
 
         # log
@@ -59,7 +59,7 @@ class opts(object):
 
         # model
         self.parser.add_argument('--arch',
-                                 default='dla_34',
+                                 default='hrnet_32',
                                  help='model architecture. Currently tested'
                                       'resdcn_34 | resdcn_50 | resfpndcn_34 |'
                                       'dla_34 | hrnet_32')
@@ -105,7 +105,7 @@ class opts(object):
                                  help='total training epochs.')
         self.parser.add_argument('--batch_size',
                                  type=int,
-                                 default=4,  # 12
+                                 default=4,  # 12, 4
                                  help='batch size')
         self.parser.add_argument('--master_batch_size', type=int, default=-1,
                                  help='batch size on the master gpu.')
@@ -173,7 +173,7 @@ class opts(object):
                                  default=200,
                                  help='filter out tiny boxes')
 
-        # 输入数据模式: video or image dir
+        # 测试阶段的输入数据模式: video or image dir
         self.parser.add_argument('--input-mode',
                                  type=str,
                                  default='img_path_list_txt',  # video or image_dir or img_path_list_txt
@@ -206,7 +206,7 @@ class opts(object):
         #                          default='../src/lib/cfg/detrac.json',  # 'mot15.json',
         #                          help='load data from cfg')
         self.parser.add_argument('--data_cfg', type=str,
-                                 default='../src/lib/cfg/mcmot.json',  # 'mot15.json',
+                                 default='../src/lib/cfg/mcmot_det.json',  # mcmot.json, mcmot_det.json,
                                  help='load data from cfg')
         self.parser.add_argument('--data_dir',
                                  type=str,
