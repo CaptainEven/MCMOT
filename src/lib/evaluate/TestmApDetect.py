@@ -94,7 +94,11 @@ def batch_detection():
     pass
 
 
-def batch_analysis(weights_list_file, img_list_file, thresh, iou_thresh, result_dir):
+def batch_analysis(weights_list_file,
+                   img_list_file,
+                   thresh,
+                   iou_thresh,
+                   result_dir):
     """
     :param weights_list_file:
     :param img_list_file:
