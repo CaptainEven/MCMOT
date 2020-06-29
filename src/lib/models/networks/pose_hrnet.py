@@ -490,7 +490,7 @@ class PoseHighResolutionNet(nn.Module):
                 x_list.append(y_list[i])
         x = self.stage4(x_list)
 
-        # Upsampling
+        # Up-sampling
         x0_h, x0_w = x[0].size(2), x[0].size(3)
         x1 = F.interpolate(x[1], size=(x0_h, x0_w), mode='bilinear', align_corners=False)  # up_sample
         x2 = F.interpolate(x[2], size=(x0_h, x0_w), mode='bilinear', align_corners=False)
