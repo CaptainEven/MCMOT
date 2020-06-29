@@ -265,8 +265,8 @@ def gen_labels(xml_root, img_root, label_root, viz_root=None):
                         # 对bbox进行归一化([0.0, 1.0])
                         bbox_center_x /= img.shape[1]  # W
                         bbox_center_y /= img.shape[0]  # H
-                        bbox_width /= img.shape[1]     # W
-                        bbox_height /= img.shape[0]    # H
+                        bbox_width /= img.shape[1]  # W
+                        bbox_height /= img.shape[0]  # H
 
                         # 组织label的内容, TODO: 优化IO, 硬盘读写一次, 每帧label生成完成才输出
                         # class_id, track_id, bbox_center_x, box_center_y, bbox_width, bbox_height
@@ -274,8 +274,8 @@ def gen_labels(xml_root, img_root, label_root, viz_root=None):
                             track_id,
                             bbox_center_x,  # center_x
                             bbox_center_y,  # center_y
-                            bbox_width,     # bbox_w
-                            bbox_height)    # bbox_h
+                            bbox_width,  # bbox_w
+                            bbox_height)  # bbox_h
                         frame_label_strs.append(label_str)
 
                         # # 输出label
@@ -326,9 +326,9 @@ def gen_dot_train_file(data_root, rel_path, out_root, f_name='detrac.train'):
         seqs.sort()
         for seq in tqdm(seqs):
             img_dir = root + '/' + seq  # + '/img1'
-            imgs = [x for x in os.listdir(img_dir)]
-            imgs.sort()
-            for img in imgs:
+            img_list = [x for x in os.listdir(img_dir)]
+            img_list.sort()
+            for img in img_list:
                 if img.endswith('.jpg'):
                     img_path = img_dir + '/' + img
                     if os.path.isfile(img_path):
