@@ -127,13 +127,13 @@ def batch_analysis(weights_list_file,
         object_type = [meta.names[i].decode('utf-8').strip() for i in range(meta.classes)]
 
         # @even: tmp modification
-        weights_name = 'mcmot'
+        weights_name = 'mcmot_hrnet32_ep5'
 
         result_path = os.path.join(result_dir, weights_name)
         if not os.path.exists(result_path):
             os.mkdir(result_path)
 
-        # @even: comment detections now
+        # # @even: comment detections now
         # # detect result and save to text
         # time_all = 0
         # for j, img_path in enumerate(image_list):
@@ -158,7 +158,7 @@ def batch_analysis(weights_list_file,
 
             # if obj_type != 'fr':
             #     continue
-            
+
             total_label = 0
             total_detect = 0
             total_corr = 0
@@ -286,13 +286,13 @@ if __name__ == "__main__":
     #     os.mkdir(result_dir)
     # batch_analysis(weights_list_file,image_list_file,0.20,0.45,result_dir)
 
-    # # all_test
-    # data_path = "/users/duanyou/c5/all_pretrain"
-    # image_list_file = os.path.join(data_path,"test.txt")
-    # result_dir = os.path.join("/users/duanyou/c5/results_new/results_all/")
-    # if not os.path.exists(result_dir):
-    #     os.mkdir(result_dir)
-    # batch_analysis(weights_list_file,image_list_file,0.20,0.45,result_dir)
+    # all_test
+    data_path = "/users/duanyou/c5/all_pretrain"
+    image_list_file = os.path.join(data_path, "test.txt")
+    result_dir = os.path.join("/users/duanyou/c5/results_new/results_all/")
+    if not os.path.exists(result_dir):
+        os.mkdir(result_dir)
+    batch_analysis(weights_list_file, image_list_file, 0.20, 0.45, result_dir)
 
     # # changsha_test
     # data_path = "/users/duanyou/c5/changsha"
@@ -310,13 +310,13 @@ if __name__ == "__main__":
     #     os.mkdir(result_dir)
     # batch_analysis(weights_list_file,image_list_file,0.20,0.45,result_dir)
 
-    # ----- puer_test
-    data_path = "/users/duanyou/c5/puer"
-    image_list_file = os.path.join(data_path, "test.txt")
-    result_dir = os.path.join("/users/duanyou/c5/results_new/results_puer/")
-    if not os.path.exists(result_dir):
-        os.mkdir(result_dir)
-    batch_analysis(weights_list_file, image_list_file, 0.20, 0.45, result_dir)
+    # # ----- puer_test
+    # data_path = "/users/duanyou/c5/puer"
+    # image_list_file = os.path.join(data_path, "test.txt")
+    # result_dir = os.path.join("/users/duanyou/c5/results_new/results_puer/")
+    # if not os.path.exists(result_dir):
+    #     os.mkdir(result_dir)
+    # batch_analysis(weights_list_file, image_list_file, 0.20, 0.45, result_dir)
 
     # # some_img_test
     # data_path = "/users/duanyou/backup_c5/test_2"

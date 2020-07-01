@@ -58,6 +58,9 @@ class LoadImages:
             raise StopIteration
 
         img_path = self.files[self.count]
+        img_name = os.path.split(img_path)[-1]
+        # if img_name == '1921681219_2_2018-02-13_14-46-00-688_3-1518504845.jpg':
+        #     print('pause here')
 
         # Read image
         img_0 = cv2.imread(img_path)  # BGR

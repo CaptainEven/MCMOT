@@ -40,6 +40,7 @@ class BaseTrainer(object):
 
     def set_device(self, gpus, chunk_sizes, device):
         dev_ids = [i for i in range(len(gpus))]
+        # dev_ids = [int(x) for x in gpus]
         if len(gpus) > 1:
             self.model_with_loss = DataParallel(self.model_with_loss,
                                                 device_ids=dev_ids,  # device_ids=gpus,

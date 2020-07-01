@@ -71,7 +71,7 @@ def _topk(heatmap, K=40, num_classes=1):
     return topk_score, topk_inds, topk_clses, topk_ys, topk_xs, cls_inds_masks
 
 
-def mot_decode(heat_map,
+def mot_decode(heatmap,
                wh,
                reg=None,
                num_classes=2,
@@ -79,7 +79,7 @@ def mot_decode(heat_map,
                K=100):
     """
     多目标检测结果解析
-    :param heat_map:
+    :param heatmap:
     :param wh:
     :param reg:
     :param num_classes:
@@ -87,14 +87,14 @@ def mot_decode(heat_map,
     :param K:
     :return:
     """
-    N, C, H, W = heat_map.size()  # N×C×H×W
+    N, C, H, W = heatmap.size()  # N×C×H×W
 
     # heat = torch.sigmoid(heat)
     # perform nms(max pool) on heat-map
-    heat_map = _max_pool(heat_map)  # 默认应用3×3max pooling操作, 检测目标数变为feature map的1/9
+    heatmap = _max_pool(heatmap)  # 默认应用3×3max pooling操作, 检测目标数变为feature map的1/9
 
     # 根据heat-map取topK
-    scores, inds, classes, ys, xs, cls_inds_masks = _topk(heatmap=heat_map, K=K, num_classes=num_classes)
+    scores, inds, classes, ys, xs, cls_inds_masks = _topk(heatmap=heatmap, K=K, num_classes=num_classes)
 
     if reg is not None:
         reg = _tranpose_and_gather_feat(reg, inds)

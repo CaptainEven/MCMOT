@@ -4,12 +4,13 @@ from __future__ import print_function
 import sys
 import logging
 import os
+import shutil
 
 os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
 
 import torch
 
-my_visible_devs = '6'  # '0, 3'  # 设置可运行GPU编号
+my_visible_devs = '0'  # '0, 3'  # 设置可运行GPU编号
 os.environ['CUDA_VISIBLE_DEVICES'] = my_visible_devs
 device = torch.device('cuda: 0' if torch.cuda.is_available() else 'cpu')
 
@@ -19,7 +20,6 @@ from lib.tracking_utils.utils import mkdir_if_missing
 from lib.tracking_utils.log import logger
 import lib.datasets.dataset.jde as datasets
 from track import eval_seq, eval_seq_and_output_dets
-
 
 logger.setLevel(logging.INFO)
 
@@ -31,6 +31,14 @@ def run_demo(opt):
     """
     result_root = opt.output_root if opt.output_root != '' else '.'
     mkdir_if_missing(result_root)
+
+    # clear existing frame results
+    frame_res_dir = result_root + '/frames'
+    if os.path.isdir(frame_res_dir):
+        shutil.rmtree(frame_res_dir)
+        os.makedirs(frame_res_dir)
+    else:
+        os.makedirs(frame_res_dir)
 
     if opt.input_mode == 'video':
         logger.info('Starting tracking...')
@@ -46,6 +54,12 @@ def run_demo(opt):
         with open(opt.input_img, 'r', encoding='utf-8') as r_h:
             logger.info('Starting detection...')
             paths = [x.strip() for x in r_h.readlines()]
+            print('Total {:d} image files.'.format(len(paths)))
+            # img_names = [os.path.split(x)[-1] for x in paths]
+            # if '1921681219_2_2018-02-13_14-46-00-688_3-1518504845.jpg' in img_names:
+            #     print('In')
+            # else:
+            #     print(' Not int')
             data_loader = datasets.LoadImages(path=paths, img_size=opt.img_size)
 
     result_file_name = os.path.join(result_root, 'results.txt')
@@ -75,7 +89,7 @@ def run_demo(opt):
             #          mode='detect')
 
             # only for tmp detection evaluation...
-            output_dir = '/users/duanyou/c5/results_new/results_puer/mcmot'
+            output_dir = '/users/duanyou/c5/results_new/results_all/mcmot_hrnet32_ep5'
             eval_seq_and_output_dets(opt=opt,
                                      data_loader=data_loader,
                                      data_type='mot',

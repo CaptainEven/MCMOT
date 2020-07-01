@@ -16,10 +16,10 @@ class opts(object):
         self.parser.add_argument('--exp_id', default='default')
         self.parser.add_argument('--test', action='store_true')
         self.parser.add_argument('--load_model',
-                                 default='../exp/mot/default/mcmot_last.pth',  # ctdet_coco_dla_2x.pth
+                                 default='../exp/mot/default/mcmot_last_det_hrnet32.pth',  # ctdet_coco_dla_2x.pth
                                  help='path to pretrained model')
         # self.parser.add_argument('--load_model',
-        #                          default='../models/hrnetv2_w32_imagenet_pretrained.pth',  # all_dla34.pth
+        #                          default='../models/hrnetv2_w18_imagenet_pretrained.pth',  # hrnetv2_w32_imagenet_pretrained
         #                          help='path to pretrained model')
         self.parser.add_argument('--resume',
                                  action='store_true',
@@ -30,7 +30,7 @@ class opts(object):
 
         # system
         self.parser.add_argument('--gpus',
-                                 default='0, 5, 6',
+                                 default='6',  # 0, 5, 6
                                  help='-1 for CPU, use comma for multiple gpus')
         self.parser.add_argument('--num_workers',
                                  type=int,
@@ -57,9 +57,9 @@ class opts(object):
         self.parser.add_argument('--vis_thresh', type=float, default=0.5,
                                  help='visualization threshold.')
 
-        # model
+        # model: backbone and so on...
         self.parser.add_argument('--arch',
-                                 default='hrnet_32',
+                                 default='hrnet_18',
                                  help='model architecture. Currently tested'
                                       'resdcn_34 | resdcn_50 | resfpndcn_34 |'
                                       'dla_34 | hrnet_32')
@@ -105,7 +105,7 @@ class opts(object):
                                  help='total training epochs.')
         self.parser.add_argument('--batch_size',
                                  type=int,
-                                 default=4,  # 12, 4
+                                 default=6,  # 12, 4
                                  help='batch size')
         self.parser.add_argument('--master_batch_size', type=int, default=-1,
                                  help='batch size on the master gpu.')
@@ -188,7 +188,7 @@ class opts(object):
         # 输入的image目录
         self.parser.add_argument('--input-img',
                                  type=str,
-                                 default='/users/duanyou/c5/puer/test.txt',  # ../images/
+                                 default='/users/duanyou/c5/all_pretrain/test.txt',  # ../images/
                                  help='path to the input image directory or image file list(.txt)')
 
         self.parser.add_argument('--output-format',

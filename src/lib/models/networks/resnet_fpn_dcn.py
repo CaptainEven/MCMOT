@@ -131,7 +131,6 @@ def fill_fc_weights(layers):
 
 
 class PoseResNet(nn.Module):
-
     def __init__(self, block, layers, heads, head_conv):
         self.inplanes = 64
         self.heads = heads
@@ -311,4 +310,5 @@ def get_pose_net(num_layers, heads, head_conv=256):
 
     model = PoseResNet(block_class, layers, heads, head_conv=head_conv)
     model.init_weights(num_layers)
+
     return model

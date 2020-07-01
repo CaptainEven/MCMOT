@@ -195,8 +195,8 @@ class HighResolutionModule(nn.Module):
                     fuse_layer.append(
                         nn.Sequential(
                             nn.Conv2d(num_inchannels[j],
-                                num_inchannels[i],
-                                1, 1, 0, bias=False),
+                                      num_inchannels[i],
+                                      1, 1, 0, bias=False),
                             nn.BatchNorm2d(num_inchannels[i]),
                             nn.Upsample(scale_factor=2 ** (j - i), mode='nearest', align_corners=None)
                         )
@@ -275,14 +275,13 @@ class PoseHighResolutionNet(nn.Module):
     def __init__(self, cfg, heads):
         self.inplanes = 64
         extra = cfg.MODEL.EXTRA
+
         super(PoseHighResolutionNet, self).__init__()
 
         # stem net
-        self.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=2, padding=1,
-                               bias=False)
+        self.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=2, padding=1, bias=False)
         self.bn1 = nn.BatchNorm2d(64, momentum=BN_MOMENTUM)
-        self.conv2 = nn.Conv2d(64, 64, kernel_size=3, stride=2, padding=1,
-                               bias=False)
+        self.conv2 = nn.Conv2d(64, 64, kernel_size=3, stride=2, padding=1, bias=False)
         self.bn2 = nn.BatchNorm2d(64, momentum=BN_MOMENTUM)
         self.relu = nn.ReLU(inplace=True)
         self.layer1 = self._make_layer(Bottleneck, 64, 4)
@@ -318,6 +317,11 @@ class PoseHighResolutionNet(nn.Module):
             pre_stage_channels, num_channels)
         self.stage4, pre_stage_channels = self._make_stage(
             self.stage4_cfg, num_channels, multi_scale_output=True)
+
+        # @even: to use de_conv to replace bi-linear upsampling
+        self.de_conv_1 = nn.ConvTranspose2d(36, 36, kernel_size=2, stride=2)
+        self.de_conv_2 = nn.ConvTranspose2d(72, 72, kernel_size=4, stride=4)
+        self.de_conv_3 = nn.ConvTranspose2d(144, 144, kernel_size=8, stride=8)
 
         logger.info('=> init weights from normal distribution')
         for m in self.modules():
@@ -369,6 +373,11 @@ class PoseHighResolutionNet(nn.Module):
         self.pretrained_layers = cfg['MODEL']['EXTRA']['PRETRAINED_LAYERS']
 
     def _make_transition_layer(self, num_channels_pre_layer, num_channels_cur_layer):
+        """
+        :param num_channels_pre_layer:
+        :param num_channels_cur_layer:
+        :return:
+        """
         num_branches_cur = len(num_channels_cur_layer)
         num_branches_pre = len(num_channels_pre_layer)
 
@@ -400,6 +409,7 @@ class PoseHighResolutionNet(nn.Module):
 
         return nn.ModuleList(transition_layers)
 
+    # Note: for caffe(Hi3559a): kernel_size >= stride
     def _make_layer(self, block, planes, blocks, stride=1):
         downsample = None
         if stride != 1 or self.inplanes != planes * block.expansion:
@@ -419,8 +429,16 @@ class PoseHighResolutionNet(nn.Module):
 
         return nn.Sequential(*layers)
 
-    def _make_stage(self, layer_config, num_inchannels,
+    def _make_stage(self,
+                    layer_config,
+                    num_inchannels,
                     multi_scale_output=True):
+        """
+        :param layer_config:
+        :param num_inchannels:
+        :param multi_scale_output:
+        :return:
+        """
         num_modules = layer_config['NUM_MODULES']
         num_branches = layer_config['NUM_BRANCHES']
         num_blocks = layer_config['NUM_BLOCKS']
@@ -490,11 +508,16 @@ class PoseHighResolutionNet(nn.Module):
                 x_list.append(y_list[i])
         x = self.stage4(x_list)
 
-        # Up-sampling
+        # Up-sampling: TODO:反卷积替换双线性插值
         x0_h, x0_w = x[0].size(2), x[0].size(3)
-        x1 = F.interpolate(x[1], size=(x0_h, x0_w), mode='bilinear', align_corners=False)  # up_sample
-        x2 = F.interpolate(x[2], size=(x0_h, x0_w), mode='bilinear', align_corners=False)
-        x3 = F.interpolate(x[3], size=(x0_h, x0_w), mode='bilinear', align_corners=False)
+        # x1 = F.interpolate(x[1], size=(x0_h, x0_w), mode='bilinear', align_corners=False)  # up_sample
+        # x2 = F.interpolate(x[2], size=(x0_h, x0_w), mode='bilinear', align_corners=False)
+        # x3 = F.interpolate(x[3], size=(x0_h, x0_w), mode='bilinear', align_corners=False)
+
+        # using de_conv to replace bi-linear up-sampling
+        x1 = self.de_conv_1(x[1])
+        x2 = self.de_conv_2(x[2])
+        x3 = self.de_conv_3(x[3])
 
         x = torch.cat([x[0], x1, x2, x3], 1)
 
@@ -511,20 +534,21 @@ class PoseHighResolutionNet(nn.Module):
 
         return [z]
 
-    def init_weights(self, pretrained=''):
-        if os.path.isfile(pretrained):
-            pretrained_state_dict = torch.load(pretrained)
-            logger.info('=> loading pretrained model {}'.format(pretrained))
+    def init_weights(self, pre_trained=''):
+        if os.path.isfile(pre_trained):
+            pre_trained_state_dict = torch.load(pre_trained)
+            logger.info('=> loading pre_trained model {}'.format(pre_trained))
+            print('=> loading pre_trained model {}'.format(pre_trained))
 
             need_init_state_dict = {}
-            for name, m in pretrained_state_dict.items():
+            for name, m in pre_trained_state_dict.items():
                 if name.split('.')[0] in self.pretrained_layers \
                         or self.pretrained_layers[0] == '*':
                     need_init_state_dict[name] = m
             self.load_state_dict(need_init_state_dict, strict=False)
-        elif pretrained:
+        elif pre_trained:
             logger.error('=> please download pre-trained models first!')
-            raise ValueError('{} is not exist!'.format(pretrained))
+            raise ValueError('{} is not exist!'.format(pre_trained))
         else:  # default
             print("Non pretrained model specified!")
 

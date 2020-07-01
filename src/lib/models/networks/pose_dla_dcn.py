@@ -360,7 +360,6 @@ class DeformConv(nn.Module):
 
 
 class IDAUp(nn.Module):
-
     def __init__(self, o, channels, up_f):
         super(IDAUp, self).__init__()
         for i in range(1, len(channels)):
@@ -420,6 +419,7 @@ class DLAUp(nn.Module):
             ida = getattr(self, 'ida_{}'.format(i))
             ida(layers, len(layers) - i - 2, len(layers))
             out.insert(0, layers[-1])
+
         return out
 
 
