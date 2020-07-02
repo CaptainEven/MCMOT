@@ -20,10 +20,17 @@ _model_factory = {
 
 
 def create_model(arch, heads, head_conv):
+    """
+    :param arch:
+    :param heads:
+    :param head_conv:
+    :return:
+    """
     num_layers = int(arch[arch.find('_') + 1:]) if '_' in arch else 0  # 模型架构
     arch = arch[:arch.find('_')] if '_' in arch else arch
     get_model = _model_factory[arch]
     model = get_model(num_layers=num_layers, heads=heads, head_conv=head_conv)
+
     return model
 
 

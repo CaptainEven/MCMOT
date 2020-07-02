@@ -59,10 +59,10 @@ class opts(object):
 
         # model: backbone and so on...
         self.parser.add_argument('--arch',
-                                 default='hrnet_18',
+                                 default='hrnet_32',
                                  help='model architecture. Currently tested'
                                       'resdcn_34 | resdcn_50 | resfpndcn_34 |'
-                                      'dla_34 | hrnet_32')
+                                      'dla_34 | hrnet_32 | hrnet_18')
         self.parser.add_argument('--head_conv',
                                  type=int,
                                  default=-1,

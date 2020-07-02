@@ -64,6 +64,7 @@ class LoadImages:
 
         # Read image
         img_0 = cv2.imread(img_path)  # BGR
+
         assert img_0 is not None, 'Failed to load ' + img_path
 
         # Padded resize

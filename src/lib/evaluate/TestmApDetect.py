@@ -172,7 +172,7 @@ def batch_analysis(weights_list_file,
             img_set_file = []
             for j, img_path in enumerate(image_list):
                 label_path = img_path2label_path(img_path)
-                image_name = get_file_name(img_path)
+                image_name = os.path.split(img_path)[-1][:-4]  # get_file_name(img_path)
                 img_set_file.append(image_name)
                 img_save_path = os.path.join(result_path, image_name + '.jpg')
                 det_save_path = os.path.join(result_path, image_name + '.txt')

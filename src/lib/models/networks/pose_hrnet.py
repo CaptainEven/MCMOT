@@ -278,6 +278,9 @@ class PoseHighResolutionNet(nn.Module):
 
         super(PoseHighResolutionNet, self).__init__()
 
+        # ----- up-sampling mode: bilinear or deconv
+        self.up_sample_mode = cfg.MODEL.UPSAMPLE_MODE
+
         # stem net
         self.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=2, padding=1, bias=False)
         self.bn1 = nn.BatchNorm2d(64, momentum=BN_MOMENTUM)
@@ -319,9 +322,10 @@ class PoseHighResolutionNet(nn.Module):
             self.stage4_cfg, num_channels, multi_scale_output=True)
 
         # @even: to use de_conv to replace bi-linear upsampling
-        self.de_conv_1 = nn.ConvTranspose2d(36, 36, kernel_size=2, stride=2)
-        self.de_conv_2 = nn.ConvTranspose2d(72, 72, kernel_size=4, stride=4)
-        self.de_conv_3 = nn.ConvTranspose2d(144, 144, kernel_size=8, stride=8)
+        if self.up_sample_mode == 'deconv':
+            self.de_conv_1 = nn.ConvTranspose2d(36, 36, kernel_size=2, stride=2)
+            self.de_conv_2 = nn.ConvTranspose2d(72, 72, kernel_size=4, stride=4)
+            self.de_conv_3 = nn.ConvTranspose2d(144, 144, kernel_size=8, stride=8)
 
         logger.info('=> init weights from normal distribution')
         for m in self.modules():
@@ -508,16 +512,17 @@ class PoseHighResolutionNet(nn.Module):
                 x_list.append(y_list[i])
         x = self.stage4(x_list)
 
-        # Up-sampling: TODO:反卷积替换双线性插值
-        x0_h, x0_w = x[0].size(2), x[0].size(3)
-        # x1 = F.interpolate(x[1], size=(x0_h, x0_w), mode='bilinear', align_corners=False)  # up_sample
-        # x2 = F.interpolate(x[2], size=(x0_h, x0_w), mode='bilinear', align_corners=False)
-        # x3 = F.interpolate(x[3], size=(x0_h, x0_w), mode='bilinear', align_corners=False)
-
-        # using de_conv to replace bi-linear up-sampling
-        x1 = self.de_conv_1(x[1])
-        x2 = self.de_conv_2(x[2])
-        x3 = self.de_conv_3(x[3])
+        # Up-Sampling
+        if self.up_sample_mode == 'bilinear':
+            x0_h, x0_w = x[0].size(2), x[0].size(3)
+            x1 = F.interpolate(x[1], size=(x0_h, x0_w), mode='bilinear', align_corners=False)  # up_sample
+            x2 = F.interpolate(x[2], size=(x0_h, x0_w), mode='bilinear', align_corners=False)
+            x3 = F.interpolate(x[3], size=(x0_h, x0_w), mode='bilinear', align_corners=False)
+        elif self.up_sample_mode == 'deconv':
+            # using de_conv to replace bi-linear up-sampling
+            x1 = self.de_conv_1(x[1])
+            x2 = self.de_conv_2(x[2])
+            x3 = self.de_conv_3(x[3])
 
         x = torch.cat([x[0], x1, x2, x3], 1)
 
@@ -577,7 +582,11 @@ def get_pose_net(num_layers,
         cfg_dir = '../src/lib/models/networks/config/hrnet_w18.yaml'
 
     update_config(cfg, cfg_dir)
+
+    # network definition
     model = PoseHighResolutionNet(cfg, heads)
+
+    # network with pre-trained weights
     model.init_weights(cfg.MODEL.PRETRAINED)
 
     return model
