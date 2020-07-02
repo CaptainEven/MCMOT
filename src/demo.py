@@ -10,7 +10,7 @@ os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
 
 import torch
 
-my_visible_devs = '0'  # '0, 3'  # 设置可运行GPU编号
+my_visible_devs = '1'  # '0, 3'  # 设置可运行GPU编号
 os.environ['CUDA_VISIBLE_DEVICES'] = my_visible_devs
 device = torch.device('cuda: 0' if torch.cuda.is_available() else 'cpu')
 
@@ -55,11 +55,6 @@ def run_demo(opt):
             logger.info('Starting detection...')
             paths = [x.strip() for x in r_h.readlines()]
             print('Total {:d} image files.'.format(len(paths)))
-            # img_names = [os.path.split(x)[-1] for x in paths]
-            # if '1921681219_2_2018-02-13_14-46-00-688_3-1518504845.jpg' in img_names:
-            #     print('In')
-            # else:
-            #     print(' Not int')
             data_loader = datasets.LoadImages(path=paths, img_size=opt.img_size)
 
     result_file_name = os.path.join(result_root, 'results.txt')
@@ -89,7 +84,7 @@ def run_demo(opt):
             #          mode='detect')
 
             # only for tmp detection evaluation...
-            output_dir = '/users/duanyou/c5/results_new/results_all/mcmot_hrnet32_ep5'
+            output_dir = '/users/duanyou/c5/results_new/results_all/mcmot_hrnet18_deconv_ep3'
             eval_seq_and_output_dets(opt=opt,
                                      data_loader=data_loader,
                                      data_type='mot',

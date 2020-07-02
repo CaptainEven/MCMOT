@@ -16,7 +16,7 @@ class opts(object):
         self.parser.add_argument('--exp_id', default='default')
         self.parser.add_argument('--test', action='store_true')
         self.parser.add_argument('--load_model',
-                                 default='../exp/mot/default/mcmot_last_det_hrnet32.pth',  # ctdet_coco_dla_2x.pth
+                                 default='../exp/mot/default/mcmot_last_det_hrnet_18_de_conv.pth',  # ctdet_coco_dla_2x.pth
                                  help='path to pretrained model')
         # self.parser.add_argument('--load_model',
         #                          default='../models/hrnetv2_w18_imagenet_pretrained.pth',  # hrnetv2_w32_imagenet_pretrained
@@ -62,7 +62,7 @@ class opts(object):
                                  default='hrnet_18',
                                  help='model architecture. Currently tested'
                                       'resdcn_34 | resdcn_50 | resfpndcn_34 |'
-                                      'dla_34 | hrnet_32')
+                                      'dla_34 | hrnet_32 | hrnet_18')
         self.parser.add_argument('--head_conv',
                                  type=int,
                                  default=-1,

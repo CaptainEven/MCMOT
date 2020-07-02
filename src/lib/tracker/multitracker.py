@@ -208,12 +208,14 @@ class JDETracker(object):
         # else:
         #     opt.device = torch.device('cpu')
 
+        # ----- init model
         print('Creating model...')
         self.model = create_model(opt.arch, opt.heads, opt.head_conv)
-        self.model = load_model(self.model, opt.load_model)
+        self.model = load_model(self.model, opt.load_model)  # load specified checkpoint
         self.model = self.model.to(opt.device)
         self.model.eval()
 
+        # ----- track_lets
         # self.tracked_stracks = []  # type: list[STrack]
         # self.lost_stracks = []     # type: list[STrack]
         # self.removed_stracks = []  # type: list[STrack]

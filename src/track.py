@@ -176,17 +176,21 @@ def eval_seq_and_output_dets(opt,
         dets_list = format_dets_dict2dets_list(dets_dict, w=img_0.shape[1], h=img_0.shape[0])
 
         # 输出到指定目录
-        out_f_name = os.path.split(path)[-1].replace('.jpg', '.txt')
+        out_img_name = os.path.split(path)[-1]
+        # if out_img_name == '192.168.1.219_2_2018-02-13_14-46-00-688_3-1518504845.jpg':
+        #     print('pause here')
+        out_f_name = out_img_name.replace('.jpg', '.txt')
         out_f_path = out_dir + '/' + out_f_name
         with open(out_f_path, 'w', encoding='utf-8') as w_h:
             w_h.write('class prob x y w h total=' + str(len(dets_list)) + '\n')
 
             for det in dets_list:
                 w_h.write('%d %f %f %f %f %f\n' % (det[0], det[1], det[2], det[3], det[4], det[5]))
-        print('{} written'.format(out_f_path))
+        # print('{} written'.format(out_f_path))
 
         # 处理完一帧, 更新frame_id
         frame_id += 1
+    print('Total {:d} detection result output.\n'.format(frame_id))
 
     # 写入最终结果save results
     write_results_dict(result_f_name, results_dict, data_type)
