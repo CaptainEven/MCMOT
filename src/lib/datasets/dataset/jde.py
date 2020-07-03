@@ -65,6 +65,9 @@ class LoadImages:
         # Read image
         img_0 = cv2.imread(img_path)  # BGR
 
+        if img_0 is None:
+            print('pause here.')
+
         assert img_0 is not None, 'Failed to load ' + img_path
 
         # Padded resize

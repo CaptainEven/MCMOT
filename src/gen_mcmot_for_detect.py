@@ -17,15 +17,15 @@ other = ["shop_truck", "unknown"]
 bicycle = ["bicycle", "motorcycle"]
 
 target_types = ["car",
-               "car_front",
-               "car_rear",
-               "bicycle",
-               "person",
-               "cyclist",
-               "tricycle",
-               "motorcycle",
-               "non_interest_zone",
-               "non_interest_zones"]
+                "car_front",
+                "car_rear",
+                "bicycle",
+                "person",
+                "cyclist",
+                "tricycle",
+                "motorcycle",
+                "non_interest_zone",
+                "non_interest_zones"]
 
 classes_c9 = ["car",
               "truck",
@@ -47,12 +47,12 @@ classes_c6 = ['car',
               "non_interest_zone",
               "non_interest_zones"]
 
-classes_c5 = ['car',                 # 0
-              "bicycle",             # 1
-              "person",              # 2
-              "cyclist",             # 3
-              "tricycle",            # 4
-              "non_interest_zone"]   # 5
+classes_c5 = ['car',  # 0
+              "bicycle",  # 1
+              "person",  # 2
+              "cyclist",  # 3
+              "tricycle",  # 4
+              "non_interest_zone"]  # 5
 
 # classes = classes_c6
 classes = classes_c5  # 选择5类目标检测
@@ -527,7 +527,7 @@ def gen_dataset_for_mcmot_det(src_root, dst_root, dot_train_f_path, dataset_pref
 
                 # 获取class_id
                 cls_id = classes.index(cls_name)
-                assert(0 <= cls_id < 5)
+                assert (0 <= cls_id < 5)
 
                 # 更新class_cnt_dict
                 class_cnt_dict[cls_name] += 1
@@ -547,7 +547,7 @@ def gen_dataset_for_mcmot_det(src_root, dst_root, dot_train_f_path, dataset_pref
 
                 # 生成检测对象的标签行: class_id, track_id, bbox_center_x, box_center_y, bbox_width, bbox_height
                 obj_str = '{:d} 0 {:.6f} {:.6f} {:.6f} {:.6f}\n'.format(
-                    cls_id,   # class_id
+                    cls_id,  # class_id
                     bbox[0],  # center_x
                     bbox[1],  # center_y
                     bbox[2],  # bbox_w

@@ -84,7 +84,7 @@ def run_demo(opt):
             #          mode='detect')
 
             # only for tmp detection evaluation...
-            output_dir = '/users/duanyou/c5/results_new/results_all/mcmot_hrnet18_deconv_ep3'
+            output_dir = '/users/duanyou/c5/results_new/results_all/mcmot_last_det_hrnet_18_de_conv_ep7'
             eval_seq_and_output_dets(opt=opt,
                                      data_loader=data_loader,
                                      data_type='mot',

@@ -177,7 +177,7 @@ def eval_seq_and_output_dets(opt,
 
         # 输出到指定目录
         out_img_name = os.path.split(path)[-1]
-        # if out_img_name == '192.168.1.219_2_2018-02-13_14-46-00-688_3-1518504845.jpg':
+        # if out_img_name == '2_2018-06-01_10-38-32-084_3-1527820831.jpg':
         #     print('pause here')
         out_f_name = out_img_name.replace('.jpg', '.txt')
         out_f_path = out_dir + '/' + out_f_name
