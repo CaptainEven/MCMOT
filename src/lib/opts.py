@@ -42,7 +42,7 @@ class opts(object):
                                  help='random seed')  # from CornerNet
         self.parser.add_argument('--is_debug',
                                  type=bool,
-                                 default=True,  # 是否使用多线程加载数据, default: False
+                                 default=False,  # 是否使用多线程加载数据, default: False
                                  help='whether in debug mode or not')
 
         # log
