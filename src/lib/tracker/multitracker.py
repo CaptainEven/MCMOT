@@ -231,9 +231,9 @@ class JDETracker(object):
         # 利用卡尔曼滤波过滤跟踪噪声
         self.kalman_filter = KalmanFilter()
 
-    # TODO: 重写一个post processing(不使用仿射变换)验证是否正确
+    # rewrite a post processing(without using affine matrix)
     def map2orig(self, dets, h_out, w_out, h_orig, w_orig, num_classes):
-        """  有问题, 没有考虑pad resize
+        """
         :param dets:
         :param h_out:
         :param w_out:
@@ -241,7 +241,6 @@ class JDETracker(object):
         :param w_orig:
         :param num_classes:
         :return: dict of detections(key: cls_id)
-        ratio = min(float(height) / shape[0], float(width) / shape[1])
         """
         def get_padding():
             """
@@ -372,7 +371,7 @@ class JDETracker(object):
             #         'out_height': h_out,
             #         'out_width': w_out}
             # dets = self.post_process(dets, meta)  # using affine matrix
-            dets = self.map2orig(dets, h_out, w_out, height, width, self.opt.num_classes)  # direct translate and scale
+            dets = self.map2orig(dets, h_out, w_out, height, width, self.opt.num_classes)  # translate and scale
             # dets = self.merge_outputs([dets])
 
             # --- parse detections of each class
