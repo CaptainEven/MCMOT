@@ -16,8 +16,7 @@ def _max_pool(heat, kernel=3):
 
     pad = (kernel - 1) // 2
 
-    h_max = nn.functional.max_pool2d(
-        heat, (kernel, kernel), stride=1, padding=pad)
+    h_max = nn.functional.max_pool2d(heat, (kernel, kernel), stride=1, padding=pad)
     # print("h_max.shape: ", h_max.shape)  # default: torch.Size([1, 1, 152, 272])
 
     keep = (h_max == heat).float()  # 将boolean类型的Tensor转换成Float类型的Tensor

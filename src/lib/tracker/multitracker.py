@@ -378,7 +378,7 @@ class JDETracker(object):
             for cls_id in range(self.opt.num_classes):  # cls_id start from index 0
                 cls_dets = dets[cls_id]
 
-                # filter low conf score dets
+                # filter out low conf score dets
                 remain_inds = cls_dets[:, 4] > self.opt.conf_thres
                 cls_dets = cls_dets[remain_inds]
                 dets_dict[cls_id] = cls_dets
@@ -427,7 +427,7 @@ class JDETracker(object):
             # print("wh shape ", wh.shape, "wh:\n", wh)
 
             id_feature = output['id']
-            id_feature = F.normalize(id_feature, dim=1)
+            id_feature = F.normalize(id_feature, dim=1)  # L2 normalize
 
             reg = output['reg'] if self.opt.reg_offset else None
             # print("reg shape ", reg.shape, "reg:\n", reg)
@@ -454,8 +454,7 @@ class JDETracker(object):
 
         # 检测结果后处理
         dets = self.post_process(dets, meta)
-        dets = self.merge_outputs([dets])
-        # dets = self.merge_outputs(dets)[1]
+        # dets = self.merge_outputs([dets])
 
         # ----- 解析每个检测类别
         for cls_id in range(self.opt.num_classes):  # cls_id从0开始

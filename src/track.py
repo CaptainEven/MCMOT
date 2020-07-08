@@ -143,7 +143,7 @@ def eval_imgs_output_dets(opt,
 
     results_dict = defaultdict(list)
 
-    frame_id = 0  # 帧编号
+    frame_id = 0  # frame index(start from 0)
     for path, img, img_0 in data_loader:
         if frame_id % 20 == 0:
             logger.info('Processing frame {} ({:.2f} fps)'.format(frame_id, 1. / max(1e-5, timer.average_time)))
@@ -242,6 +242,8 @@ def eval_seq(opt,
             # --- track updates of each frame
             online_targets_dict = tracker.update_tracking(blob, img_0)
 
+            timer.toc()
+
             # 聚合每一帧的结果
             online_tlwhs_dict = defaultdict(list)
             online_ids_dict = defaultdict(list)
@@ -255,8 +257,6 @@ def eval_seq(opt,
                     if tlwh[2] * tlwh[3] > opt.min_box_area:  # and not vertical:
                         online_tlwhs_dict[cls_id].append(tlwh)
                         online_ids_dict[cls_id].append(t_id)
-
-            timer.toc()
 
             # 保存每一帧的结果
             for cls_id in range(opt.num_classes):
