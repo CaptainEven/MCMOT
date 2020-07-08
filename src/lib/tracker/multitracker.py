@@ -216,10 +216,6 @@ class JDETracker(object):
         self.model.eval()
 
         # ----- track_lets
-        # self.tracked_stracks = []  # type: list[STrack]
-        # self.lost_stracks = []     # type: list[STrack]
-        # self.removed_stracks = []  # type: list[STrack]
-
         self.tracked_stracks_dict = defaultdict(list)  # value type: list[STrack]
         self.lost_stracks_dict = defaultdict(list)  # value type: list[STrack]
         self.removed_stracks_dict = defaultdict(list)  # value type: list[STrack]
@@ -228,12 +224,75 @@ class JDETracker(object):
         self.det_thresh = opt.conf_thres
         self.buffer_size = int(frame_rate / 30.0 * opt.track_buffer)
         self.max_time_lost = self.buffer_size
-        self.max_per_image = 128
+        self.max_per_image = 128  # max objects per image
         self.mean = np.array(opt.mean, dtype=np.float32).reshape(1, 1, 3)
         self.std = np.array(opt.std, dtype=np.float32).reshape(1, 1, 3)
 
         # 利用卡尔曼滤波过滤跟踪噪声
         self.kalman_filter = KalmanFilter()
+
+    # TODO: 重写一个post processing(不使用仿射变换)验证是否正确
+    def map2orig(self, dets, h_net, w_net, h_orig, w_orig, num_classes):
+        """  有问题, 没有考虑pad resize
+        :param dets:
+        :param h_net:
+        :param w_net:
+        :param h_orig:
+        :param w_orig:
+        :param num_classes:
+        :return: dict of detections(key: cls_id)
+        ratio = min(float(height) / shape[0], float(width) / shape[1])
+        """
+        def get_padding():
+            """
+            :return: pad_1, pad_2, pad_type('pad_x' or 'pad_y'), new_shape(w, h)
+            """
+            ratio_x = float(w_net) / w_orig
+            ratio_y = float(h_net) / h_orig
+            ratio = min(ratio_x, ratio_y)
+            new_shape = (round(w_orig * ratio), round(h_orig * ratio))  # new_w, new_h
+
+            pad_x = (w_net - new_shape[0]) * 0.5  # width padding
+            pad_y = (h_net - new_shape[1]) * 0.5  # height padding
+            top, bottom = round(pad_y - 0.1), round(pad_y + 0.1)
+            left, right = round(pad_x - 0.1), round(pad_x + 0.1)
+            if ratio == ratio_x:  # pad_y
+                return top, bottom, 'pad_y', new_shape
+            else:  # pad_x
+                return left, right, 'pad_x', new_shape
+
+        pad_1, pad_2, pad_type, new_shape = get_padding()
+
+        dets = dets.detach().cpu().numpy()
+        dets = dets.reshape(1, -1, dets.shape[2])  # default: 1×128×6
+        dets = dets[0]  # 128×6
+
+        dets_dict = {}
+
+        if pad_type == 'pad_x':
+            dets[:, 0] = (dets[:, 0] - pad_1) / new_shape[0] * w_orig  # x1
+            dets[:, 2] = (dets[:, 2] - pad_1) / new_shape[0] * w_orig  # x2
+
+            dets[:, 1] = dets[:, 1] / h_net * h_orig  # y1
+            dets[:, 3] = dets[:, 3] / h_net * h_orig  # y2
+        else:  # 'pad_y'
+            dets[:, 0] = dets[:, 0] / w_net * w_orig  # x1
+            dets[:, 2] = dets[:, 2] / w_net * w_orig  # x2
+
+            dets[:, 1] = (dets[:, 1] - pad_1) / new_shape[1] * h_orig  # y1
+            dets[:, 3] = (dets[:, 3] - pad_1) / new_shape[1] * h_orig  # y2
+
+        # dets[:, 0] = dets[:, 0] / w_net * w_orig  # x1
+        # dets[:, 1] = dets[:, 1] / h_net * h_orig  # y1
+        # dets[:, 2] = dets[:, 2] / w_net * w_orig  # x2
+        # dets[:, 3] = dets[:, 3] / h_net * h_orig  # y2
+
+        classes = dets[:, -1]
+        for cls_id in range(num_classes):
+            inds = (classes == cls_id)
+            dets_dict[cls_id] = dets[inds, :]
+
+        return dets_dict
 
     def post_process(self, dets, meta):
         """
@@ -245,19 +304,19 @@ class JDETracker(object):
         dets = dets.detach().cpu().numpy()
         dets = dets.reshape(1, -1, dets.shape[2])  # default: 1×128×6
 
-        # 仿射变换到输出分辨率的坐标系
+        # affine transform
         dets = ctdet_post_process(dets.copy(),
                                   [meta['c']], [meta['s']],
                                   meta['out_height'],
                                   meta['out_width'],
                                   self.opt.num_classes)
 
-        # for j in range(1, self.opt.num_classes + 1):  # 遍历每一个类别j(从1开始)
-        #     dets[0][j] = np.array(dets[0][j], dtype=np.float32).reshape(-1, 5)  # 这里不输出类别(因为默认一个类别)
-        for j in range(1, self.opt.num_classes + 1):  # 遍历每一个类别j(从1开始)
-            dets[0][j] = np.array(dets[0][j], dtype=np.float32).reshape(-1, 6)
+        # detection dict(cls_id as key)
+        dets = dets[0]  # fetch the first image dets results(batch_size = 1 by default)
+        # for j in range(self.opt.num_classes):  # j start from 0
+        #     dets[j] = np.array(dets[j], dtype=np.float32).reshape(-1, 6)
 
-        return dets[0]
+        return dets
 
     def merge_outputs(self, detections):
         """
@@ -287,30 +346,32 @@ class JDETracker(object):
         :param img_0:
         :return:
         """
-        width = img_0.shape[1]
-        height = img_0.shape[0]
-        inp_height = im_blob.shape[2]
-        inp_width = im_blob.shape[3]
+        height, width = img_0.shape[0], img_0.shape[1]  # H, W of original input image
+        net_height, net_width = im_blob.shape[2], im_blob.shape[3]  # H, W of net input
 
-        c = np.array([width * 0.5, height * 0.5], dtype=np.float32)  # center
-        s = max(float(inp_width) / float(inp_height) * height, width) * 1.0
+        c = np.array([width * 0.5, height * 0.5], dtype=np.float32)  # image center
+        s = max(float(net_width) / float(net_height) * height, width) * 1.0
+
+        h_out = net_height // self.opt.down_ratio
+        w_out = net_width // self.opt.down_ratio
         meta = {'c': c,
                 's': s,
-                'out_height': inp_height // self.opt.down_ratio,
-                'out_width': inp_width // self.opt.down_ratio}
+                'out_height': h_out,
+                'out_width': w_out}
 
         # ----- get detections
         with torch.no_grad():
             dets_dict = defaultdict(list)
 
+            # --- network output
             output = self.model.forward(im_blob)[-1]
 
-            # detect outputs
+            # --- detection outputs
             hm = output['hm'].sigmoid_()
             wh = output['wh']
             reg = output['reg'] if self.opt.reg_offset else None
 
-            # 检测和分类结果解析
+            # --- decode results of detection
             dets, inds, cls_inds_mask = mot_decode(heatmap=hm,
                                                    wh=wh,
                                                    reg=reg,
@@ -318,19 +379,18 @@ class JDETracker(object):
                                                    cat_spec_wh=self.opt.cat_spec_wh,
                                                    K=self.opt.K)
 
-            # 检测结果后处理
-            dets = self.post_process(dets, meta)
-            dets = self.merge_outputs([dets])
-            # dets = self.merge_outputs(dets)[1]
+            # --- map to output size
+            # dets = self.post_process(dets, meta)
+            dets = self.map2orig(dets, h_out, w_out, height, width, self.opt.num_classes)
+            # dets = self.merge_outputs([dets])
 
-            # ----- 解析每个检测类别
-            for cls_id in range(self.opt.num_classes):  # cls_id从0开始
-                cls_dets = dets[cls_id + 1]
+            # --- parse detections of each class
+            for cls_id in range(self.opt.num_classes):  # cls_id start from index 0
+                cls_dets = dets[cls_id]
 
-                # 过滤掉score得分太低的dets
+                # filter low conf score dets
                 remain_inds = cls_dets[:, 4] > self.opt.conf_thres
                 cls_dets = cls_dets[remain_inds]
-                # print(cls_dets)
                 dets_dict[cls_id] = cls_dets
 
         return dets_dict

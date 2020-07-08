@@ -28,8 +28,8 @@ def transform_preds(coords, center, scale, output_size):
     """
     target_coords = np.zeros(coords.shape)
 
-    # 进行仿射变换: 只有缩放和平移?
-    trans = get_affine_transform(center, scale, 0, output_size, inv=1)  # rot=0 here
+    # affine matrix: only scale and translation(no rotation)
+    trans = get_affine_transform(center=center, scale=scale, rot=0, output_size=output_size, inv=1)
 
     for p in range(coords.shape[0]):
         target_coords[p, 0:2] = affine_transform(coords[p, 0:2], trans)
@@ -60,7 +60,7 @@ def get_affine_transform(center,
     dst_w = output_size[0]
     dst_h = output_size[1]
 
-    rot_rad = np.pi * rot / 180
+    rot_rad = np.pi * rot / 180.0
     src_dir = get_dir([0, src_w * -0.5], rot_rad)
     dst_dir = np.array([0, dst_w * -0.5], np.float32)
 

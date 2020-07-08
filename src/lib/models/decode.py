@@ -115,10 +115,10 @@ def mot_decode(heatmap,
 
     classes = classes.view(N, K, 1).float()  # 目标类别
     scores = scores.view(N, K, 1)
-    bboxes = torch.cat([xs - wh[..., 0:1] / 2,   # left
-                        ys - wh[..., 1:2] / 2,   # top
-                        xs + wh[..., 0:1] / 2,   # right
-                        ys + wh[..., 1:2] / 2],  # down
+    bboxes = torch.cat([xs - wh[..., 0:1] / 2,   # left    x1
+                        ys - wh[..., 1:2] / 2,   # top     y1
+                        xs + wh[..., 0:1] / 2,   # right   x2
+                        ys + wh[..., 1:2] / 2],  # down    y2
                        dim=2)
     detections = torch.cat([bboxes, scores, classes], dim=2)
 

@@ -136,6 +136,7 @@ def eval_seq_and_output_dets(opt,
         shutil.rmtree(out_dir)
         os.makedirs(out_dir)
 
+    # init tracker
     tracker = JDETracker(opt, frame_rate=30)
 
     timer = Timer()
@@ -147,14 +148,16 @@ def eval_seq_and_output_dets(opt,
         if frame_id % 20 == 0:
             logger.info('Processing frame {} ({:.2f} fps)'.format(frame_id, 1. / max(1e-5, timer.average_time)))
 
-        # --- run tracking
-        timer.tic()
         blob = torch.from_numpy(img).to(opt.device).unsqueeze(0)
 
-        # update detection results of this frame(or image)
+        # ----- run detection
+        timer.tic()
+
+        # update detection results
         dets_dict = tracker.update_detection(blob, img_0)
 
         timer.toc()
+        # -----
 
         # plot detection results
         if show_image or save_dir is not None:
@@ -177,13 +180,10 @@ def eval_seq_and_output_dets(opt,
 
         # 输出到指定目录
         out_img_name = os.path.split(path)[-1]
-        # if out_img_name == '2_2018-06-01_10-38-32-084_3-1527820831.jpg':
-        #     print('pause here')
         out_f_name = out_img_name.replace('.jpg', '.txt')
         out_f_path = out_dir + '/' + out_f_name
         with open(out_f_path, 'w', encoding='utf-8') as w_h:
             w_h.write('class prob x y w h total=' + str(len(dets_list)) + '\n')
-
             for det in dets_list:
                 w_h.write('%d %f %f %f %f %f\n' % (det[0], det[1], det[2], det[3], det[4], det[5]))
         # print('{} written'.format(out_f_path))

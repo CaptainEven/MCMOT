@@ -71,7 +71,7 @@ def plot_detects(image,
         for obj_i, obj in enumerate(cls_dets):
             # left, top, right, down, score, cls_id
             x1, y1, x2, y2, score, cls_id = obj
-            cls_name = id2cls[cls_id]
+            cls_name = id2cls[int(cls_id)]
             box_int = tuple(map(int, (x1, y1, x2, y2)))
             cls_color = cls_color_dict[cls_name]
 

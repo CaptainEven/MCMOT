@@ -154,7 +154,7 @@ class opts(object):
         self.parser.add_argument(
             '--conf_thres',
             type=float,
-            default=0.4,  # 0.6
+            default=0.4,  # 0.6, 0.4
             help='confidence thresh for tracking')  # heat-map置信度阈值
         self.parser.add_argument('--det_thres',
                                  type=float,

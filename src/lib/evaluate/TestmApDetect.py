@@ -122,12 +122,12 @@ def batch_analysis(weights_list_file,
 
         # 选择对应的dn
         meta = dn.load_meta(meta_file)
-        net = dn.load_net(cfg_file, bytes(weights, 'utf-8'), 0)
+        # net = dn.load_net(cfg_file, bytes(weights, 'utf-8'), 0)
 
         object_type = [meta.names[i].decode('utf-8').strip() for i in range(meta.classes)]
 
         # @even: tmp modification
-        weights_name = 'mcmot_last_det_hrnet_18_de_conv_ep7'  # sub_dir name
+        weights_name = 'tmp'  # sub_dir name
 
         result_path = os.path.join(result_dir, weights_name)
         if not os.path.exists(result_path):
