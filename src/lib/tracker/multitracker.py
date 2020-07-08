@@ -365,7 +365,7 @@ class JDETracker(object):
                                                    cat_spec_wh=self.opt.cat_spec_wh,
                                                    K=self.opt.K)
 
-            # --- map to output size
+            # --- map to original image coordinate system
             # meta = {'c': c,
             #         's': s,
             #         'out_height': h_out,
