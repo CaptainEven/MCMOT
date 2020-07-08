@@ -421,14 +421,9 @@ class JDETracker(object):
             output = self.model.forward(im_blob)[-1]
 
             hm = output['hm'].sigmoid_()
-            # print("hm shape ", hm.shape, "hm:\n", hm)
-
             wh = output['wh']
-            # print("wh shape ", wh.shape, "wh:\n", wh)
-
             id_feature = output['id']
             id_feature = F.normalize(id_feature, dim=1)  # L2 normalize
-
             reg = output['reg'] if self.opt.reg_offset else None
             # print("reg shape ", reg.shape, "reg:\n", reg)
 
