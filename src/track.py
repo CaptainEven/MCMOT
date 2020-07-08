@@ -110,13 +110,13 @@ def format_dets_dict2dets_list(dets_dict, w, h):
     return dets_list
 
 
-def eval_seq_and_output_dets(opt,
-                             data_loader,
-                             data_type,
-                             result_f_name,
-                             out_dir,
-                             save_dir=None,
-                             show_image=True):
+def eval_imgs_output_dets(opt,
+                          data_loader,
+                          data_type,
+                          result_f_name,
+                          out_dir,
+                          save_dir=None,
+                          show_image=True):
     """
     :param opt:
     :param data_loader:
