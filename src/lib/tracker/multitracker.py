@@ -232,11 +232,11 @@ class JDETracker(object):
         self.kalman_filter = KalmanFilter()
 
     # TODO: 重写一个post processing(不使用仿射变换)验证是否正确
-    def map2orig(self, dets, h_net, w_net, h_orig, w_orig, num_classes):
+    def map2orig(self, dets, h_out, w_out, h_orig, w_orig, num_classes):
         """  有问题, 没有考虑pad resize
         :param dets:
-        :param h_net:
-        :param w_net:
+        :param h_out:
+        :param w_out:
         :param h_orig:
         :param w_orig:
         :param num_classes:
@@ -247,13 +247,13 @@ class JDETracker(object):
             """
             :return: pad_1, pad_2, pad_type('pad_x' or 'pad_y'), new_shape(w, h)
             """
-            ratio_x = float(w_net) / w_orig
-            ratio_y = float(h_net) / h_orig
+            ratio_x = float(w_out) / w_orig
+            ratio_y = float(h_out) / h_orig
             ratio = min(ratio_x, ratio_y)
             new_shape = (round(w_orig * ratio), round(h_orig * ratio))  # new_w, new_h
 
-            pad_x = (w_net - new_shape[0]) * 0.5  # width padding
-            pad_y = (h_net - new_shape[1]) * 0.5  # height padding
+            pad_x = (w_out - new_shape[0]) * 0.5  # width padding
+            pad_y = (h_out - new_shape[1]) * 0.5  # height padding
             top, bottom = round(pad_y - 0.1), round(pad_y + 0.1)
             left, right = round(pad_x - 0.1), round(pad_x + 0.1)
             if ratio == ratio_x:  # pad_y
@@ -272,20 +272,13 @@ class JDETracker(object):
         if pad_type == 'pad_x':
             dets[:, 0] = (dets[:, 0] - pad_1) / new_shape[0] * w_orig  # x1
             dets[:, 2] = (dets[:, 2] - pad_1) / new_shape[0] * w_orig  # x2
-
-            dets[:, 1] = dets[:, 1] / h_net * h_orig  # y1
-            dets[:, 3] = dets[:, 3] / h_net * h_orig  # y2
+            dets[:, 1] = dets[:, 1] / h_out * h_orig  # y1
+            dets[:, 3] = dets[:, 3] / h_out * h_orig  # y2
         else:  # 'pad_y'
-            dets[:, 0] = dets[:, 0] / w_net * w_orig  # x1
-            dets[:, 2] = dets[:, 2] / w_net * w_orig  # x2
-
+            dets[:, 0] = dets[:, 0] / w_out * w_orig  # x1
+            dets[:, 2] = dets[:, 2] / w_out * w_orig  # x2
             dets[:, 1] = (dets[:, 1] - pad_1) / new_shape[1] * h_orig  # y1
             dets[:, 3] = (dets[:, 3] - pad_1) / new_shape[1] * h_orig  # y2
-
-        # dets[:, 0] = dets[:, 0] / w_net * w_orig  # x1
-        # dets[:, 1] = dets[:, 1] / h_net * h_orig  # y1
-        # dets[:, 2] = dets[:, 2] / w_net * w_orig  # x2
-        # dets[:, 3] = dets[:, 3] / h_net * h_orig  # y2
 
         classes = dets[:, -1]
         for cls_id in range(num_classes):
@@ -313,8 +306,6 @@ class JDETracker(object):
 
         # detection dict(cls_id as key)
         dets = dets[0]  # fetch the first image dets results(batch_size = 1 by default)
-        # for j in range(self.opt.num_classes):  # j start from 0
-        #     dets[j] = np.array(dets[j], dtype=np.float32).reshape(-1, 6)
 
         return dets
 
@@ -354,10 +345,6 @@ class JDETracker(object):
 
         h_out = net_height // self.opt.down_ratio
         w_out = net_width // self.opt.down_ratio
-        meta = {'c': c,
-                's': s,
-                'out_height': h_out,
-                'out_width': w_out}
 
         # ----- get detections
         with torch.no_grad():
@@ -380,8 +367,12 @@ class JDETracker(object):
                                                    K=self.opt.K)
 
             # --- map to output size
-            # dets = self.post_process(dets, meta)
-            dets = self.map2orig(dets, h_out, w_out, height, width, self.opt.num_classes)
+            # meta = {'c': c,
+            #         's': s,
+            #         'out_height': h_out,
+            #         'out_width': w_out}
+            # dets = self.post_process(dets, meta)  # using affine matrix
+            dets = self.map2orig(dets, h_out, w_out, height, width, self.opt.num_classes)  # direct translate and scale
             # dets = self.merge_outputs([dets])
 
             # --- parse detections of each class
