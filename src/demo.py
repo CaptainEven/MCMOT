@@ -10,7 +10,7 @@ os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
 
 import torch
 
-my_visible_devs = '1'  # '0, 3'  # 设置可运行GPU编号
+my_visible_devs = '6'  # '0, 3'  # 设置可运行GPU编号
 os.environ['CUDA_VISIBLE_DEVICES'] = my_visible_devs
 device = torch.device('cuda: 0' if torch.cuda.is_available() else 'cpu')
 
@@ -32,20 +32,20 @@ def run_demo(opt):
     result_root = opt.output_root if opt.output_root != '' else '.'
     mkdir_if_missing(result_root)
 
-    # clear existing frame results
-    frame_res_dir = result_root + '/frames'
-    if os.path.isdir(frame_res_dir):
-        shutil.rmtree(frame_res_dir)
-        os.makedirs(frame_res_dir)
-    else:
-        os.makedirs(frame_res_dir)
+    # # clear existing frame results
+    # frame_res_dir = result_root + '/frame'
+    # if os.path.isdir(frame_res_dir):
+    #     shutil.rmtree(frame_res_dir)
+    #     os.makedirs(frame_res_dir)
+    # else:
+    #     os.makedirs(frame_res_dir)
 
     if opt.input_mode == 'video':
         logger.info('Starting tracking...')
-        data_loader = datasets.LoadVideo(opt.input_video, opt.img_size)
+        data_loader = datasets.LoadVideo(opt.input_video, opt.img_size)  # load video as input
     elif opt.input_mode == 'image_dir':
         logger.info('Starting detection...')
-        data_loader = datasets.LoadImages(opt.input_img, opt.img_size)
+        data_loader = datasets.LoadImages(opt.input_img, opt.img_size)  # load images as input
     elif opt.input_mode == 'img_path_list_txt':
         if not os.path.isfile(opt.input_img):
             print('[Err]: invalid image file path list.')
@@ -84,7 +84,7 @@ def run_demo(opt):
             #          mode='detect')
 
             # only for tmp detection evaluation...
-            output_dir = '/users/duanyou/c5/results_new/results_all/mcmot_last_det_hrnet_18_de_conv_ep7'
+            output_dir = '/users/duanyou/c5/results_new/results_all/tmp'
             eval_seq_and_output_dets(opt=opt,
                                      data_loader=data_loader,
                                      data_type='mot',
