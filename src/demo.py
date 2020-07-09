@@ -32,13 +32,13 @@ def run_demo(opt):
     result_root = opt.output_root if opt.output_root != '' else '.'
     mkdir_if_missing(result_root)
 
-    # # clear existing frame results
-    # frame_res_dir = result_root + '/frame'
-    # if os.path.isdir(frame_res_dir):
-    #     shutil.rmtree(frame_res_dir)
-    #     os.makedirs(frame_res_dir)
-    # else:
-    #     os.makedirs(frame_res_dir)
+    # clear existing frame results
+    frame_res_dir = result_root + '/frame'
+    if os.path.isdir(frame_res_dir):
+        shutil.rmtree(frame_res_dir)
+        os.makedirs(frame_res_dir)
+    else:
+        os.makedirs(frame_res_dir)
 
     if opt.input_mode == 'video':
         logger.info('Starting tracking...')
