@@ -581,15 +581,15 @@ if __name__ == '__main__':
     #            label_root='/mnt/diskb/even/dataset/DETRAC/labels_with_ids/train',
     #            viz_root='/mnt/diskb/even/viz_result')
 
-    # gen_dot_train_file(data_root='/mnt/diskb/even/dataset',
-    #                    rel_path='/MCMOT/images',
-    #                    out_root='/mnt/diskb/even/MCMOT/src/data',
-    #                    f_name='mcmot.train')
+    gen_dot_train_file(data_root='/mnt/diskb/even/dataset',
+                       rel_path='/MCMOT/images',
+                       out_root='/mnt/diskb/even/MCMOT/src/data',
+                       f_name='mcmot.train')
 
-    add_new_train_data(part_train_f_path='/mnt/diskb/maqiao/multiClass/c5_hzpc_20200707/train.txt',
-                       data_root='/mnt/diskb/even/dataset/MCMOT_DET',
-                       dot_train_f_path='/mnt/diskb/even/MCMOT/src/data/mcmot_det.train',
-                       dataset_prefix='/mnt/diskb/even/dataset/')
+    # add_new_train_data(part_train_f_path='/mnt/diskb/maqiao/multiClass/c5_hzpc_20200707/train.txt',
+    #                    data_root='/mnt/diskb/even/dataset/MCMOT_DET',
+    #                    dot_train_f_path='/mnt/diskb/even/MCMOT/src/data/mcmot_det.train',
+    #                    dataset_prefix='/mnt/diskb/even/dataset/')
 
     # clean_train_set(img_root='/mnt/diskb/even/dataset/DETRAC/images/train',
     #                 label_root='/mnt/diskb/even/dataset/DETRAC/labels_with_ids/train')

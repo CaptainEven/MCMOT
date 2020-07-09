@@ -206,7 +206,7 @@ class opts(object):
         #                          default='../src/lib/cfg/detrac.json',  # 'mot15.json',
         #                          help='load data from cfg')
         self.parser.add_argument('--data_cfg', type=str,
-                                 default='../src/lib/cfg/mcmot_det.json',  # mcmot.json, mcmot_det.json,
+                                 default='../src/lib/cfg/mcmot.json',  # mcmot.json, mcmot_det.json,
                                  help='load data from cfg')
         self.parser.add_argument('--data_dir',
                                  type=str,

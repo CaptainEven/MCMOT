@@ -90,6 +90,7 @@ def plot_detects(image,
                         text_scale,
                         [0, 255, 255],  # cls_id: yellow
                         thickness=text_thickness)
+
     return img
 
 

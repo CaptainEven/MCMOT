@@ -18,6 +18,7 @@ from cython_bbox import bbox_overlaps as bbox_ious
 from lib.opts import opts
 from lib.utils.image import gaussian_radius, draw_umich_gaussian, draw_msra_gaussian
 from lib.utils.utils import xyxy2xywh, generate_anchors, xywh2xyxy, encode_delta
+from lib.tracker.multitracker import id2cls
 
 
 # for inference
@@ -523,7 +524,7 @@ class JointDataset(LoadImagesAndLabels):  # for training
         if opt.id_weight > 0:  # If do ReID calculation
             # print('total # identities:', self.nID)
             for k, v in self.nID_dict.items():
-                print('Total {:d} IDs of class {:d}'.format(v, k))
+                print('Total {:d} IDs of {}'.format(v, id2cls[k]))
 
             # print('start index', self.tid_start_index)
             for k, v in self.tid_start_idx_of_cls_ids.items():
@@ -567,8 +568,7 @@ class JointDataset(LoadImagesAndLabels):  # for training
         wh = np.zeros((self.max_objs, 2), dtype=np.float32)
         reg = np.zeros((self.max_objs, 2), dtype=np.float32)
         ind = np.zeros((self.max_objs,), dtype=np.int64)  # K个object
-        reg_mask = np.zeros((self.max_objs,),
-                            dtype=np.uint8)  # 只计算feature map有目标的像素的reg loss
+        reg_mask = np.zeros((self.max_objs,), dtype=np.uint8)  # 只计算feature map有目标的像素的reg loss
 
         if self.opt.id_weight > 0:
             # --- GT of ReID
@@ -615,7 +615,7 @@ class JointDataset(LoadImagesAndLabels):  # for training
                 draw_gaussian(hm[cls_id], ct_int, radius)  # hm
 
                 # --- GT of detection
-                wh[k] = 1. * w, 1. * h
+                wh[k] = float(w), float(h)
 
                 # 记录feature map上有目标的坐标索引
                 ind[k] = ct_int[1] * output_w + ct_int[0]  # feature map index:y*w+x
