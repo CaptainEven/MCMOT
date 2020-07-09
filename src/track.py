@@ -110,13 +110,13 @@ def format_dets_dict2dets_list(dets_dict, w, h):
     return dets_list
 
 
-def eval_seq_and_output_dets(opt,
-                             data_loader,
-                             data_type,
-                             result_f_name,
-                             out_dir,
-                             save_dir=None,
-                             show_image=True):
+def eval_imgs_output_dets(opt,
+                          data_loader,
+                          data_type,
+                          result_f_name,
+                          out_dir,
+                          save_dir=None,
+                          show_image=True):
     """
     :param opt:
     :param data_loader:
@@ -136,25 +136,28 @@ def eval_seq_and_output_dets(opt,
         shutil.rmtree(out_dir)
         os.makedirs(out_dir)
 
+    # init tracker
     tracker = JDETracker(opt, frame_rate=30)
 
     timer = Timer()
 
     results_dict = defaultdict(list)
 
-    frame_id = 0  # 帧编号
+    frame_id = 0  # frame index(start from 0)
     for path, img, img_0 in data_loader:
         if frame_id % 20 == 0:
             logger.info('Processing frame {} ({:.2f} fps)'.format(frame_id, 1. / max(1e-5, timer.average_time)))
 
-        # --- run tracking
-        timer.tic()
         blob = torch.from_numpy(img).to(opt.device).unsqueeze(0)
 
-        # update detection results of this frame(or image)
+        # ----- run detection
+        timer.tic()
+
+        # update detection results
         dets_dict = tracker.update_detection(blob, img_0)
 
         timer.toc()
+        # -----
 
         # plot detection results
         if show_image or save_dir is not None:
@@ -177,13 +180,10 @@ def eval_seq_and_output_dets(opt,
 
         # 输出到指定目录
         out_img_name = os.path.split(path)[-1]
-        # if out_img_name == '2_2018-06-01_10-38-32-084_3-1527820831.jpg':
-        #     print('pause here')
         out_f_name = out_img_name.replace('.jpg', '.txt')
         out_f_path = out_dir + '/' + out_f_name
         with open(out_f_path, 'w', encoding='utf-8') as w_h:
             w_h.write('class prob x y w h total=' + str(len(dets_list)) + '\n')
-
             for det in dets_list:
                 w_h.write('%d %f %f %f %f %f\n' % (det[0], det[1], det[2], det[3], det[4], det[5]))
         # print('{} written'.format(out_f_path))
@@ -242,6 +242,8 @@ def eval_seq(opt,
             # --- track updates of each frame
             online_targets_dict = tracker.update_tracking(blob, img_0)
 
+            timer.toc()
+
             # 聚合每一帧的结果
             online_tlwhs_dict = defaultdict(list)
             online_ids_dict = defaultdict(list)
@@ -255,8 +257,6 @@ def eval_seq(opt,
                     if tlwh[2] * tlwh[3] > opt.min_box_area:  # and not vertical:
                         online_tlwhs_dict[cls_id].append(tlwh)
                         online_ids_dict[cls_id].append(t_id)
-
-            timer.toc()
 
             # 保存每一帧的结果
             for cls_id in range(opt.num_classes):

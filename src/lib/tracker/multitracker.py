@@ -109,9 +109,9 @@ class STrack(BaseTrack):
         self.start_frame = frame_id
 
     def re_activate(self, new_track, frame_id, new_id=False):
-        self.mean, self.covariance = self.kalman_filter.update_tracking(self.mean,
-                                                                        self.covariance,
-                                                                        self.tlwh_to_xyah(new_track.tlwh))
+        self.mean, self.covariance = self.kalman_filter.update(self.mean,
+                                                               self.covariance,
+                                                               self.tlwh_to_xyah(new_track.tlwh))
 
         self.update_features(new_track.curr_feat)
         self.tracklet_len = 0
@@ -134,9 +134,9 @@ class STrack(BaseTrack):
         self.tracklet_len += 1
 
         new_tlwh = new_track.tlwh
-        self.mean, self.covariance = self.kalman_filter.update_tracking(self.mean,
-                                                                        self.covariance,
-                                                                        self.tlwh_to_xyah(new_tlwh))
+        self.mean, self.covariance = self.kalman_filter.update(self.mean,
+                                                               self.covariance,
+                                                               self.tlwh_to_xyah(new_tlwh))
         self.state = TrackState.Tracked
         self.is_activated = True
 
@@ -242,6 +242,7 @@ class JDETracker(object):
         :param num_classes:
         :return: dict of detections(key: cls_id)
         """
+
         def get_padding():
             """
             :return: pad_1, pad_2, pad_type('pad_x' or 'pad_y'), new_shape(w, h)
@@ -365,7 +366,7 @@ class JDETracker(object):
                                                    cat_spec_wh=self.opt.cat_spec_wh,
                                                    K=self.opt.K)
 
-            # --- map to output size
+            # --- map to original image coordinate system
             # meta = {'c': c,
             #         's': s,
             #         'out_height': h_out,
@@ -378,7 +379,7 @@ class JDETracker(object):
             for cls_id in range(self.opt.num_classes):  # cls_id start from index 0
                 cls_dets = dets[cls_id]
 
-                # filter low conf score dets
+                # filter out low conf score dets
                 remain_inds = cls_dets[:, 4] > self.opt.conf_thres
                 cls_dets = cls_dets[remain_inds]
                 dets_dict[cls_id] = cls_dets
@@ -421,14 +422,9 @@ class JDETracker(object):
             output = self.model.forward(im_blob)[-1]
 
             hm = output['hm'].sigmoid_()
-            # print("hm shape ", hm.shape, "hm:\n", hm)
-
             wh = output['wh']
-            # print("wh shape ", wh.shape, "wh:\n", wh)
-
             id_feature = output['id']
-            id_feature = F.normalize(id_feature, dim=1)
-
+            id_feature = F.normalize(id_feature, dim=1)  # L2 normalize
             reg = output['reg'] if self.opt.reg_offset else None
             # print("reg shape ", reg.shape, "reg:\n", reg)
 
@@ -454,12 +450,11 @@ class JDETracker(object):
 
         # 检测结果后处理
         dets = self.post_process(dets, meta)
-        dets = self.merge_outputs([dets])
-        # dets = self.merge_outputs(dets)[1]
+        # dets = self.merge_outputs([dets])
 
         # ----- 解析每个检测类别
         for cls_id in range(self.opt.num_classes):  # cls_id从0开始
-            cls_dets = dets[cls_id + 1]
+            cls_dets = dets[cls_id]
 
             '''
             # 可视化中间的检测结果(每一类)

@@ -10,7 +10,7 @@ os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
 
 import torch
 
-my_visible_devs = '6'  # '0, 3'  # 设置可运行GPU编号
+my_visible_devs = '0'  # '0, 3'  # 设置可运行GPU编号
 os.environ['CUDA_VISIBLE_DEVICES'] = my_visible_devs
 device = torch.device('cuda: 0' if torch.cuda.is_available() else 'cpu')
 
@@ -19,7 +19,7 @@ from lib.opts import opts  # import opts
 from lib.tracking_utils.utils import mkdir_if_missing
 from lib.tracking_utils.log import logger
 import lib.datasets.dataset.jde as datasets
-from track import eval_seq, eval_seq_and_output_dets
+from track import eval_seq, eval_imgs_output_dets
 
 logger.setLevel(logging.INFO)
 
@@ -32,13 +32,13 @@ def run_demo(opt):
     result_root = opt.output_root if opt.output_root != '' else '.'
     mkdir_if_missing(result_root)
 
-    # # clear existing frame results
-    # frame_res_dir = result_root + '/frame'
-    # if os.path.isdir(frame_res_dir):
-    #     shutil.rmtree(frame_res_dir)
-    #     os.makedirs(frame_res_dir)
-    # else:
-    #     os.makedirs(frame_res_dir)
+    # clear existing frame results
+    frame_res_dir = result_root + '/frame'
+    if os.path.isdir(frame_res_dir):
+        shutil.rmtree(frame_res_dir)
+        os.makedirs(frame_res_dir)
+    else:
+        os.makedirs(frame_res_dir)
 
     if opt.input_mode == 'video':
         logger.info('Starting tracking...')
@@ -61,9 +61,9 @@ def run_demo(opt):
     frame_rate = data_loader.frame_rate
 
     frame_dir = None if opt.output_format == 'text' else osp.join(result_root, 'frame')
-
     opt.device = device
-    try:  # 视频推断的入口函数
+
+    try:
         if opt.id_weight > 0:
             eval_seq(opt=opt,
                      data_loader=data_loader,
@@ -85,13 +85,13 @@ def run_demo(opt):
 
             # only for tmp detection evaluation...
             output_dir = '/users/duanyou/c5/results_new/results_all/tmp'
-            eval_seq_and_output_dets(opt=opt,
-                                     data_loader=data_loader,
-                                     data_type='mot',
-                                     result_f_name=result_file_name,
-                                     out_dir=output_dir,
-                                     save_dir=frame_dir,
-                                     show_image=False)
+            eval_imgs_output_dets(opt=opt,
+                                  data_loader=data_loader,
+                                  data_type='mot',
+                                  result_f_name=result_file_name,
+                                  out_dir=output_dir,
+                                  save_dir=frame_dir,
+                                  show_image=False)
     except Exception as e:
         logger.info(e)
 

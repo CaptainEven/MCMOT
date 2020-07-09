@@ -586,7 +586,7 @@ if __name__ == '__main__':
     #                    out_root='/mnt/diskb/even/MCMOT/src/data',
     #                    f_name='mcmot.train')
 
-    add_new_train_data(part_train_f_path='/mnt/diskb/maqiao/multiClass/c5_yancheng_20200703/train.txt',
+    add_new_train_data(part_train_f_path='/mnt/diskb/maqiao/multiClass/c5_hzpc_20200707/train.txt',
                        data_root='/mnt/diskb/even/dataset/MCMOT_DET',
                        dot_train_f_path='/mnt/diskb/even/MCMOT/src/data/mcmot_det.train',
                        dataset_prefix='/mnt/diskb/even/dataset/')

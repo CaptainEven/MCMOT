@@ -27,7 +27,7 @@ class LoadImages:
         :param path:
         :param img_size:
         """
-        self.frame_rate = 10  #
+        self.frame_rate = 10  # no actual meaning here
 
         if type(path) == str:
             if os.path.isdir(path):
@@ -58,16 +58,9 @@ class LoadImages:
             raise StopIteration
 
         img_path = self.files[self.count]
-        img_name = os.path.split(img_path)[-1]
-        # if img_name == '1921681219_2_2018-02-13_14-46-00-688_3-1518504845.jpg':
-        #     print('pause here')
 
         # Read image
         img_0 = cv2.imread(img_path)  # BGR
-
-        if img_0 is None:
-            print('pause here.')
-
         assert img_0 is not None, 'Failed to load ' + img_path
 
         # Padded resize
@@ -86,18 +79,18 @@ class LoadImages:
         img_path = self.files[idx]
 
         # Read image
-        img0 = cv2.imread(img_path)  # BGR
-        assert img0 is not None, 'Failed to load ' + img_path
+        img_0 = cv2.imread(img_path)  # BGR
+        assert img_0 is not None, 'Failed to load ' + img_path
 
         # Padded resize
-        img, _, _, _ = letterbox(img0, height=self.height, width=self.width)
+        img, _, _, _ = letterbox(img_0, height=self.height, width=self.width)
 
-        # Normalize RGB
+        # Normalize RGB: BGR -> RGB and H×W×C -> C×H×W
         img = img[:, :, ::-1].transpose(2, 0, 1)
         img = np.ascontiguousarray(img, dtype=np.float32)
         img /= 255.0
 
-        return img_path, img, img0
+        return img_path, img, img_0
 
     def __len__(self):
         return self.nF  # number of files
@@ -313,8 +306,8 @@ def letterbox(img,
 
     # new_shape = [width, height]
     new_shape = (round(shape[1] * ratio), round(shape[0] * ratio))
-    dw = (width - new_shape[0]) / 2  # width padding
-    dh = (height - new_shape[1]) / 2  # height padding
+    dw = (width - new_shape[0]) * 0.5   # width padding
+    dh = (height - new_shape[1]) * 0.5  # height padding
     top, bottom = round(dh - 0.1), round(dh + 0.1)
     left, right = round(dw - 0.1), round(dw + 0.1)
 

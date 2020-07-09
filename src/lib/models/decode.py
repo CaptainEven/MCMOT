@@ -16,8 +16,7 @@ def _max_pool(heat, kernel=3):
 
     pad = (kernel - 1) // 2
 
-    h_max = nn.functional.max_pool2d(
-        heat, (kernel, kernel), stride=1, padding=pad)
+    h_max = nn.functional.max_pool2d(heat, (kernel, kernel), stride=1, padding=pad)
     # print("h_max.shape: ", h_max.shape)  # default: torch.Size([1, 1, 152, 272])
 
     keep = (h_max == heat).float()  # 将boolean类型的Tensor转换成Float类型的Tensor
@@ -115,10 +114,10 @@ def mot_decode(heatmap,
 
     classes = classes.view(N, K, 1).float()  # 目标类别
     scores = scores.view(N, K, 1)
-    bboxes = torch.cat([xs - wh[..., 0:1] / 2,   # left
-                        ys - wh[..., 1:2] / 2,   # top
-                        xs + wh[..., 0:1] / 2,   # right
-                        ys + wh[..., 1:2] / 2],  # down
+    bboxes = torch.cat([xs - wh[..., 0:1] / 2,   # left    x1
+                        ys - wh[..., 1:2] / 2,   # top     y1
+                        xs + wh[..., 0:1] / 2,   # right   x2
+                        ys + wh[..., 1:2] / 2],  # down    y2
                        dim=2)
     detections = torch.cat([bboxes, scores, classes], dim=2)
 

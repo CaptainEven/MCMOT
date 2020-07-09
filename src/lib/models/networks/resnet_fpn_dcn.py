@@ -137,8 +137,8 @@ class PoseResNet(nn.Module):
         self.deconv_with_bias = False
 
         super(PoseResNet, self).__init__()
-        self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3,
-                               bias=False)
+
+        self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3, bias=False)
         self.bn1 = nn.BatchNorm2d(64, momentum=BN_MOMENTUM)
         self.relu = nn.ReLU(inplace=True)
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
@@ -215,7 +215,6 @@ class PoseResNet(nn.Module):
         return deconv_kernel, padding, output_padding
 
     def _make_deconv_layer(self, num_filters, num_kernels):
-
         layers = []
 
         kernel, padding, output_padding = \
@@ -245,6 +244,7 @@ class PoseResNet(nn.Module):
         layers.append(up)
         layers.append(nn.BatchNorm2d(planes, momentum=BN_MOMENTUM))
         layers.append(nn.ReLU(inplace=True))
+
         self.inplanes = planes
 
         return nn.Sequential(*layers)
@@ -268,6 +268,7 @@ class PoseResNet(nn.Module):
         ret = {}
         for head in self.heads:
             ret[head] = self.__getattr__(head)(p1)
+
         return [ret]
 
     def init_weights(self, num_layers):
@@ -309,6 +310,7 @@ def get_pose_net(num_layers, heads, head_conv=256):
     block_class, layers = resnet_spec[num_layers]
 
     model = PoseResNet(block_class, layers, heads, head_conv=head_conv)
+
     model.init_weights(num_layers)
 
     return model
