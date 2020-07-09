@@ -234,15 +234,16 @@ def eval_seq(opt,
                 frame_id, 1. / max(1e-5, timer.average_time)))
 
         # --- run tracking
-        timer.tic()
-        # blob = torch.from_numpy(img).cuda().unsqueeze(0)
         blob = torch.from_numpy(img).to(opt.device).unsqueeze(0)
 
         if mode == 'track':  # process tracking
-            # --- track updates of each frame
+            # ----- track updates of each frame
+            timer.tic()
+
             online_targets_dict = tracker.update_tracking(blob, img_0)
 
             timer.toc()
+            # -----
 
             # 聚合每一帧的结果
             online_tlwhs_dict = defaultdict(list)

@@ -405,17 +405,13 @@ class JDETracker(object):
         removed_stracks_dict = defaultdict(list)
         output_stracks_dict = defaultdict(list)
 
-        width = img_0.shape[1]
-        height = img_0.shape[0]
-        inp_height = im_blob.shape[2]
-        inp_width = im_blob.shape[3]
+        height, width = img_0.shape[0], img_0.shape[1]  # H, W of original input image
+        net_height, net_width = im_blob.shape[2], im_blob.shape[3]  # H, W of net input
 
         c = np.array([width / 2., height / 2.], dtype=np.float32)
-        s = max(float(inp_width) / float(inp_height) * height, width) * 1.0
-        meta = {'c': c,
-                's': s,
-                'out_height': inp_height // self.opt.down_ratio,
-                'out_width': inp_width // self.opt.down_ratio}
+        s = max(float(net_width) / float(net_height) * height, width) * 1.0
+        h_out = net_height // self.opt.down_ratio
+        w_out = net_width // self.opt.down_ratio
 
         ''' Step 1: Network forward, get detections & embeddings'''
         with torch.no_grad():
@@ -449,8 +445,14 @@ class JDETracker(object):
                 cls_id_feats.append(cls_id_feature)
 
         # 检测结果后处理
-        dets = self.post_process(dets, meta)
+        # meta = {'c': c,
+        #         's': s,
+        #         'out_height': h_out,
+        #         'out_width': w_out}
+        # dets = self.post_process(dets, meta)  # using affine matrix
         # dets = self.merge_outputs([dets])
+
+        dets = self.map2orig(dets, h_out, w_out, height, width, self.opt.num_classes)  # translate and scale
 
         # ----- 解析每个检测类别
         for cls_id in range(self.opt.num_classes):  # cls_id从0开始
