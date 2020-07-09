@@ -16,7 +16,7 @@ class opts(object):
         self.parser.add_argument('--exp_id', default='default')
         self.parser.add_argument('--test', action='store_true')
         self.parser.add_argument('--load_model',
-                                 default='../exp/mot/default/mcmot_last_det_hrnet_18_de_conv.pth',  # mcmot_last_det_hrnet_18_de_conv.pth
+                                 default='../exp/mot/default/mcmot_last_track_hrnet_18.pth',  # mcmot_last_det_hrnet_18_de_conv.pth
                                  help='path to pretrained model')
         # self.parser.add_argument('--load_model',
         #                          default='../models/hrnetv2_w18_imagenet_pretrained.pth',  # hrnetv2_w32_imagenet_pretrained
@@ -176,7 +176,7 @@ class opts(object):
         # 测试阶段的输入数据模式: video or image dir
         self.parser.add_argument('--input-mode',
                                  type=str,
-                                 default='img_path_list_txt',  # video or image_dir or img_path_list_txt
+                                 default='video',  # video or image_dir or img_path_list_txt
                                  help='input data type(video or image dir)')
 
         # 输入的video文件路径
@@ -237,7 +237,7 @@ class opts(object):
                                  help='reid loss: ce | triplet')
         self.parser.add_argument('--id_weight',
                                  type=float,
-                                 default=0,  # 0for detection only and 1 for detection and re-id
+                                 default=1,  # 0for detection only and 1 for detection and re-id
                                  help='loss weight for id')  # 控制是否计算ReID
         self.parser.add_argument('--reid_dim',
                                  type=int,
