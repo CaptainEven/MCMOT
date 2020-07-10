@@ -200,6 +200,63 @@ class STrack(BaseTrack):
         return 'OT_{}_({}-{})'.format(self.track_id, self.start_frame, self.end_frame)
 
 
+# rewrite a post processing(without using affine matrix)
+def map2orig(dets, h_out, w_out, h_orig, w_orig, num_classes):
+    """
+    :param dets:
+    :param h_out:
+    :param w_out:
+    :param h_orig:
+    :param w_orig:
+    :param num_classes:
+    :return: dict of detections(key: cls_id)
+    """
+
+    def get_padding():
+        """
+        :return: pad_1, pad_2, pad_type('pad_x' or 'pad_y'), new_shape(w, h)
+        """
+        ratio_x = float(w_out) / w_orig
+        ratio_y = float(h_out) / h_orig
+        ratio = min(ratio_x, ratio_y)
+        new_shape = (round(w_orig * ratio), round(h_orig * ratio))  # new_w, new_h
+
+        pad_x = (w_out - new_shape[0]) * 0.5  # width padding
+        pad_y = (h_out - new_shape[1]) * 0.5  # height padding
+        top, bottom = round(pad_y - 0.1), round(pad_y + 0.1)
+        left, right = round(pad_x - 0.1), round(pad_x + 0.1)
+        if ratio == ratio_x:  # pad_y
+            return top, bottom, 'pad_y', new_shape
+        else:  # pad_x
+            return left, right, 'pad_x', new_shape
+
+    pad_1, pad_2, pad_type, new_shape = get_padding()
+
+    dets = dets.detach().cpu().numpy()
+    dets = dets.reshape(1, -1, dets.shape[2])  # default: 1×128×6
+    dets = dets[0]  # 128×6
+
+    dets_dict = {}
+
+    if pad_type == 'pad_x':
+        dets[:, 0] = (dets[:, 0] - pad_1) / new_shape[0] * w_orig  # x1
+        dets[:, 2] = (dets[:, 2] - pad_1) / new_shape[0] * w_orig  # x2
+        dets[:, 1] = dets[:, 1] / h_out * h_orig  # y1
+        dets[:, 3] = dets[:, 3] / h_out * h_orig  # y2
+    else:  # 'pad_y'
+        dets[:, 0] = dets[:, 0] / w_out * w_orig  # x1
+        dets[:, 2] = dets[:, 2] / w_out * w_orig  # x2
+        dets[:, 1] = (dets[:, 1] - pad_1) / new_shape[1] * h_orig  # y1
+        dets[:, 3] = (dets[:, 3] - pad_1) / new_shape[1] * h_orig  # y2
+
+    classes = dets[:, -1]
+    for cls_id in range(num_classes):
+        inds = (classes == cls_id)
+        dets_dict[cls_id] = dets[inds, :]
+
+    return dets_dict
+
+
 class JDETracker(object):
     def __init__(self, opt, frame_rate=30):
         self.opt = opt
@@ -230,62 +287,6 @@ class JDETracker(object):
 
         # 利用卡尔曼滤波过滤跟踪噪声
         self.kalman_filter = KalmanFilter()
-
-    # rewrite a post processing(without using affine matrix)
-    def map2orig(self, dets, h_out, w_out, h_orig, w_orig, num_classes):
-        """
-        :param dets:
-        :param h_out:
-        :param w_out:
-        :param h_orig:
-        :param w_orig:
-        :param num_classes:
-        :return: dict of detections(key: cls_id)
-        """
-
-        def get_padding():
-            """
-            :return: pad_1, pad_2, pad_type('pad_x' or 'pad_y'), new_shape(w, h)
-            """
-            ratio_x = float(w_out) / w_orig
-            ratio_y = float(h_out) / h_orig
-            ratio = min(ratio_x, ratio_y)
-            new_shape = (round(w_orig * ratio), round(h_orig * ratio))  # new_w, new_h
-
-            pad_x = (w_out - new_shape[0]) * 0.5  # width padding
-            pad_y = (h_out - new_shape[1]) * 0.5  # height padding
-            top, bottom = round(pad_y - 0.1), round(pad_y + 0.1)
-            left, right = round(pad_x - 0.1), round(pad_x + 0.1)
-            if ratio == ratio_x:  # pad_y
-                return top, bottom, 'pad_y', new_shape
-            else:  # pad_x
-                return left, right, 'pad_x', new_shape
-
-        pad_1, pad_2, pad_type, new_shape = get_padding()
-
-        dets = dets.detach().cpu().numpy()
-        dets = dets.reshape(1, -1, dets.shape[2])  # default: 1×128×6
-        dets = dets[0]  # 128×6
-
-        dets_dict = {}
-
-        if pad_type == 'pad_x':
-            dets[:, 0] = (dets[:, 0] - pad_1) / new_shape[0] * w_orig  # x1
-            dets[:, 2] = (dets[:, 2] - pad_1) / new_shape[0] * w_orig  # x2
-            dets[:, 1] = dets[:, 1] / h_out * h_orig  # y1
-            dets[:, 3] = dets[:, 3] / h_out * h_orig  # y2
-        else:  # 'pad_y'
-            dets[:, 0] = dets[:, 0] / w_out * w_orig  # x1
-            dets[:, 2] = dets[:, 2] / w_out * w_orig  # x2
-            dets[:, 1] = (dets[:, 1] - pad_1) / new_shape[1] * h_orig  # y1
-            dets[:, 3] = (dets[:, 3] - pad_1) / new_shape[1] * h_orig  # y2
-
-        classes = dets[:, -1]
-        for cls_id in range(num_classes):
-            inds = (classes == cls_id)
-            dets_dict[cls_id] = dets[inds, :]
-
-        return dets_dict
 
     def post_process(self, dets, meta):
         """
@@ -372,7 +373,7 @@ class JDETracker(object):
             #         'out_height': h_out,
             #         'out_width': w_out}
             # dets = self.post_process(dets, meta)  # using affine matrix
-            dets = self.map2orig(dets, h_out, w_out, height, width, self.opt.num_classes)  # translate and scale
+            dets = map2orig(dets, h_out, w_out, height, width, self.opt.num_classes)  # translate and scale
             # dets = self.merge_outputs([dets])
 
             # --- parse detections of each class
@@ -419,10 +420,9 @@ class JDETracker(object):
 
             hm = output['hm'].sigmoid_()
             wh = output['wh']
+            reg = output['reg'] if self.opt.reg_offset else None
             id_feature = output['id']
             id_feature = F.normalize(id_feature, dim=1)  # L2 normalize
-            reg = output['reg'] if self.opt.reg_offset else None
-            # print("reg shape ", reg.shape, "reg:\n", reg)
 
             #  检测和分类结果解析
             dets, inds, cls_inds_mask = mot_decode(heatmap=hm,
@@ -452,7 +452,7 @@ class JDETracker(object):
         # dets = self.post_process(dets, meta)  # using affine matrix
         # dets = self.merge_outputs([dets])
 
-        dets = self.map2orig(dets, h_out, w_out, height, width, self.opt.num_classes)  # translate and scale
+        dets = map2orig(dets, h_out, w_out, height, width, self.opt.num_classes)  # translate and scale
 
         # ----- 解析每个检测类别
         for cls_id in range(self.opt.num_classes):  # cls_id从0开始
