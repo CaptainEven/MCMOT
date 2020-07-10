@@ -202,4 +202,4 @@ if __name__ == '__main__':
     # run_demo(opt)
 
     test_single(img_path='/mnt/diskb/even/MCMOT/src/00000.jpg',
-                dev=torch.device('cuda:0'))  # 'cpu' or 'cuda:0'
+                dev=torch.device('cpu'))  # 'cpu' or 'cuda:0'
