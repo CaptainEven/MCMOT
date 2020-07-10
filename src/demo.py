@@ -19,7 +19,7 @@ import shutil
 import numpy as np
 import os.path as osp
 from collections import defaultdict
-from lib.opts import opts  # import opts
+# from lib.opts import opts  # import opts
 from lib.tracking_utils.utils import mkdir_if_missing
 from lib.tracking_utils.log import logger
 import lib.datasets.dataset.jde as datasets
@@ -130,7 +130,7 @@ def test_single(img_path, dev):
              'reg': 2,
              'id': 128}
     net = create_model(arch='hrnet_18', heads=heads, head_conv=-1)
-    model_path = '/mnt/diskb/even/MCMOT/exp/mot/default/mcmot_last_det_hrnet_18_de_conv.pth'
+    model_path = '/mnt/diskb/even/MCMOT/exp/mot/default/mcmot_last_det_hrnet_18_de_conv_old.pth'
     net = load_model(model=net, model_path=model_path)
     net = net.to(dev)
     net.eval()
