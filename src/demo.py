@@ -194,7 +194,7 @@ def test_single(img_path, dev):
             dets_dict[cls_id] = cls_dets
 
     # Visualize detection results
-    img_draw = plot_detects(img_0, dets_dict, 5, frame_id=0, fps=1.0 / 50.0)
+    img_draw = plot_detects(img_0, dets_dict, 5, frame_id=0, fps=30.0)
     cv2.imshow('Detection', img_draw)
     cv2.waitKey()
 
