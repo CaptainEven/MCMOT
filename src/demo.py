@@ -125,10 +125,7 @@ def test_single(img_path, dev):
         return
 
     # Load model and put to device
-    heads = {'hm': 5,
-             'wh': 2,
-             'reg': 2,
-             'id': 128}
+    heads = {'hm': 5, 'reg': 2, 'wh': 2, 'id': 128}
     net = create_model(arch='hrnet_18', heads=heads, head_conv=-1)
     model_path = '/mnt/diskb/even/MCMOT/exp/mot/default/mcmot_last_det_hrnet_18_de_conv_old.pth'
     net = load_model(model=net, model_path=model_path)
@@ -147,8 +144,8 @@ def test_single(img_path, dev):
     img = np.ascontiguousarray(img, dtype=np.float32)
     img /= 255.0
 
-    # convert to tensor and put to device
-    blob = torch.from_numpy(img).to(dev).unsqueeze(0)
+    # Convert to tensor and put to device
+    blob = torch.from_numpy(img).unsqueeze(0).to(dev)
 
     with torch.no_grad():
         # Network output
@@ -156,8 +153,8 @@ def test_single(img_path, dev):
 
         # Tracking output
         hm = output['hm'].sigmoid_()
-        wh = output['wh']
         reg = output['reg']
+        wh = output['wh']
         id_feature = output['id']
         id_feature = F.normalize(id_feature, dim=1)  # L2 normalize
 
