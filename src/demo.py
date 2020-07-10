@@ -9,7 +9,7 @@ os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
 
 import torch
 
-my_visible_devs = '0'  # '0, 3'  # 设置可运行GPU编号
+my_visible_devs = '2'  # '0, 3'  # 设置可运行GPU编号
 os.environ['CUDA_VISIBLE_DEVICES'] = my_visible_devs
 device = torch.device('cuda: 0' if torch.cuda.is_available() else 'cpu')
 
@@ -19,7 +19,7 @@ import shutil
 import numpy as np
 import os.path as osp
 from collections import defaultdict
-# from lib.opts import opts  # import opts
+from lib.opts import opts  # import opts
 from lib.tracking_utils.utils import mkdir_if_missing
 from lib.tracking_utils.log import logger
 import lib.datasets.dataset.jde as datasets
@@ -198,8 +198,8 @@ def test_single(img_path, dev):
 
 
 if __name__ == '__main__':
-    # opt = opts().init()
-    # run_demo(opt)
+    opt = opts().init()
+    run_demo(opt)
 
-    test_single(img_path='/mnt/diskb/even/MCMOT/src/00000.jpg',
-                dev=torch.device('cpu'))  # 'cpu' or 'cuda:0'
+    # test_single(img_path='/mnt/diskb/even/MCMOT/src/00000.jpg',
+    #             dev=torch.device('cpu'))  # 'cpu' or 'cuda:0'

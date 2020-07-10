@@ -101,7 +101,7 @@ class opts(object):
                                  help='drop learning rate by 10.')
         self.parser.add_argument('--num_epochs',
                                  type=int,
-                                 default=100,
+                                 default=5,
                                  help='total training epochs.')
         self.parser.add_argument('--batch_size',
                                  type=int,
@@ -176,7 +176,7 @@ class opts(object):
         # 测试阶段的输入数据模式: video or image dir
         self.parser.add_argument('--input-mode',
                                  type=str,
-                                 default='img_path_list_txt',  # video or image_dir or img_path_list_txt
+                                 default='video',  # video or image_dir or img_path_list_txt
                                  help='input data type(video or image dir)')
 
         # 输入的video文件路径
@@ -206,7 +206,7 @@ class opts(object):
         #                          default='../src/lib/cfg/detrac.json',  # 'mot15.json',
         #                          help='load data from cfg')
         self.parser.add_argument('--data_cfg', type=str,
-                                 default='../src/lib/cfg/mcmot_det.json',  # mcmot.json, mcmot_det.json,
+                                 default='../src/lib/cfg/mcmot.json',  # mcmot.json, mcmot_det.json,
                                  help='load data from cfg')
         self.parser.add_argument('--data_dir',
                                  type=str,
@@ -237,7 +237,7 @@ class opts(object):
                                  help='reid loss: ce | triplet')
         self.parser.add_argument('--id_weight',
                                  type=float,
-                                 default=0,  # 0for detection only and 1 for detection and re-id
+                                 default=0.5,  # 0for detection only and 1 for detection and re-id
                                  help='loss weight for id')  # 控制是否计算ReID
         self.parser.add_argument('--reid_dim',
                                  type=int,
