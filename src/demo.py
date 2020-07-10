@@ -161,6 +161,7 @@ def test_single(img_path, dev):
         id_feature = output['id']
         id_feature = F.normalize(id_feature, dim=1)  # L2 normalize
 
+        # Decode output
         dets, inds, cls_inds_mask = mot_decode(hm, wh, reg, 5, False, 128)
 
         # Get ReID feature vector by object class
