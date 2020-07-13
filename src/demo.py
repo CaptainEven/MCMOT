@@ -6,10 +6,9 @@ import logging
 import os
 
 os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
-
 import torch
 
-my_visible_devs = '2'  # '0, 3'  # 设置可运行GPU编号
+my_visible_devs = '4'  # '0, 3'  # 设置可运行GPU编号
 os.environ['CUDA_VISIBLE_DEVICES'] = my_visible_devs
 device = torch.device('cuda: 0' if torch.cuda.is_available() else 'cpu')
 
@@ -30,7 +29,6 @@ from lib.models.decode import mot_decode
 from lib.models.utils import _tranpose_and_gather_feat
 from lib.tracker.multitracker import map2orig
 from lib.tracking_utils.visualization import plot_detects
-
 
 logger.setLevel(logging.INFO)
 
@@ -57,11 +55,13 @@ def run_demo(opt):
     elif opt.input_mode == 'image_dir':
         logger.info('Starting detection...')
         data_loader = datasets.LoadImages(opt.input_img, opt.img_size)  # load images as input
+        opt.id_weight = 0  # only do detection in this mode
     elif opt.input_mode == 'img_path_list_txt':
         if not os.path.isfile(opt.input_img):
             print('[Err]: invalid image file path list.')
             return
 
+        opt.id_weight = 0  # only do detection in this mode
         with open(opt.input_img, 'r', encoding='utf-8') as r_h:
             logger.info('Starting detection...')
             paths = [x.strip() for x in r_h.readlines()]
@@ -70,7 +70,6 @@ def run_demo(opt):
 
     result_file_name = os.path.join(result_root, 'results.txt')
     frame_rate = data_loader.frame_rate
-
     frame_dir = None if opt.output_format == 'text' else osp.join(result_root, 'frame')
     opt.device = device
 
@@ -84,7 +83,7 @@ def run_demo(opt):
                      show_image=False,
                      frame_rate=frame_rate,
                      mode='track')
-        else:
+        else:  # input video, do detection
             # eval_seq(opt=opt,
             #          data_loader=data_loader,
             #          data_type='mot',
@@ -109,8 +108,7 @@ def run_demo(opt):
     if opt.output_format == 'video':
         output_video_path = osp.join(result_root, 'result.mp4')
         cmd_str = 'ffmpeg -f image2 -i {}/%05d.jpg -b 5000k -c:v mpeg4 {}' \
-            .format(osp.join(result_root, 'frame'),
-                    output_video_path)
+            .format(osp.join(result_root, 'frame'), output_video_path)
         os.system(cmd_str)
 
 
@@ -127,7 +125,7 @@ def test_single(img_path, dev):
     # Load model and put to device
     heads = {'hm': 5, 'reg': 2, 'wh': 2, 'id': 128}
     net = create_model(arch='hrnet_18', heads=heads, head_conv=-1)
-    model_path = '/mnt/diskb/even/MCMOT/exp/mot/default/mcmot_last_det_hrnet_18_de_conv_old.pth'
+    model_path = '/mnt/diskb/even/MCMOT/exp/mot/default/mcmot_last_track_hrnet_18.pth'
     net = load_model(model=net, model_path=model_path)
     net = net.to(dev)
     net.eval()

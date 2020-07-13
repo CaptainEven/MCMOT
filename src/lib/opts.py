@@ -101,7 +101,7 @@ class opts(object):
                                  help='drop learning rate by 10.')
         self.parser.add_argument('--num_epochs',
                                  type=int,
-                                 default=5,
+                                 default=3,
                                  help='total training epochs.')
         self.parser.add_argument('--batch_size',
                                  type=int,
@@ -176,13 +176,13 @@ class opts(object):
         # 测试阶段的输入数据模式: video or image dir
         self.parser.add_argument('--input-mode',
                                  type=str,
-                                 default='video',  # video or image_dir or img_path_list_txt
+                                 default='img_path_list_txt',  # video or image_dir or img_path_list_txt
                                  help='input data type(video or image dir)')
 
         # 输入的video文件路径
         self.parser.add_argument('--input-video',
                                  type=str,
-                                 default='../videos/test5.mp4',  # '../videos/MOT16-03.mp4'
+                                 default='../videos/test3.mp4',  # '../videos/MOT16-03.mp4'
                                  help='path to the input video')
 
         # 输入的image目录
@@ -237,7 +237,7 @@ class opts(object):
                                  help='reid loss: ce | triplet')
         self.parser.add_argument('--id_weight',
                                  type=float,
-                                 default=0.5,  # 0for detection only and 1 for detection and re-id
+                                 default=0,  # 0for detection only and 1 for detection and re-id
                                  help='loss weight for id')  # 控制是否计算ReID
         self.parser.add_argument('--reid_dim',
                                  type=int,

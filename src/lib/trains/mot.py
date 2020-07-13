@@ -145,7 +145,7 @@ class McMotLoss(torch.nn.Module):
                 self.emb_scale_dict[cls_id] = math.sqrt(2) * math.log(nID - 1)
 
             # track reid分类的损失缩放系数
-            self.s_id = nn.Parameter(-1.02 * torch.ones(1))  # -1.05
+            self.s_id = nn.Parameter(-1.05 * torch.ones(1))  # -1.05
 
         # scale factor of detection loss
         self.s_det = nn.Parameter(-1.85 * torch.ones(1))
