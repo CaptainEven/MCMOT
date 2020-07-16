@@ -9,8 +9,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from lib.models.decode import mot_decode
 from lib.models.losses import FocalLoss
-from lib.models.losses import RegL1Loss, RegLoss, NormRegL1Loss, RegWeightedL1Loss, ArcMarginFc, CircleLoss, \
-    convert_label_to_similarity
+from lib.models.losses import RegL1Loss, RegLoss, NormRegL1Loss, RegWeightedL1Loss, \
+    ArcMarginFc, CircleLoss, convert_label_to_similarity, McFocalLoss, GHMC
 from lib.models.utils import _sigmoid, _tranpose_and_gather_feat
 from lib.utils.post_process import ctdet_post_process
 
@@ -33,8 +33,8 @@ class MotLoss(torch.nn.Module):
         self.nID = opt.nID
 
         # 唯一包含可学习参数的层: 用于Re-ID的全连接层
-        self.classifier = nn.Linear(self.emb_dim, self.nID)  # 不同的track id分类最后一层FC:将特征转换到概率得分
-        self.IDLoss = nn.CrossEntropyLoss(ignore_index=-1)  # 不同的track id分类用交叉熵损失
+        self.classifier = nn.Linear(self.emb_dim, self.nID)
+        self.IDLoss = nn.CrossEntropyLoss(ignore_index=-1)
         # self.TriLoss = TripletLoss()
 
         self.emb_scale = math.sqrt(2) * math.log(self.nID - 1)
@@ -114,7 +114,10 @@ class McMotLoss(torch.nn.Module):
         self.crit_wh = torch.nn.L1Loss(reduction='sum') if opt.dense_wh else \
             NormRegL1Loss() if opt.norm_wh else \
                 RegWeightedL1Loss() if opt.cat_spec_wh else self.crit_reg  # box size loss
+
+        # additional loss functions for re-id
         self.circle_loss = CircleLoss(m=0.25, gamma=80)
+        self.ghm_c = GHMC()  # GHM_C loss for multi-class classification(For ReID)
 
         if opt.id_weight > 0:
             self.emb_dim = opt.reid_dim
@@ -125,6 +128,7 @@ class McMotLoss(torch.nn.Module):
             # 包含可学习参数的层: 用于Re-ID的全连接层
             # @even: 为每个需要ReID的类别定义一个分类器
             self.classifiers = nn.ModuleDict()  # 使用ModuleList或ModuleDict才可以自动注册参数
+            self.focal_loss_dict = nn.ModuleDict()
             for cls_id, nID in self.nID_dict.items():
                 # 选择一: 使用普通的全连接层
                 self.classifiers[str(cls_id)] = nn.Linear(self.emb_dim, nID)  # FC layers
@@ -134,6 +138,9 @@ class McMotLoss(torch.nn.Module):
                 #                                             out_features=nID,
                 #                                             device=self.opt.device,
                 #                                             m=0.4)
+
+                # 使用Focal loss
+                self.focal_loss_dict[str(cls_id)] = McFocalLoss(nID, self.opt.device)
 
             # using CE loss to do ReID classification
             self.IDLoss = nn.CrossEntropyLoss(ignore_index=-1)
@@ -204,21 +211,30 @@ class McMotLoss(torch.nn.Module):
                     cls_id_target = batch['cls_tr_ids'][inds[0], cls_id, inds[2], inds[3]]
 
                     # ---分类结果
-                    # 使用普通的全连接层
-                    cls_id_output = self.classifiers[str(cls_id)].forward(cls_id_head).contiguous()
+                    # normal FC layers
+                    cls_id_pred = self.classifiers[str(cls_id)].forward(cls_id_head).contiguous()
 
                     # 使用Arc margin全连接层
-                    # cls_id_output = self.classifiers[str(cls_id)].forward(cls_id_head, cls_id_target).contiguous()
+                    # cls_id_pred = self.classifiers[str(cls_id)].forward(cls_id_head, cls_id_target).contiguous()
 
                     # --- 累加每一个检测类别的ReID loss
                     # 选择一: 使用交叉熵优化ReID
-                    reid_loss += self.IDLoss(cls_id_output, cls_id_target)
+                    # reid_loss += self.IDLoss(cls_id_pred, cls_id_target)
 
                     # 选择二: 使用Circle loss优化ReID
-                    # reid_loss += self.circle_loss(*convert_label_to_similarity(cls_id_output, cls_id_target))
+                    # reid_loss += self.circle_loss(*convert_label_to_similarity(cls_id_pred, cls_id_target))
 
                     # 选择三: 使用triplet loss优化ReID
-                    # reid_loss += self.IDLoss(cls_id_output, cls_id_target) + self.TriLoss(cls_id_head, cls_id_target)
+                    # reid_loss += self.IDLoss(cls_id_pred, cls_id_target) + self.TriLoss(cls_id_head, cls_id_target)
+
+                    # 选择三: Focal loss
+                    reid_loss += self.focal_loss_dict[str(cls_id)](cls_id_pred, cls_id_target)
+
+                    # 选择四: 使用GHM loss
+                    # target = torch.zeros_like(cls_id_pred)
+                    # target.scatter_(1, cls_id_target.view(-1, 1).long(), 1)
+                    # label_weight = torch.ones_like(cls_id_pred)
+                    # reid_loss += self.ghm_c.forward(cls_id_pred, target, label_weight)
 
         # loss = opt.hm_weight * hm_loss + opt.wh_weight * wh_loss + opt.off_weight * off_loss + opt.id_weight * id_loss
 

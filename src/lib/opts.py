@@ -16,7 +16,7 @@ class opts(object):
         self.parser.add_argument('--exp_id', default='default')
         self.parser.add_argument('--test', action='store_true')
         self.parser.add_argument('--load_model',
-                                 default='../exp/mot/default/mcmot_last_track_hrnet_18.pth',  # mcmot_last_det_hrnet_18_de_conv.pth
+                                 default='../exp/mot/default/mcmot_last_track_hrnet_18_deconv.pth',  # mcmot_last_det_hrnet_18_de_conv.pth
                                  help='path to pretrained model')
         # self.parser.add_argument('--load_model',
         #                          default='../models/hrnetv2_w18_imagenet_pretrained.pth',  # hrnetv2_w32_imagenet_pretrained
@@ -34,7 +34,7 @@ class opts(object):
                                  help='-1 for CPU, use comma for multiple gpus')
         self.parser.add_argument('--num_workers',
                                  type=int,
-                                 default=4,  # 8
+                                 default=6,  # 8
                                  help='dataloader threads. 0 for single-thread.')
         self.parser.add_argument('--not_cuda_benchmark', action='store_true',
                                  help='disable when the input size is not fixed.')
@@ -42,7 +42,7 @@ class opts(object):
                                  help='random seed')  # from CornerNet
         self.parser.add_argument('--is_debug',
                                  type=bool,
-                                 default=False,  # 是否使用多线程加载数据, default: False
+                                 default=True,  # 是否使用多线程加载数据, default: False
                                  help='whether in debug mode or not')
 
         # log
@@ -101,7 +101,7 @@ class opts(object):
                                  help='drop learning rate by 10.')
         self.parser.add_argument('--num_epochs',
                                  type=int,
-                                 default=3,
+                                 default=30,
                                  help='total training epochs.')
         self.parser.add_argument('--batch_size',
                                  type=int,
@@ -176,13 +176,13 @@ class opts(object):
         # 测试阶段的输入数据模式: video or image dir
         self.parser.add_argument('--input-mode',
                                  type=str,
-                                 default='img_path_list_txt',  # video or image_dir or img_path_list_txt
+                                 default='video',  # video or image_dir or img_path_list_txt
                                  help='input data type(video or image dir)')
 
         # 输入的video文件路径
         self.parser.add_argument('--input-video',
                                  type=str,
-                                 default='../videos/test3.mp4',  # '../videos/MOT16-03.mp4'
+                                 default='../videos/test5.mp4',  # '../videos/MOT16-03.mp4'
                                  help='path to the input video')
 
         # 输入的image目录
@@ -237,7 +237,7 @@ class opts(object):
                                  help='reid loss: ce | triplet')
         self.parser.add_argument('--id_weight',
                                  type=float,
-                                 default=0,  # 0for detection only and 1 for detection and re-id
+                                 default=1,  # 0for detection only and 1 for detection and re-id
                                  help='loss weight for id')  # 控制是否计算ReID
         self.parser.add_argument('--reid_dim',
                                  type=int,
