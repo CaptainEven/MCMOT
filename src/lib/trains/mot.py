@@ -139,11 +139,11 @@ class McMotLoss(torch.nn.Module):
                 #                                             device=self.opt.device,
                 #                                             m=0.4)
 
-                # 使用Focal loss
+                # 选择三: 使用Focal loss
                 self.focal_loss_dict[str(cls_id)] = McFocalLoss(nID, self.opt.device)
 
             # using CE loss to do ReID classification
-            self.IDLoss = nn.CrossEntropyLoss(ignore_index=-1)
+            self.ce_loss = nn.CrossEntropyLoss(ignore_index=-1)
             # self.TriLoss = TripletLoss()
 
             # @even: 为每个需要ReID的类别定义一个embedding scale
@@ -219,13 +219,13 @@ class McMotLoss(torch.nn.Module):
 
                     # --- 累加每一个检测类别的ReID loss
                     # 选择一: 使用交叉熵优化ReID
-                    # reid_loss += self.IDLoss(cls_id_pred, cls_id_target)
+                    # reid_loss += self.ce_loss(cls_id_pred, cls_id_target)
 
                     # 选择二: 使用Circle loss优化ReID
                     # reid_loss += self.circle_loss(*convert_label_to_similarity(cls_id_pred, cls_id_target))
 
-                    # 选择三: 使用triplet loss优化ReID
-                    # reid_loss += self.IDLoss(cls_id_pred, cls_id_target) + self.TriLoss(cls_id_head, cls_id_target)
+                    # 选择三: 使用ce_loss + triplet loss优化ReID
+                    # reid_loss += self.ce_loss(cls_id_pred, cls_id_target) + self.TriLoss(cls_id_head, cls_id_target)
 
                     # 选择三: Focal loss
                     reid_loss += self.focal_loss_dict[str(cls_id)](cls_id_pred, cls_id_target)
