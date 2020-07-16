@@ -10,7 +10,7 @@ os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
 
 import torch
 
-my_visible_devs = '5'  # '0, 3'  # 设置可运行GPU编号
+my_visible_devs = '4'  # '0, 3'  # 设置可运行GPU编号
 os.environ['CUDA_VISIBLE_DEVICES'] = my_visible_devs
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
@@ -113,12 +113,12 @@ def run(opt):
                        epoch, model, optimizer)
         else:  # mcmot_last_track or mcmot_last_det
             if opt.id_weight > 0:  # do tracking(detection and re-id)
-                save_model(os.path.join(opt.save_dir, 'mcmot_last_track_' + opt.arch + '.pth'),
+                save_model(os.path.join(opt.save_dir, 'mcmot_last_track_' + opt.arch + '_deconv.pth'),
                        epoch, model, optimizer)
             else:  # only do detection
                 # save_model(os.path.join(opt.save_dir, 'mcmot_last_det_' + opt.arch + '.pth'),
                 #        epoch, model, optimizer)
-                save_model(os.path.join(opt.save_dir, 'mcmot_last_det_' + opt.arch + '_de_conv.pth'),
+                save_model(os.path.join(opt.save_dir, 'mcmot_last_det_' + opt.arch + '_deconv.pth'),
                        epoch, model, optimizer)
         logger.write('\n')
 

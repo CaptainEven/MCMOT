@@ -300,6 +300,221 @@ class CircleLoss(nn.Module):
         return loss
 
 
+class Registry(object):
+    def __init__(self, name):
+        self._name = name
+        self._module_dict = dict()
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def module_dict(self):
+        return self._module_dict
+
+    def _register_module(self, module_class):
+        """Register a module.
+        Args:
+            module (:obj:`nn.Module`): Module to be registered.
+        """
+        if not issubclass(module_class, nn.Module):
+            raise TypeError(
+                'module must be a child of nn.Module, but got {}'.format(
+                    module_class))
+        module_name = module_class.__name__
+        if module_name in self._module_dict:
+            raise KeyError('{} is already registered in {}'.format(
+                module_name, self.name))
+        self._module_dict[module_name] = module_class
+
+    def register_module(self, cls):
+        self._register_module(cls)
+        return cls
+
+
+BACKBONES = Registry('backbone')
+NECKS = Registry('neck')
+ROI_EXTRACTORS = Registry('roi_extractor')
+SHARED_HEADS = Registry('shared_head')
+HEADS = Registry('head')
+LOSSES = Registry('loss')
+DETECTORS = Registry('detector')
+
+
+def _expand_binary_labels(labels, label_weights, label_channels):
+    bin_labels = labels.new_full((labels.size(0), label_channels), 0)
+    inds = torch.nonzero(labels >= 1).squeeze()
+    if inds.numel() > 0:
+        bin_labels[inds, labels[inds] - 1] = 1
+    bin_label_weights = label_weights.view(-1, 1).expand(
+        label_weights.size(0), label_channels)
+    return bin_labels, bin_label_weights
+
+
+@LOSSES.register_module
+class GHMC(nn.Module):
+    """GHM Classification Loss.
+    Details of the theorem can be viewed in the paper
+    "Gradient Harmonized Single-stage Detector".
+    https://arxiv.org/abs/1811.05181
+    Args:
+        bins (int): Number of the unit regions for distribution calculation.
+        momentum (float): The parameter for moving average.
+        use_sigmoid (bool): Can only be true for BCE based loss now.
+        loss_weight (float): The weight of the total GHM-C loss.
+    """
+
+    def __init__(
+            self,
+            bins=10,
+            momentum=0,
+            use_sigmoid=True,
+            loss_weight=1.0):
+        """
+        :param bins:
+        :param momentum:
+        :param use_sigmoid:
+        :param loss_weight:
+        """
+        super(GHMC, self).__init__()
+
+        self.bins = bins
+        self.momentum = momentum
+        self.edges = torch.arange(bins + 1).float().cuda() / bins
+        self.edges[-1] += 1e-6
+
+        if momentum > 0:
+            self.acc_sum = torch.zeros(bins).cuda()
+
+        self.use_sigmoid = use_sigmoid
+        if not self.use_sigmoid:
+            raise NotImplementedError
+        self.loss_weight = loss_weight
+
+    def forward(self, pred, target, label_weight, *args, **kwargs):
+        """Calculate the GHM-C loss.
+        Args:
+            pred (float tensor of size [batch_num, class_num]):
+                The direct prediction of classification fc layer.
+            target (float tensor of size [batch_num, class_num]):
+                Binary class target for each sample.
+            label_weight (float tensor of size [batch_num, class_num]):
+                the value is 1 if the sample is valid and 0 if ignored.
+        Returns:
+            The gradient harmonized loss.
+        """
+        # the target should be binary class label
+        if pred.dim() != target.dim():
+            target, label_weight = _expand_binary_labels(
+                target, label_weight, pred.size(-1))
+
+        target, label_weight = target.float(), label_weight.float()
+        edges = self.edges
+        mmt = self.momentum
+        weights = torch.zeros_like(pred)
+
+        # gradient length
+        g = torch.abs(pred.sigmoid().detach() - target)
+
+        valid = label_weight > 0
+        tot = max(valid.float().sum().item(), 1.0)
+        n = 0  # n valid bins
+        for i in range(self.bins):
+            inds = (g >= edges[i]) & (g < edges[i + 1]) & valid
+            num_in_bin = inds.sum().item()
+            if num_in_bin > 0:
+                if mmt > 0:
+                    self.acc_sum[i] = mmt * self.acc_sum[i] \
+                                      + (1 - mmt) * num_in_bin
+                    weights[inds] = tot / self.acc_sum[i]
+                else:
+                    weights[inds] = tot / num_in_bin
+                n += 1
+        if n > 0:
+            weights = weights / n
+
+        loss = F.binary_cross_entropy_with_logits(pred, target, weights, reduction='sum') / tot
+
+        return loss * self.loss_weight
+
+
+@LOSSES.register_module
+class GHMR(nn.Module):
+    """GHM Regression Loss.
+    Details of the theorem can be viewed in the paper
+    "Gradient Harmonized Single-stage Detector"
+    https://arxiv.org/abs/1811.05181
+    Args:
+        mu (float): The parameter for the Authentic Smooth L1 loss.
+        bins (int): Number of the unit regions for distribution calculation.
+        momentum (float): The parameter for moving average.
+        loss_weight (float): The weight of the total GHM-R loss.
+    """
+
+    def __init__(
+            self,
+            mu=0.02,
+            bins=10,
+            momentum=0,
+            loss_weight=1.0):
+        super(GHMR, self).__init__()
+        self.mu = mu
+        self.bins = bins
+        self.edges = torch.arange(bins + 1).float().cuda() / bins
+        self.edges[-1] = 1e3
+        self.momentum = momentum
+        if momentum > 0:
+            self.acc_sum = torch.zeros(bins).cuda()
+        self.loss_weight = loss_weight
+
+    def forward(self, pred, target, label_weight, avg_factor=None):
+        """Calculate the GHM-R loss.
+        Args:
+            pred (float tensor of size [batch_num, 4 (* class_num)]):
+                The prediction of box regression layer. Channel number can be 4
+                or 4 * class_num depending on whether it is class-agnostic.
+            target (float tensor of size [batch_num, 4 (* class_num)]):
+                The target regression values with the same size of pred.
+            label_weight (float tensor of size [batch_num, 4 (* class_num)]):
+                The weight of each sample, 0 if ignored.
+        Returns:
+            The gradient harmonized loss.
+        """
+        mu = self.mu
+        edges = self.edges
+        mmt = self.momentum
+
+        # ASL1 loss
+        diff = pred - target
+        loss = torch.sqrt(diff * diff + mu * mu) - mu
+
+        # gradient length
+        g = torch.abs(diff / torch.sqrt(mu * mu + diff * diff)).detach()
+        weights = torch.zeros_like(g)
+
+        valid = label_weight > 0
+        tot = max(label_weight.float().sum().item(), 1.0)
+        n = 0  # n: valid bins
+        for i in range(self.bins):
+            inds = (g >= edges[i]) & (g < edges[i + 1]) & valid
+            num_in_bin = inds.sum().item()
+            if num_in_bin > 0:
+                n += 1
+                if mmt > 0:
+                    self.acc_sum[i] = mmt * self.acc_sum[i] \
+                                      + (1 - mmt) * num_in_bin
+                    weights[inds] = tot / self.acc_sum[i]
+                else:
+                    weights[inds] = tot / num_in_bin
+        if n > 0:
+            weights /= n
+
+        loss = loss * weights
+        loss = loss.sum() / tot
+        return loss * self.loss_weight
+
+
 class RegLoss(nn.Module):
     '''Regression loss for an output tensor
     Smooth L1 loss

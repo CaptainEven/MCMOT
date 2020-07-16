@@ -178,7 +178,7 @@ def eval_imgs_output_dets(opt,
         # 格式化
         dets_list = format_dets_dict2dets_list(dets_dict, w=img_0.shape[1], h=img_0.shape[0])
 
-        # 输出到指定目录
+        # 输出label(txt)到指定目录
         out_img_name = os.path.split(path)[-1]
         out_f_name = out_img_name.replace('.jpg', '.txt')
         out_f_path = out_dir + '/' + out_f_name
@@ -186,7 +186,7 @@ def eval_imgs_output_dets(opt,
             w_h.write('class prob x y w h total=' + str(len(dets_list)) + '\n')
             for det in dets_list:
                 w_h.write('%d %f %f %f %f %f\n' % (det[0], det[1], det[2], det[3], det[4], det[5]))
-        # print('{} written'.format(out_f_path))
+        print('{} written'.format(out_f_path))
 
         # 处理完一帧, 更新frame_id
         frame_id += 1
@@ -234,7 +234,7 @@ def eval_seq(opt,
                 frame_id, 1. / max(1e-5, timer.average_time)))
 
         # --- run tracking
-        blob = torch.from_numpy(img).to(opt.device).unsqueeze(0)
+        blob = torch.from_numpy(img).unsqueeze(0).to(opt.device)
 
         if mode == 'track':  # process tracking
             # ----- track updates of each frame
