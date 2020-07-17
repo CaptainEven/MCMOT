@@ -16,7 +16,7 @@ class opts(object):
         self.parser.add_argument('--exp_id', default='default')
         self.parser.add_argument('--test', action='store_true')
         self.parser.add_argument('--load_model',
-                                 default='../exp/mot/default/mcmot_last_det_hrnet_18_deconv.pth',  # mcmot_last_det_hrnet_18_de_conv.pth
+                                 default='../exp/mot/default/mcmot_last_track_hrnet_18_deconv.pth',  # mcmot_last_det_hrnet_18_de_conv.pth
                                  help='path to pretrained model')
         # self.parser.add_argument('--load_model',
         #                          default='../models/hrnetv2_w18_imagenet_pretrained.pth',  # hrnetv2_w32_imagenet_pretrained
@@ -372,6 +372,7 @@ class opts(object):
 
         h_w = default_dataset_info[opt.task]['default_resolution']
         opt.img_size = (h_w[1], h_w[0])
+        print('Net input image H, W', h_w)
 
         dataset = Struct(default_dataset_info[opt.task])
         opt.dataset = dataset.dataset
