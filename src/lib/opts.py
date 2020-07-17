@@ -16,7 +16,7 @@ class opts(object):
         self.parser.add_argument('--exp_id', default='default')
         self.parser.add_argument('--test', action='store_true')
         self.parser.add_argument('--load_model',
-                                 default='../exp/mot/default/mcmot_last_track_hrnet_18_deconv.pth',  # mcmot_last_det_hrnet_18_de_conv.pth
+                                 default='../exp/mot/default/mcmot_last_det_hrnet_18_deconv.pth',  # mcmot_last_det_hrnet_18_de_conv.pth
                                  help='path to pretrained model')
         # self.parser.add_argument('--load_model',
         #                          default='../models/hrnetv2_w18_imagenet_pretrained.pth',  # hrnetv2_w32_imagenet_pretrained
@@ -42,7 +42,7 @@ class opts(object):
                                  help='random seed')  # from CornerNet
         self.parser.add_argument('--is_debug',
                                  type=bool,
-                                 default=True,  # 是否使用多线程加载数据, default: False
+                                 default=False,  # 是否使用多线程加载数据, default: False
                                  help='whether in debug mode or not')
 
         # log
@@ -308,6 +308,11 @@ class opts(object):
         return opt
 
     def update_dataset_info_and_set_heads(self, opt, dataset):
+        """
+        :param opt:
+        :param dataset:
+        :return:
+        """
         input_h, input_w = dataset.default_resolution  # 图片的高和宽
         opt.mean, opt.std = dataset.mean, dataset.std  # 均值 方差
         opt.num_classes = dataset.num_classes  # 类别数
@@ -340,7 +345,7 @@ class opts(object):
             if opt.id_weight > 0:
                 opt.nID_dict = dataset.nID_dict
 
-            opt.img_size = (1088, 608)
+            # opt.img_size = (640, 320)  # (1088, 608)
         else:
             assert 0, 'task not defined!'
 
@@ -349,7 +354,7 @@ class opts(object):
 
     def init(self, args=''):
         default_dataset_info = {
-            'mot': {'default_resolution': [608, 1088],
+            'mot': {'default_resolution': [320, 640],  # [608, 1088]
                     'num_classes': 5,  # 1
                     'mean': [0.408, 0.447, 0.470],
                     'std': [0.289, 0.274, 0.278],
@@ -364,6 +369,10 @@ class opts(object):
                     self.__setattr__(k, v)
 
         opt = self.parse(args)
+
+        h_w = default_dataset_info[opt.task]['default_resolution']
+        opt.img_size = (h_w[1], h_w[0])
+
         dataset = Struct(default_dataset_info[opt.task])
         opt.dataset = dataset.dataset
         opt = self.update_dataset_info_and_set_heads(opt, dataset)

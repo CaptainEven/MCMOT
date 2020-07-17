@@ -102,12 +102,22 @@ def load_model(model,
 
 
 def save_model(path, epoch, model, optimizer=None):
+    """
+    :param path:
+    :param epoch:
+    :param model:
+    :param optimizer:
+    :return:
+    """
     if isinstance(model, torch.nn.DataParallel):
         state_dict = model.module.state_dict()
     else:
         state_dict = model.state_dict()
+
     data = {'epoch': epoch,
             'state_dict': state_dict}
+
     if not (optimizer is None):
         data['optimizer'] = optimizer.state_dict()
+
     torch.save(data, path)

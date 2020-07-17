@@ -409,7 +409,7 @@ class JDETracker(object):
         height, width = img_0.shape[0], img_0.shape[1]  # H, W of original input image
         net_height, net_width = im_blob.shape[2], im_blob.shape[3]  # H, W of net input
 
-        c = np.array([width / 2., height / 2.], dtype=np.float32)
+        c = np.array([width * 0.5, height * 0.5], dtype=np.float32)
         s = max(float(net_width) / float(net_height) * height, width) * 1.0
         h_out = net_height // self.opt.down_ratio
         w_out = net_width // self.opt.down_ratio

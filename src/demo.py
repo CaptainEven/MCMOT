@@ -8,7 +8,7 @@ import os
 os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
 import torch
 
-my_visible_devs = '6'  # '0, 3'  # 设置可运行GPU编号
+my_visible_devs = '5'  # '0, 3'  # 设置可运行GPU编号
 os.environ['CUDA_VISIBLE_DEVICES'] = my_visible_devs
 device = torch.device('cuda: 0' if torch.cuda.is_available() else 'cpu')
 
@@ -125,7 +125,7 @@ def test_single(img_path, dev):
     # Load model and put to device
     heads = {'hm': 5, 'reg': 2, 'wh': 2, 'id': 128}
     net = create_model(arch='hrnet_18', heads=heads, head_conv=-1)
-    model_path = '/mnt/diskb/even/MCMOT/exp/mot/default/mcmot_last_track_hrnet_18.pth'
+    model_path = '/mnt/diskb/even/MCMOT/exp/mot/default/mcmot_last_track_hrnet_18_deconv.pth'
     net = load_model(model=net, model_path=model_path)
     net = net.to(dev)
     net.eval()
@@ -135,7 +135,8 @@ def test_single(img_path, dev):
     assert img_0 is not None, 'Failed to load ' + img_path
 
     # Padded resize
-    img, _, _, _ = letterbox(img=img_0, height=608, width=1088)
+    h_in, w_in = 608, 1088  # (608, 1088) (320, 640)
+    img, _, _, _ = letterbox(img=img_0, height=h_in, width=w_in)
 
     # Normalize RGB: BGR -> RGB and H×W×C -> C×H×W
     img = img[:, :, ::-1].transpose(2, 0, 1)
@@ -176,7 +177,7 @@ def test_single(img_path, dev):
 
         # Convert back to original image coordinate system
         height_0, width_0 = img_0.shape[0], img_0.shape[1]  # H, W of original input image
-        dets = map2orig(dets, 152, 272, height_0, width_0, 5)  # translate and scale
+        dets = map2orig(dets, h_in // 4, w_in // 4, height_0, width_0, 5)  # translate and scale
 
         # Parse detections of each class
         dets_dict = defaultdict(list)

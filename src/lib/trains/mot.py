@@ -140,7 +140,7 @@ class McMotLoss(torch.nn.Module):
                 #                                             m=0.4)
 
                 # 选择三: 使用Focal loss
-                self.focal_loss_dict[str(cls_id)] = McFocalLoss(nID, self.opt.device)
+                # self.focal_loss_dict[str(cls_id)] = McFocalLoss(nID, self.opt.device)
 
             # using CE loss to do ReID classification
             self.ce_loss = nn.CrossEntropyLoss(ignore_index=-1)
@@ -228,13 +228,13 @@ class McMotLoss(torch.nn.Module):
                     # reid_loss += self.ce_loss(cls_id_pred, cls_id_target) + self.TriLoss(cls_id_head, cls_id_target)
 
                     # 选择三: Focal loss
-                    reid_loss += self.focal_loss_dict[str(cls_id)](cls_id_pred, cls_id_target)
+                    # reid_loss += self.focal_loss_dict[str(cls_id)](cls_id_pred, cls_id_target)
 
                     # 选择四: 使用GHM loss
-                    # target = torch.zeros_like(cls_id_pred)
-                    # target.scatter_(1, cls_id_target.view(-1, 1).long(), 1)
-                    # label_weight = torch.ones_like(cls_id_pred)
-                    # reid_loss += self.ghm_c.forward(cls_id_pred, target, label_weight)
+                    target = torch.zeros_like(cls_id_pred)
+                    target.scatter_(1, cls_id_target.view(-1, 1).long(), 1)
+                    label_weight = torch.ones_like(cls_id_pred)
+                    reid_loss += self.ghm_c.forward(cls_id_pred, target, label_weight)
 
         # loss = opt.hm_weight * hm_loss + opt.wh_weight * wh_loss + opt.off_weight * off_loss + opt.id_weight * id_loss
 
