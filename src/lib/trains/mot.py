@@ -116,8 +116,8 @@ class McMotLoss(torch.nn.Module):
                 RegWeightedL1Loss() if opt.cat_spec_wh else self.crit_reg  # box size loss
 
         # @even: Test additional loss functions for re-id
-        self.circle_loss = CircleLoss(m=0.25, gamma=80)
-        self.ghm_c = GHMC()  # GHM_C loss for multi-class classification(For ReID)
+        # self.circle_loss = CircleLoss(m=0.25, gamma=80)
+        self.ghm_c = GHMC(bins=30)  # GHM_C loss for multi-class classification(For ReID)
 
         if opt.id_weight > 0:
             self.emb_dim = opt.reid_dim

@@ -8,7 +8,7 @@ import os
 os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
 import torch
 
-my_visible_devs = '5'  # '0, 3'  # 设置可运行GPU编号
+my_visible_devs = '1'  # '0, 3'  # 设置可运行GPU编号
 os.environ['CUDA_VISIBLE_DEVICES'] = my_visible_devs
 device = torch.device('cuda: 0' if torch.cuda.is_available() else 'cpu')
 
@@ -52,9 +52,11 @@ def run_demo(opt):
     if opt.input_mode == 'video':
         logger.info('Starting tracking...')
         data_loader = datasets.LoadVideo(opt.input_video, opt.img_size)  # load video as input
+        f_name = os.path.split(opt.input_video)[-1][:-4]
     elif opt.input_mode == 'image_dir':
         logger.info('Starting detection...')
         data_loader = datasets.LoadImages(opt.input_img, opt.img_size)  # load images as input
+        f_name = os.path.split(opt.input_video)[-1]
         opt.id_weight = 0  # only do detection in this mode
     elif opt.input_mode == 'img_path_list_txt':
         if not os.path.isfile(opt.input_img):
@@ -74,25 +76,26 @@ def run_demo(opt):
     opt.device = device
 
     try:
-        if opt.id_weight > 0:
-            eval_seq(opt=opt,
-                     data_loader=data_loader,
-                     data_type='mot',
-                     result_f_name=result_file_name,
-                     save_dir=frame_dir,
-                     show_image=False,
-                     frame_rate=frame_rate,
-                     mode='track')
-        else:  # input video, do detection
-            # eval_seq(opt=opt,
-            #          data_loader=data_loader,
-            #          data_type='mot',
-            #          result_f_name=result_file_name,
-            #          save_dir=frame_dir,
-            #          show_image=False,
-            #          frame_rate=frame_rate,
-            #          mode='detect')
-
+        if opt.input_mode == 'video':
+            if opt.id_weight > 0:
+                eval_seq(opt=opt,
+                         data_loader=data_loader,
+                         data_type='mot',
+                         result_f_name=result_file_name,
+                         save_dir=frame_dir,
+                         show_image=False,
+                         frame_rate=frame_rate,
+                         mode='track')
+            else:  # input video, do detection
+                eval_seq(opt=opt,
+                         data_loader=data_loader,
+                         data_type='mot',
+                         result_f_name=result_file_name,
+                         save_dir=frame_dir,
+                         show_image=False,
+                         frame_rate=frame_rate,
+                         mode='detect')
+        else:
             # only for tmp detection evaluation...
             output_dir = '/users/duanyou/c5/results_new/results_all/tmp'
             eval_imgs_output_dets(opt=opt,
@@ -106,7 +109,13 @@ def run_demo(opt):
         logger.info(e)
 
     if opt.output_format == 'video':
-        output_video_path = osp.join(result_root, 'result.mp4')
+        if opt.input_mode == 'video':
+            if opt.id_weight > 0:
+                output_video_path = osp.join(result_root, f_name + '_track.mp4')
+            else:
+                output_video_path = osp.join(result_root, f_name + '_det.mp4')
+        elif opt.input_mode == 'image_dir':
+            output_video_path = osp.join(result_root, f_name + '_det.mp4')
         cmd_str = 'ffmpeg -f image2 -i {}/%05d.jpg -b 5000k -c:v mpeg4 {}' \
             .format(osp.join(result_root, 'frame'), output_video_path)
         os.system(cmd_str)

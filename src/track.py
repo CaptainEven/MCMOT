@@ -274,6 +274,8 @@ def eval_seq(opt,
                                                          fps=1.0 / timer.average_time)
 
         elif mode == 'detect':  # process detections
+            timer.tic()
+
             # update detection results of this frame(or image)
             dets_dict = tracker.update_detection(blob, img_0)
 

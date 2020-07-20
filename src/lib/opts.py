@@ -101,7 +101,7 @@ class opts(object):
                                  help='drop learning rate by 10.')
         self.parser.add_argument('--num_epochs',
                                  type=int,
-                                 default=30,
+                                 default=3,
                                  help='total training epochs.')
         self.parser.add_argument('--batch_size',
                                  type=int,
@@ -182,7 +182,7 @@ class opts(object):
         # 输入的video文件路径
         self.parser.add_argument('--input-video',
                                  type=str,
-                                 default='../videos/test5.mp4',  # '../videos/MOT16-03.mp4'
+                                 default='../videos/test10.mp4',
                                  help='path to the input video')
 
         # 输入的image目录
@@ -237,7 +237,7 @@ class opts(object):
                                  help='reid loss: ce | triplet')
         self.parser.add_argument('--id_weight',
                                  type=float,
-                                 default=1,  # 0for detection only and 1 for detection and re-id
+                                 default=0,  # 0for detection only and 1 for detection and re-id
                                  help='loss weight for id')  # 控制是否计算ReID
         self.parser.add_argument('--reid_dim',
                                  type=int,
@@ -354,7 +354,7 @@ class opts(object):
 
     def init(self, args=''):
         default_dataset_info = {
-            'mot': {'default_resolution': [320, 640],  # [608, 1088]
+            'mot': {'default_resolution': [608, 1088],  # [608, 1088], [320, 640]
                     'num_classes': 5,  # 1
                     'mean': [0.408, 0.447, 0.470],
                     'std': [0.289, 0.274, 0.278],
