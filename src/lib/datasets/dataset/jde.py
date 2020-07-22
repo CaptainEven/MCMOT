@@ -193,6 +193,7 @@ class LoadImagesAndLabels:  # for training
         :param label_path:
         :return:
         """
+        # 输入网络的图像分辨率
         height = self.height
         width = self.width
 
@@ -307,7 +308,7 @@ def letterbox(img,
 
     # new_shape = [width, height]
     new_shape = (round(shape[1] * ratio), round(shape[0] * ratio))
-    dw = (width - new_shape[0]) * 0.5   # width padding
+    dw = (width - new_shape[0]) * 0.5  # width padding
     dh = (height - new_shape[1]) * 0.5  # height padding
     top, bottom = round(dh - 0.1), round(dh + 0.1)
     left, right = round(dw - 0.1), round(dw + 0.1)
@@ -433,7 +434,6 @@ class JointDataset(LoadImagesAndLabels):  # for training
     default_resolution = [1088, 608]
     mean = None
     std = None
-    num_classes = 1  # 这里写死了1类目标检测的多实例跟踪
 
     def __init__(self,
                  opt,
@@ -451,7 +451,7 @@ class JointDataset(LoadImagesAndLabels):  # for training
         :param transforms:
         """
         self.opt = opt
-        dataset_names = paths.keys()
+        # dataset_names = paths.keys()
         self.img_files = OrderedDict()
         self.label_files = OrderedDict()
         self.tid_num = OrderedDict()
@@ -542,6 +542,7 @@ class JointDataset(LoadImagesAndLabels):  # for training
         img_path = self.img_files[ds][f_idx - start_index]
         label_path = self.label_files[ds][f_idx - start_index]
 
+        # 获取数据和标签
         imgs, labels, img_path, (input_h, input_w) = self.get_data(img_path, label_path)
         # print('input_h, input_w: %d %d' % (input_h, input_w))
 
@@ -558,13 +559,13 @@ class JointDataset(LoadImagesAndLabels):  # for training
         output_w = imgs.shape[2] // self.opt.down_ratio
         # print('output_h, output_w: %d %d' % (output_h, output_w))
 
-        num_classes = self.num_classes
+        # num_classes = self.num_classes
 
         # 图片中实际标注的目标数
         num_objs = labels.shape[0]
 
         # --- GT of detection
-        hm = np.zeros((num_classes, output_h, output_w), dtype=np.float32)  # C×H×W: heat-map通道数即类别数
+        hm = np.zeros((self.num_classes, output_h, output_w), dtype=np.float32)  # C×H×W: heat-map通道数即类别数
         wh = np.zeros((self.max_objs, 2), dtype=np.float32)
         reg = np.zeros((self.max_objs, 2), dtype=np.float32)
         ind = np.zeros((self.max_objs,), dtype=np.int64)  # K个object
@@ -580,7 +581,7 @@ class JointDataset(LoadImagesAndLabels):  # for training
             # @even, class id map: 每个(x, y)处的目标类别, 都初始化为-1
             cls_id_map = np.full((1, output_h, output_w), -1, dtype=np.int64)  # 1×H×W
 
-        # 设置用于heat-map初始化的高斯函数
+        # Gauss function definition
         draw_gaussian = draw_msra_gaussian if self.opt.mse_loss else draw_umich_gaussian
 
         # 遍历每一个ground truth检测目标
@@ -637,20 +638,20 @@ class JointDataset(LoadImagesAndLabels):  # for training
         if self.opt.id_weight > 0:
             ret = {'input': imgs,
                    'hm': hm,
-                   'reg_mask': reg_mask,
-                   'ind': ind,
-                   'wh': wh,
                    'reg': reg,
+                   'wh': wh,
+                   'ind': ind,
+                   'reg_mask': reg_mask,
                    'ids': ids,
                    'cls_id_map': cls_id_map,  # feature map上每个(x, y)处的目标类别id(背景为0)
                    'cls_tr_ids': cls_tr_ids}
         else:  # only for detection
             ret = {'input': imgs,
                    'hm': hm,
-                   'reg_mask': reg_mask,
-                   'ind': ind,
+                   'reg': reg,
                    'wh': wh,
-                   'reg': reg}
+                   'ind': ind,
+                   'reg_mask': reg_mask}
 
         return ret  # 返回一个字典(第一次见识这样的getitem)
 

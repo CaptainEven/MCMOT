@@ -53,17 +53,17 @@ class BaseTrainer(object):
                 if isinstance(v, torch.Tensor):
                     state[k] = v.to(device=device, non_blocking=True)
 
-    # 训练一个epoch
+    # Train an epoch
     def run_epoch(self, phase, epoch, data_loader):
         model_with_loss = self.model_with_loss
 
         if phase == 'train':
-            model_with_loss.train()  # 训练模式
+            model_with_loss.train()  # train phase
         else:
             if len(self.opt.gpus) > 1:
                 model_with_loss = self.model_with_loss.module
 
-            model_with_loss.eval()  # 测试模式
+            model_with_loss.eval()  # test phase
             torch.cuda.empty_cache()
 
         opt = self.opt
@@ -73,6 +73,7 @@ class BaseTrainer(object):
         num_iters = len(data_loader) if opt.num_iters < 0 else opt.num_iters
         bar = Bar('{}/{}'.format(opt.task, opt.exp_id), max=num_iters)
         end = time.time()
+
         for iter_id, batch in enumerate(data_loader):
             if iter_id >= num_iters:
                 break
@@ -117,7 +118,8 @@ class BaseTrainer(object):
 
         bar.finish()
         ret = {k: v.avg for k, v in avg_loss_stats.items()}
-        ret['time'] = bar.elapsed_td.total_seconds() / 60.
+        ret['time'] = bar.elapsed_td.total_seconds() / 60.0
+
         return ret, results
 
     def debug(self, batch, output, iter_id):

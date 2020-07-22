@@ -10,7 +10,7 @@ os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
 
 import torch
 
-my_visible_devs = '5'  # '0, 3'  # 设置可运行GPU编号
+my_visible_devs = '6'  # '0, 3'  # 设置可运行GPU编号
 os.environ['CUDA_VISIBLE_DEVICES'] = my_visible_devs
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
@@ -39,7 +39,10 @@ def run(opt):
     print("Dataset root: %s" % dataset_root)
     f.close()
 
+    # Image data transformations
     transforms = T.Compose([T.ToTensor()])
+
+    # Dataset
     dataset = Dataset(opt=opt,
                       root=dataset_root,
                       paths=trainset_paths,
@@ -100,7 +103,7 @@ def run(opt):
     for epoch in range(start_epoch + 1, opt.num_epochs + 1):
         mark = epoch if opt.save_all else 'last'
 
-        # 训练的核心函数
+        # Train an epoch
         log_dict_train, _ = trainer.train(epoch, train_loader)
 
         logger.write('epoch: {} |'.format(epoch))
@@ -114,12 +117,12 @@ def run(opt):
         else:  # mcmot_last_track or mcmot_last_det
             if opt.id_weight > 0:  # do tracking(detection and re-id)
                 save_model(os.path.join(opt.save_dir, 'mcmot_last_track_' + opt.arch + '_deconv.pth'),
-                       epoch, model, optimizer)
+                           epoch, model, optimizer)
             else:  # only do detection
                 # save_model(os.path.join(opt.save_dir, 'mcmot_last_det_' + opt.arch + '.pth'),
                 #        epoch, model, optimizer)
                 save_model(os.path.join(opt.save_dir, 'mcmot_last_det_' + opt.arch + '_deconv.pth'),
-                       epoch, model, optimizer)
+                           epoch, model, optimizer)
         logger.write('\n')
 
         if epoch in opt.lr_step:

@@ -16,7 +16,7 @@ class opts(object):
         self.parser.add_argument('--exp_id', default='default')
         self.parser.add_argument('--test', action='store_true')
         self.parser.add_argument('--load_model',
-                                 default='../exp/mot/default/mcmot_last_track_hrnet_18_deconv.pth',  # mcmot_last_det_hrnet_18_de_conv.pth
+                                 default='../exp/mot/default/mcmot_last_det_hrnet_18_deconv.pth',  # mcmot_last_det_hrnet_18_de_conv.pth
                                  help='path to pretrained model')
         # self.parser.add_argument('--load_model',
         #                          default='../models/hrnetv2_w18_imagenet_pretrained.pth',  # hrnetv2_w32_imagenet_pretrained
@@ -43,7 +43,7 @@ class opts(object):
         self.parser.add_argument('--is_debug',
                                  type=bool,
                                  default=False,  # 是否使用多线程加载数据, default: False
-                                 help='whether in debug mode or not')
+                                 help='whether in debug mode or not')  # debug模式下只能使用单进程
 
         # log
         self.parser.add_argument('--print_iter', type=int, default=0,
@@ -182,7 +182,7 @@ class opts(object):
         # 输入的video文件路径
         self.parser.add_argument('--input-video',
                                  type=str,
-                                 default='../videos/test10.mp4',
+                                 default='../videos/test5.mp4',
                                  help='path to the input video')
 
         # 输入的image目录
@@ -237,11 +237,11 @@ class opts(object):
                                  help='reid loss: ce | triplet')
         self.parser.add_argument('--id_weight',
                                  type=float,
-                                 default=0,  # 0for detection only and 1 for detection and re-id
+                                 default=1,  # 0for detection only and 1 for detection and re-id
                                  help='loss weight for id')  # 控制是否计算ReID
         self.parser.add_argument('--reid_dim',
                                  type=int,
-                                 default=128,  # 512
+                                 default=128,  # 128, 256, 512
                                  help='feature dim for reid')
         self.parser.add_argument('--reid_cls_ids',
                                  default='0,1,2,3,4',  # car, bicycle, person, cyclist, tricycle

@@ -13,6 +13,7 @@ import torch.utils.model_zoo as model_zoo
 from torch import nn
 
 from dcn_v2 import DCN
+# from lib.models.networks.DCNv2.dcn_v2 import DCN
 
 BN_MOMENTUM = 0.1
 logger = logging.getLogger(__name__)

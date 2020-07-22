@@ -138,7 +138,7 @@ def plot_tracks(image,
 
         for i, tlwh_i in enumerate(cls_tlwhs):
             x1, y1, w, h = tlwh_i
-            int_box = tuple(map(int, (x1, y1, x1 + w, y1 + h)))
+            int_box = tuple(map(int, (x1, y1, x1 + w, y1 + h)))  # x1, y1, x2, y2
             obj_id = int(obj_ids[i])
             id_text = '{}'.format(int(obj_id))
 
@@ -146,28 +146,21 @@ def plot_tracks(image,
             color = get_color(abs(obj_id))
             # cls_color = cls_color_dict[id2cls[cls_id]]
 
-            cv2.rectangle(img, int_box[0:2],
-                          int_box[2:4],
+            cv2.rectangle(img=img,
+                          pt1=int_box[0:2],  # (x1, y1)
+                          pt2=int_box[2:4],  # (x2, y2)
                           color=color,
-                          thickness=line_thickness)  # bbox: 随机颜色
+                          thickness=line_thickness)
 
-            # plot track id
+            # draw class name and index
             cv2.putText(img,
-                        id_text,
-                        (int_box[0], int_box[1] + 30),
-                        cv2.FONT_HERSHEY_PLAIN,
-                        text_scale,
-                        (0, 255, 255),  # id: yellow
-                        thickness=text_thickness)
-
-            # plot class name
-            cv2.putText(img,
-                        id2cls[cls_id],
+                        id2cls[cls_id] + id_text,
                         (int(x1), int(y1)),
                         cv2.FONT_HERSHEY_PLAIN,
                         text_scale,
                         (0, 255, 255),  # cls_id: yellow
                         thickness=text_thickness)
+
 
     return img
 
