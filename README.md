@@ -7,7 +7,9 @@ You can refer to origin fork [FairMOT](https://github.com/ifzhang/FairMOT)
 ## Tracking demo
 ![image](https://github.com/CaptainEven/MCMOT/blob/master/demo.gif)
 </br>
-## Pretained model
-[MCMOT pretained model_hrnet18_deconv](https://pan.baidu.com/s/1imrim0kt72_Ay9w-X4kqdw) 
+## Pretained model for detection and tracking
+HRNet18 with bi-linear upsampling replaced with de-convolution </br>
+[baidu drive link](https://pan.baidu.com/s/1imrim0kt72_Ay9w-X4kqdw) extract code：ej4p
 </br>
-extract code：ej4p
+[one drive link](https://1drv.ms/u/s!AmgjV-Jny9CqkX2EneIkb6Q8x6WI?e=Lsqx4G)
+
