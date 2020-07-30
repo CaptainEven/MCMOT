@@ -116,12 +116,12 @@ def run(opt):
                        epoch, model, optimizer)
         else:  # mcmot_last_track or mcmot_last_det
             if opt.id_weight > 0:  # do tracking(detection and re-id)
-                save_model(os.path.join(opt.save_dir, 'mcmot_last_track_' + opt.arch + '_deconv.pth'),
+                save_model(os.path.join(opt.save_dir, 'mcmot_last_track_' + opt.arch + '.pth'),
                            epoch, model, optimizer)
             else:  # only do detection
                 # save_model(os.path.join(opt.save_dir, 'mcmot_last_det_' + opt.arch + '.pth'),
                 #        epoch, model, optimizer)
-                save_model(os.path.join(opt.save_dir, 'mcmot_last_det_' + opt.arch + '_deconv.pth'),
+                save_model(os.path.join(opt.save_dir, 'mcmot_last_det_' + opt.arch + '.pth'),
                            epoch, model, optimizer)
         logger.write('\n')
 

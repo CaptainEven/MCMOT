@@ -139,7 +139,7 @@ class McFocalLoss(nn.Module):
                  device,
                  use_alpha=False,
                  alpha=None,
-                 gamma=2.0,
+                 gamma=1.5,
                  size_average=True):
         """
         :param num_classes:

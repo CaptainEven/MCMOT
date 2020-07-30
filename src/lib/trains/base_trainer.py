@@ -55,6 +55,12 @@ class BaseTrainer(object):
 
     # Train an epoch
     def run_epoch(self, phase, epoch, data_loader):
+        """
+        :param phase:
+        :param epoch:
+        :param data_loader:
+        :return:
+        """
         model_with_loss = self.model_with_loss
 
         if phase == 'train':
@@ -74,6 +80,7 @@ class BaseTrainer(object):
         bar = Bar('{}/{}'.format(opt.task, opt.exp_id), max=num_iters)
         end = time.time()
 
+        # train each batch
         for iter_id, batch in enumerate(data_loader):
             if iter_id >= num_iters:
                 break
@@ -84,10 +91,10 @@ class BaseTrainer(object):
                 if k != 'meta':
                     batch[k] = batch[k].to(device=opt.device, non_blocking=True)
 
-            # 前向计算loss
+            # Forward
             output, loss, loss_stats = model_with_loss.forward(batch)
 
-            # loss反传更新权重
+            # Backwards
             loss = loss.mean()
             if phase == 'train':
                 self.optimizer.zero_grad()  # 优化器梯度清零
