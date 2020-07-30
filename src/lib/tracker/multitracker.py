@@ -512,7 +512,7 @@ class JDETracker(object):
             STrack.multi_predict(strack_pool_dict[cls_id])
             dists = matching.embedding_distance(strack_pool_dict[cls_id], cls_detections)
             dists = matching.fuse_motion(self.kalman_filter, dists, strack_pool_dict[cls_id], cls_detections)
-            matches, u_track, u_detection = matching.linear_assignment(dists, thresh=0.7)
+            matches, u_track, u_detection = matching.linear_assignment(dists, thresh=0.7)  # thresh=0.7
 
             for i_tracked, i_det in matches:
                 track = strack_pool_dict[cls_id][i_tracked]
@@ -529,7 +529,7 @@ class JDETracker(object):
             r_tracked_stracks = [strack_pool_dict[cls_id][i]
                                  for i in u_track if strack_pool_dict[cls_id][i].state == TrackState.Tracked]
             dists = matching.iou_distance(r_tracked_stracks, cls_detections)
-            matches, u_track, u_detection = matching.linear_assignment(dists, thresh=0.5)
+            matches, u_track, u_detection = matching.linear_assignment(dists, thresh=0.5)  # thresh=0.5
 
             for i_tracked, i_det in matches:
                 track = r_tracked_stracks[i_tracked]

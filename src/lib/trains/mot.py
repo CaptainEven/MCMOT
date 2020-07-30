@@ -117,7 +117,7 @@ class McMotLoss(torch.nn.Module):
 
         # @even: Test additional loss functions for re-id
         # self.circle_loss = CircleLoss(m=0.25, gamma=80)
-        self.ghm_c = GHMC(bins=30)  # GHM_C loss for multi-class classification(For ReID)
+        # self.ghm_c = GHMC(bins=30)  # GHM_C loss for multi-class classification(For ReID)
 
         if opt.id_weight > 0:
             self.emb_dim = opt.reid_dim
@@ -134,10 +134,7 @@ class McMotLoss(torch.nn.Module):
                 self.classifiers[str(cls_id)] = nn.Linear(self.emb_dim, nID)  # FC layers
 
                 # 选择二: 使用Arc margin全连接层
-                # self.classifiers[str(cls_id)] = ArcMarginFc(in_features=self.emb_dim,
-                #                                             out_features=nID,
-                #                                             device=self.opt.device,
-                #                                             m=0.4)
+                # self.classifiers[str(cls_id)] = ArcMarginFc(self.emb_dim, nID, self.opt.device, 0.3)
 
                 # 选择三: 使用Focal loss
                 # self.focal_loss_dict[str(cls_id)] = McFocalLoss(nID, self.opt.device)
@@ -219,7 +216,7 @@ class McMotLoss(torch.nn.Module):
 
                     # --- 累加每一个检测类别的ReID loss
                     # 选择一: 使用交叉熵优化ReID
-                    # reid_loss += self.ce_loss(cls_id_pred, cls_id_target)
+                    reid_loss += self.ce_loss(cls_id_pred, cls_id_target)
 
                     # 选择二: 使用Circle loss优化ReID
                     # reid_loss += self.circle_loss(*convert_label_to_similarity(cls_id_pred, cls_id_target))
@@ -231,10 +228,10 @@ class McMotLoss(torch.nn.Module):
                     # reid_loss += self.focal_loss_dict[str(cls_id)](cls_id_pred, cls_id_target)
 
                     # 选择四: 使用GHM loss
-                    target = torch.zeros_like(cls_id_pred)
-                    target.scatter_(1, cls_id_target.view(-1, 1).long(), 1)
-                    label_weight = torch.ones_like(cls_id_pred)
-                    reid_loss += self.ghm_c.forward(cls_id_pred, target, label_weight)
+                    # target = torch.zeros_like(cls_id_pred)
+                    # target.scatter_(1, cls_id_target.view(-1, 1).long(), 1)
+                    # label_weight = torch.ones_like(cls_id_pred)
+                    # reid_loss += self.ghm_c.forward(cls_id_pred, target, label_weight)
 
         # loss = opt.hm_weight * hm_loss + opt.wh_weight * wh_loss + opt.off_weight * off_loss + opt.id_weight * id_loss
 

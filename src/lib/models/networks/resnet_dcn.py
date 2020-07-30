@@ -132,14 +132,19 @@ def fill_fc_weights(layers):
 
 class PoseResNet(nn.Module):
     def __init__(self, block, layers, heads, head_conv):
+        """
+        :param block:
+        :param layers:
+        :param heads:
+        :param head_conv:
+        """
         self.inplanes = 64
         self.heads = heads
         self.deconv_with_bias = False
 
         super(PoseResNet, self).__init__()
 
-        self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3,
-                               bias=False)
+        self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3, bias=False)
         self.bn1 = nn.BatchNorm2d(64, momentum=BN_MOMENTUM)
         self.relu = nn.ReLU(inplace=True)
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
@@ -155,28 +160,24 @@ class PoseResNet(nn.Module):
             [4, 4, 4],
         )
 
+        # set heads
         for head in self.heads:
             classes = self.heads[head]
             if head_conv > 0:
-                fc = nn.Sequential(
-                    nn.Conv2d(64, head_conv,
-                              kernel_size=3, padding=1, bias=True),
-                    nn.ReLU(inplace=True),
-                    nn.Conv2d(head_conv, classes,
-                              kernel_size=1, stride=1,
-                              padding=0, bias=True))
+                fc = nn.Sequential(nn.Conv2d(64, head_conv, kernel_size=3, padding=1, bias=True),
+                                   nn.ReLU(inplace=True),
+                                   nn.Conv2d(head_conv, classes, kernel_size=1, stride=1, padding=0, bias=True))
                 if 'hm' in head:
                     fc[-1].bias.data.fill_(-2.19)
                 else:
                     fill_fc_weights(fc)
             else:
-                fc = nn.Conv2d(64, classes,
-                               kernel_size=1, stride=1,
-                               padding=0, bias=True)
+                fc = nn.Conv2d(64, classes, kernel_size=1, stride=1, padding=0, bias=True)
                 if 'hm' in head:
                     fc.bias.data.fill_(-2.19)
                 else:
                     fill_fc_weights(fc)
+
             self.__setattr__(head, fc)
 
     def _make_layer(self, block, planes, blocks, stride=1):
@@ -230,12 +231,8 @@ class PoseResNet(nn.Module):
                 self._get_deconv_cfg(num_kernels[i], i)
 
             planes = num_filters[i]
-            fc = DCN(self.inplanes, planes,
-                     kernel_size=(3, 3), stride=1,
-                     padding=1, dilation=1, deformable_groups=1)
-            # fc = nn.Conv2d(self.inplanes, planes,
-            #         kernel_size=3, stride=1, 
-            #         padding=1, dilation=1, bias=False)
+            # fc = DCN(self.inplanes, planes, kernel_size=(3, 3), stride=1, padding=1, dilation=1, deformable_groups=1)
+            fc = nn.Conv2d(self.inplanes, planes, kernel_size=3, stride=1, padding=1, dilation=1, bias=False)
             # fill_fc_weights(fc)
             up = nn.ConvTranspose2d(
                 in_channels=planes,
@@ -269,9 +266,12 @@ class PoseResNet(nn.Module):
         x = self.layer4(x)
 
         x = self.deconv_layers(x)
+
+        # get heads
         ret = {}
         for head in self.heads:
             ret[head] = self.__getattr__(head)(x)
+
         return [ret]
 
     def init_weights(self, num_layers):

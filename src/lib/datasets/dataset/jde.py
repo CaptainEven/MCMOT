@@ -8,14 +8,14 @@ import warnings
 from collections import OrderedDict, defaultdict
 
 import cv2
-import json
+# import json
 import numpy as np
 import torch
 
-from torch.utils.data import Dataset
-from torchvision.transforms import transforms as T
-from cython_bbox import bbox_overlaps as bbox_ious
-from lib.opts import opts
+# from torch.utils.data import Dataset
+# from torchvision.transforms import transforms as T
+# from cython_bbox import bbox_overlaps as bbox_ious
+# from lib.opts import opts
 from lib.utils.image import gaussian_radius, draw_umich_gaussian, draw_msra_gaussian
 from lib.utils.utils import xyxy2xywh, generate_anchors, xywh2xyxy, encode_delta
 from lib.tracker.multitracker import id2cls
@@ -229,7 +229,7 @@ class LoadImagesAndLabels:  # for training
 
         # Load labels
         if os.path.isfile(label_path):
-            with warnings.catch_warnings():  # 空的txt文件不报警告
+            with warnings.catch_warnings():  # No warnings for empty label file(txt)
                 warnings.simplefilter("ignore")
                 labels_0 = np.loadtxt(label_path, dtype=np.float32).reshape(-1, 6)
 
@@ -387,8 +387,7 @@ def random_affine(img, targets=None,
             y = (xy[:, 3] + xy[:, 1]) / 2
             w = (xy[:, 2] - xy[:, 0]) * reduction
             h = (xy[:, 3] - xy[:, 1]) * reduction
-            xy = np.concatenate(
-                (x - w / 2, y - h / 2, x + w / 2, y + h / 2)).reshape(4, n).T
+            xy = np.concatenate((x - w / 2, y - h / 2, x + w / 2, y + h / 2)).reshape(4, n).T
 
             # reject warped points outside of image
             np.clip(xy[:, 0], 0, width, out=xy[:, 0])
@@ -542,7 +541,7 @@ class JointDataset(LoadImagesAndLabels):  # for training
         img_path = self.img_files[ds][f_idx - start_index]
         label_path = self.label_files[ds][f_idx - start_index]
 
-        # 获取数据和标签
+        # Get image data and label
         imgs, labels, img_path, (input_h, input_w) = self.get_data(img_path, label_path)
         # print('input_h, input_w: %d %d' % (input_h, input_w))
 
@@ -643,7 +642,7 @@ class JointDataset(LoadImagesAndLabels):  # for training
                    'ind': ind,
                    'reg_mask': reg_mask,
                    'ids': ids,
-                   'cls_id_map': cls_id_map,  # feature map上每个(x, y)处的目标类别id(背景为0)
+                   'cls_id_map': cls_id_map,  # feature map上每个(x, y)处的目标类别id
                    'cls_tr_ids': cls_tr_ids}
         else:  # only for detection
             ret = {'input': imgs,

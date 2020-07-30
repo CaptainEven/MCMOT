@@ -145,8 +145,9 @@ def eval_imgs_output_dets(opt,
 
     frame_id = 0  # frame index(start from 0)
     for path, img, img_0 in data_loader:
-        if frame_id % 20 == 0:
-            logger.info('Processing frame {} ({:.2f} fps)'.format(frame_id, 1. / max(1e-5, timer.average_time)))
+        if frame_id % 30 == 0:
+            logger.info('Processing frame {} ({:.2f} fps)'
+                        .format(frame_id, 1.0 / max(1e-5, timer.average_time)))
 
         blob = torch.from_numpy(img).to(opt.device).unsqueeze(0)
 
