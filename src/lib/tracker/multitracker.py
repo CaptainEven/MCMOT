@@ -211,7 +211,6 @@ def map2orig(dets, h_out, w_out, h_orig, w_orig, num_classes):
     :param num_classes:
     :return: dict of detections(key: cls_id)
     """
-
     def get_padding():
         """
         :return: pad_1, pad_2, pad_type('pad_x' or 'pad_y'), new_shape(w, h)

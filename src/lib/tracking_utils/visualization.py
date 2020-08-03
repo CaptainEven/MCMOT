@@ -146,6 +146,7 @@ def plot_tracks(image,
             color = get_color(abs(obj_id))
             # cls_color = cls_color_dict[id2cls[cls_id]]
 
+            # draw bbox
             cv2.rectangle(img=img,
                           pt1=int_box[0:2],  # (x1, y1)
                           pt2=int_box[2:4],  # (x2, y2)

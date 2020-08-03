@@ -90,15 +90,15 @@ class opts(object):
         # train
         self.parser.add_argument('--lr',
                                  type=float,
-                                 default=1e-4,  # 1e-4, 5e-5, 3e-5
+                                 default=4e-5,  # 1e-4, 5e-5, 3e-5
                                  help='learning rate for batch size 32.')
         self.parser.add_argument('--lr_step',
                                  type=str,
-                                 default='20,27',
+                                 default='5,10',  # 20,27
                                  help='drop learning rate by 10.')
         self.parser.add_argument('--num_epochs',
                                  type=int,
-                                 default=10,  # 30, 10, 3, 1
+                                 default=3,  # 30, 10, 3, 1
                                  help='total training epochs.')
         self.parser.add_argument('--batch_size',
                                  type=int,
@@ -173,13 +173,13 @@ class opts(object):
         # 测试阶段的输入数据模式: video or image dir
         self.parser.add_argument('--input-mode',
                                  type=str,
-                                 default='img_path_list_txt',  # video or image_dir or img_path_list_txt
+                                 default='video',  # video or image_dir or img_path_list_txt
                                  help='input data type(video or image dir)')
 
         # 输入的video文件路径
         self.parser.add_argument('--input-video',
                                  type=str,
-                                 default='../videos/test11.mp4',
+                                 default='../videos/test25.mp4',
                                  help='path to the input video')
 
         # 输入的image目录
@@ -234,7 +234,7 @@ class opts(object):
                                  help='reid loss: ce | triplet')
         self.parser.add_argument('--id_weight',
                                  type=float,
-                                 default=1,  # 0for detection only and 1 for detection and re-id
+                                 default=1,  # 0for detection only and 1 for detection and re-ida
                                  help='loss weight for id')  # 控制是否计算ReID
         self.parser.add_argument('--reid_dim',
                                  type=int,

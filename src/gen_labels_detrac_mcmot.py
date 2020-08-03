@@ -500,7 +500,7 @@ def gen_dot_train_file(data_root, rel_path, out_root, f_name='detrac.train'):
                     img_path = img_dir + '/' + img
                     if os.path.isfile(img_path):
                         item = img_path.replace(data_root + '/', '')
-                        print(item)
+                        # print(item)
                         f.write(item + '\n')
                         cnt += 1
 
@@ -586,7 +586,7 @@ if __name__ == '__main__':
                        out_root='/mnt/diskb/even/MCMOT/src/data',
                        f_name='mcmot.train')
 
-    # add_new_train_data(part_train_f_path='/mnt/diskb/maqiao/multiClass/c5_hzpc_20200707/train.txt',
+    # add_new_train_data(part_train_f_path='/mnt/diskb/maqiao/multiClass/c5_pc_20200714/train.txt',
     #                    data_root='/mnt/diskb/even/dataset/MCMOT_DET',
     #                    dot_train_f_path='/mnt/diskb/even/MCMOT/src/data/mcmot_det.train',
     #                    dataset_prefix='/mnt/diskb/even/dataset/')

@@ -476,7 +476,7 @@ class JointDataset(LoadImagesAndLabels):  # for training
 
                 for lp in label_paths:  # 子数据集中每个label
                     if not os.path.isfile(lp):
-                        print('[Warning]: invalid label file.')
+                        print('[Warning]: invalid label file {}.'.format(lp))
                         continue
 
                     with warnings.catch_warnings():

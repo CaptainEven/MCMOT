@@ -8,7 +8,7 @@ import os
 os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
 import torch
 
-my_visible_devs = '6'  # '0, 3'  # 设置可运行GPU编号
+my_visible_devs = '0'  # '0, 3'  # 设置可运行GPU编号
 os.environ['CUDA_VISIBLE_DEVICES'] = my_visible_devs
 device = torch.device('cuda: 0' if torch.cuda.is_available() else 'cpu')
 
@@ -50,7 +50,10 @@ def run_demo(opt):
         os.makedirs(frame_res_dir)
 
     if opt.input_mode == 'video':
-        logger.info('Starting tracking...')
+        if opt.id_weight > 0:
+            logger.info('Starting tracking...')
+        else:
+            logger.info('Starting detection...')
         data_loader = datasets.LoadVideo(opt.input_video, opt.img_size)  # load video as input
         f_name = os.path.split(opt.input_video)[-1][:-4]
     elif opt.input_mode == 'image_dir':
@@ -59,6 +62,7 @@ def run_demo(opt):
         f_name = os.path.split(opt.input_video)[-1]
         opt.id_weight = 0  # only do detection in this mode
     elif opt.input_mode == 'img_path_list_txt':
+        logger.info('Starting detection...')
         if not os.path.isfile(opt.input_img):
             print('[Err]: invalid image file path list.')
             return
