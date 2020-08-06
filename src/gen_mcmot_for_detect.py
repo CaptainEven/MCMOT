@@ -394,7 +394,10 @@ def gen_one_voc_train_dir():
     all_list.close()
 
 
-def gen_dataset_for_mcmot_det(src_root, dst_root, dot_train_f_path, dataset_prefix=''):
+def gen_dataset_for_mcmot_det(src_root,
+                              dst_root,
+                              dot_train_f_path,
+                              dataset_prefix=''):
     """
     :param src_root:
     :param dst_root:
@@ -413,11 +416,17 @@ def gen_dataset_for_mcmot_det(src_root, dst_root, dot_train_f_path, dataset_pref
 
     # 创建训练根目录
     dst_img_root = dst_root + '/images'
-    dst_label_root = dst_root + '/labels_with_ids'
+    dst_txt_root = dst_root + '/labels_with_ids'
     if not os.path.isdir(dst_img_root):
         os.makedirs(dst_img_root)
-    if not os.path.isdir(dst_label_root):
-        os.makedirs(dst_label_root)
+    else:
+        shutil.rmtree(dst_img_root)
+        os.makedirs(dst_img_root)
+    if not os.path.isdir(dst_txt_root):
+        os.makedirs(dst_txt_root)
+    else:
+        shutil.rmtree(dst_txt_root)
+        os.makedirs(dst_txt_root)
 
     # ----- 数据集统计
     class_cnt_dict = defaultdict(int)
@@ -459,7 +468,7 @@ def gen_dataset_for_mcmot_det(src_root, dst_root, dot_train_f_path, dataset_pref
             shutil.rmtree(dst_img_dir)
             os.makedirs(dst_img_dir)
 
-        dst_label_dir = dst_label_root + '/' + dir_name
+        dst_label_dir = dst_txt_root + '/' + dir_name
         if not os.path.isdir(dst_label_dir):
             os.makedirs(dst_label_dir)
         else:
@@ -542,12 +551,12 @@ def gen_dataset_for_mcmot_det(src_root, dst_root, dot_train_f_path, dataset_pref
                 # bounding box格式化: bbox([0.0, 1.0]): center_x, center_y, width, height
                 bbox = bbox_format((w, h), box)
                 if bbox is None:
-                    print('[Warning]: bbox is err.')
+                    print('[Warning]: bbox err.')
                     continue
 
                 # 生成检测对象的标签行: class_id, track_id, bbox_center_x, box_center_y, bbox_width, bbox_height
                 obj_str = '{:d} 0 {:.6f} {:.6f} {:.6f} {:.6f}\n'.format(
-                    cls_id,  # class_id
+                    cls_id,   # class_id
                     bbox[0],  # center_x
                     bbox[1],  # center_y
                     bbox[2],  # bbox_w

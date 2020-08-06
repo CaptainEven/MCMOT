@@ -307,6 +307,218 @@ def gen_labels(xml_root, img_root, label_root, viz_root=None):
     print('Total {:d} frames'.format(frame_cnt))
 
 
+def add_new_train_from_txt(txt_f_path,
+                           data_root,
+                           dot_train_f_path,
+                           dataset_prefix):
+    """
+    :param txt_f_path:
+    :param data_root:
+    :param dot_train_f_path:
+    :param dataset_prefix:
+    :return:
+    """
+    if not os.path.isfile(txt_f_path):
+        print('[Err]: invalid txt all train file.')
+        return
+
+    if not os.path.isfile(dot_train_f_path):
+        print('[Err]: invalid final dot train file.')
+        return
+
+    if not os.path.isdir(data_root):
+        print('[Err]: invalid data root.')
+        return
+
+    # 判断是否存在指定的目录结构(images目录和labels_with_ids目录)
+    dst_img_root = data_root + '/images'
+    dst_txt_root = data_root + '/labels_with_ids'
+    if not (os.path.isdir(dst_img_root) and os.path.isdir(dst_txt_root)):
+        print('[Err]: dst img root or txt root not exists!')
+        return
+
+    with open(txt_f_path, 'r', encoding='utf-8') as f_1, open(dot_train_f_path) as f_2:
+        files = [x.strip() for x in f_1.readlines()]
+        exist_files = [x.strip() for x in f_2.readlines()]
+        print(exist_files)
+
+
+def gen_dot_train_file_from_txt(txt_f_path,
+                                dst_root,
+                                dot_train_f_path,
+                                dataset_prefix):
+    """
+    :param txt_f_path:
+    :param dst_root:
+    :param dot_train_f_path:
+    :param dataset_prefix:
+    :return:
+    """
+    if not os.path.isfile(txt_f_path):
+        print('[Err]: invalid txt all train file.')
+        return
+
+    if not os.path.isdir(dst_root):
+        print('[Err]: invalid data root.')
+        return
+
+    # # 判断是否存在指定的目录结构(images目录和labels_with_ids目录)
+    # dst_img_root = dst_root + '/images'
+    # dst_txt_root = dst_root + '/labels_with_ids'
+    # if not (os.path.isdir(dst_img_root) and os.path.isdir(dst_txt_root)):
+    #     print('[Err]: dst img root or txt root not exists!')
+    #     return
+
+    # 创建训练根目录
+    dst_img_root = dst_root + '/images'
+    dst_txt_root = dst_root + '/labels_with_ids'
+    if not os.path.isdir(dst_img_root):
+        os.makedirs(dst_img_root)
+    else:
+        shutil.rmtree(dst_img_root)
+        os.makedirs(dst_img_root)
+    if not os.path.isdir(dst_txt_root):
+        os.makedirs(dst_txt_root)
+    else:
+       shutil.rmtree(dst_txt_root)
+       os.makedirs(dst_txt_root)
+
+    # 训练数据条数, 类别目标数, 计数
+    item_cnt = 0
+    class_cnt_dict = defaultdict(int)
+
+    with open(txt_f_path, 'r', encoding='utf-8') as f_1, \
+            open(dot_train_f_path, 'w', encoding='utf-8') as f_2:
+
+        for line in f_1.readlines():
+            src_img_path = line.strip()
+            if not os.path.isfile(src_img_path):
+                print('[Warning]: invalid image file path {}'.format(line))
+                continue
+
+            line = os.path.split(src_img_path)
+            src_img_dir = line[0]
+            img_name = line[-1]
+
+            src_xml_path = src_img_dir.replace('JPEGImages', 'Annotations') + '/' + img_name.replace('.jpg', '.xml')
+            if not os.path.isfile(src_xml_path):
+                print('[Warning]: invalid xml file path {}'.format(src_xml_path))
+                continue
+
+            # 是否创建目标子目录
+            src_sub_dir_name = src_img_dir.split('/')[-2]
+            dst_img_sub_dir = dst_img_root + '/' + src_sub_dir_name
+            dst_txt_sub_dir = dst_txt_root + '/' + src_sub_dir_name
+
+            if not os.path.isdir(dst_img_sub_dir):
+                os.makedirs(dst_img_sub_dir)
+            if not os.path.isdir(dst_txt_sub_dir):
+                os.makedirs(dst_txt_sub_dir)
+
+            # 读取并解析xml
+            tree = ET.parse(src_xml_path)
+            root = tree.getroot()
+            # print(root)
+
+            mark_node = root.find('markNode')
+            if mark_node is None:
+                print('[Warning]: markNode not found.')
+                continue
+
+            label_obj_strs = []
+
+            try:
+                # 图片宽高
+                w = int(root.find('width').text.strip())
+                h = int(root.find('height').text.strip())
+            except Exception as e:
+                print('[Warning]: invalid (w, h)')
+                print(e)
+                continue
+
+            # 更新item_cnt
+            item_cnt += 1
+
+            # 遍历该图片的每一个object
+            for obj in mark_node.iter('object'):
+                target_type = obj.find('targettype')
+                cls_name = target_type.text
+                if cls_name not in target_types:
+                    print("=> " + cls_name + " is not in targetTypes list.")
+                    continue
+
+                # classes_c5(5类别的特殊处理)
+                if cls_name == 'car_front' or cls_name == 'car_rear':
+                    cls_name = 'car_fr'
+                if cls_name == 'car':
+                    car_type = obj.find('cartype').text
+                    if car_type == 'motorcycle':
+                        cls_name = 'bicycle'
+                if cls_name == 'motorcycle':
+                    cls_name = 'bicycle'
+                if cls_name not in classes:
+                    # print('=> ' + cls_name + ' is not in class list.')
+                    continue
+                if cls_name == 'non_interest_zone':
+                    # print('Non interest zone.')
+                    continue
+
+                # 获取class_id
+                cls_id = classes.index(cls_name)
+                assert (0 <= cls_id < 5)
+
+                # 更新class_cnt_dict
+                class_cnt_dict[cls_name] += 1
+
+                # 获取bounding box
+                xml_box = obj.find('bndbox')
+                box = (float(xml_box.find('xmin').text),
+                       float(xml_box.find('xmax').text),
+                       float(xml_box.find('ymin').text),
+                       float(xml_box.find('ymax').text))
+
+                # bounding box格式化: bbox([0.0, 1.0]): center_x, center_y, width, height
+                bbox = bbox_format((w, h), box)
+                if bbox is None:
+                    print('[Warning]: bbox is err.')
+                    continue
+
+                # 生成检测对象的标签行: class_id, track_id, bbox_center_x, box_center_y, bbox_width, bbox_height
+                obj_str = '{:d} 0 {:.6f} {:.6f} {:.6f} {:.6f}\n'.format(
+                    cls_id,   # class_id
+                    bbox[0],  # center_x
+                    bbox[1],  # center_y
+                    bbox[2],  # bbox_w
+                    bbox[3])  # bbox_h
+                label_obj_strs.append(obj_str)
+
+            # 拷贝图片到指定数据根目录下的子目录
+            dst_img_path = dst_img_sub_dir + '/' + img_name
+            if not os.path.isfile(dst_img_path):
+                shutil.copy(src_img_path, dst_img_sub_dir)
+                print('{} from {} copy to {}.'.format(img_name, src_img_dir, dst_img_sub_dir))
+            else:
+                print('{} already exists in {}.'.format(img_name, dst_img_sub_dir))
+
+            # 写入生成的txt格式的label到指定目标子目录
+            txt_f_path = dst_txt_sub_dir + '/' + img_name.split('.')[0] + '.txt'
+            if not os.path.isfile(txt_f_path):
+                with open(txt_f_path, 'w', encoding='utf-8') as w_h:
+                    for obj in label_obj_strs:
+                        w_h.write(obj)
+                    print('{} written'.format(os.path.split(txt_f_path)[-1]))
+
+            # 写入.train文件
+            train_str = str(dst_img_sub_dir + '/' + img_name).replace(dataset_prefix, '')
+            f_2.write(train_str + '\n')
+            print('{} written to {}.'.format(train_str, dot_train_f_path))
+
+    # 打印统计数据
+    print('Total {:d} image files in train dataset.'.format(item_cnt))
+    for k, v in class_cnt_dict.items():
+        print('Class {} contains {:d} items'.format(k, v))
+
+
 def add_new_train_data(part_train_f_path,
                        data_root,
                        dot_train_f_path,
@@ -346,7 +558,6 @@ def add_new_train_data(part_train_f_path,
 
     with open(part_train_f_path, 'r', encoding='utf-8') as r_h:
         for line in r_h.readlines():
-
             src_img_path = line.strip()
             if not os.path.isfile(src_img_path):
                 print('[Warning]: invalid image file path {}'.format(line))
@@ -581,15 +792,20 @@ if __name__ == '__main__':
     #            label_root='/mnt/diskb/even/dataset/DETRAC/labels_with_ids/train',
     #            viz_root='/mnt/diskb/even/viz_result')
 
-    gen_dot_train_file(data_root='/mnt/diskb/even/dataset',
-                       rel_path='/MCMOT/images',
-                       out_root='/mnt/diskb/even/MCMOT/src/data',
-                       f_name='mcmot.train')
+    # gen_dot_train_file(data_root='/mnt/diskb/even/dataset',
+    #                    rel_path='/MCMOT/images',
+    #                    out_root='/mnt/diskb/even/MCMOT/src/data',
+    #                    f_name='mcmot.train')
 
     # add_new_train_data(part_train_f_path='/mnt/diskb/maqiao/multiClass/c5_pc_20200714/train.txt',
     #                    data_root='/mnt/diskb/even/dataset/MCMOT_DET',
-    #                    dot_train_f_path='/mnt/diskb/even/MCMOT/src/data/mcmot_det.train',
+    #                    dot_train_f_path='/mnt/diskb/even/MCMOT/src/data/mcmot_det_bk.train',
     #                    dataset_prefix='/mnt/diskb/even/dataset/')
+
+    gen_dot_train_file_from_txt(txt_f_path='/users/duanyou/c5/all_pretrain/trainall.txt',
+                                dst_root='/mnt/diskb/even/dataset/MCMOT_DET',
+                                dot_train_f_path='/mnt/diskb/even/MCMOT/src/data/mcmot_det.train',
+                                dataset_prefix='/mnt/diskb/even/dataset/')
 
     # clean_train_set(img_root='/mnt/diskb/even/dataset/DETRAC/images/train',
     #                 label_root='/mnt/diskb/even/dataset/DETRAC/labels_with_ids/train')

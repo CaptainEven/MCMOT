@@ -8,7 +8,7 @@ import os
 os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
 import torch
 
-my_visible_devs = '0'  # '0, 3'  # 设置可运行GPU编号
+my_visible_devs = '7'  # '0, 3'  # 设置可运行GPU编号
 os.environ['CUDA_VISIBLE_DEVICES'] = my_visible_devs
 device = torch.device('cuda: 0' if torch.cuda.is_available() else 'cpu')
 
@@ -136,12 +136,12 @@ def test_single(img_path, dev):
         print('[Err]: invalid image path.')
         return
 
-    # Load model and put to device
+    # Head dimensions of the net
     heads = {'hm': 5, 'reg': 2, 'wh': 2, 'id': 128}
 
-    # head_conv: if hrnet18 256
-    net = create_model(arch='resdcn_34', heads=heads, head_conv=256)
-    model_path = '/mnt/diskb/even/MCMOT/exp/mot/default/mcmot_last_det_resdcn_34.pth'
+    # Load model and put to device
+    net = create_model(arch='resdcn_18', heads=heads, head_conv=256)
+    model_path = '/mnt/diskb/even/MCMOT/exp/mot/default/mcmot_last_det_resdcn_18.pth'
     net = load_model(model=net, model_path=model_path)
     net = net.to(dev)
     net.eval()
@@ -172,7 +172,7 @@ def test_single(img_path, dev):
         reg = output['reg']
         wh = output['wh']
         id_feature = output['id']
-        id_feature = F.normalize(id_feature, dim=1)  # L2 normalize
+        id_feature = F.normalize(id_feature, dim=1)  # L2 normalization for feature vector
 
         # Decode output
         dets, inds, cls_inds_mask = mot_decode(hm, wh, reg, 5, False, 128)
@@ -215,7 +215,7 @@ def test_single(img_path, dev):
 
 
 if __name__ == '__main__':
-    opt = opts().init()
-    run_demo(opt)
+    # opt = opts().init()
+    # run_demo(opt)
 
-    # test_single(img_path='/mnt/diskb/even/MCMOT/src/00000.jpg', dev=torch.device('cpu'))
+    test_single(img_path='/mnt/diskb/even/MCMOT/src/00000.jpg', dev=torch.device('cpu'))

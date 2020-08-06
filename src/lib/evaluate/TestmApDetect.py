@@ -223,8 +223,7 @@ def batch_analysis(weights_list_file,
                 total_iou += cmp_res['avg_iou'] * cmp_res['label_num']
 
                 cmp_result.append(cmp_res)
-                print(
-                    "%s: %d/%d  label: %d   detect: %d   correct: %d   recall: %f   avg_iou: %f   accuracy: %f   precision: %f\n" %
+                print('%s: %d/%d  label: %d   detect: %d   correct: %d   recall: %f   avg_iou: %f   accuracy: %f   precision: %f' %
                     (str(obj_type), j + 1, image_num, cmp_res['label_num'], cmp_res['detect_num'],
                      cmp_res['correct'], cmp_res['recall'], cmp_res['avg_iou'],
                      cmp_res['accuracy'], cmp_res['precision']))
@@ -259,7 +258,8 @@ def batch_analysis(weights_list_file,
                 avg_precision = float(total_corr) / total_detect
             total_result = [total_label, total_detect, total_corr, avg_recall, avg_iou, avg_acc, avg_precision]
             cdl.ExportAnaRes(obj_type, cmp_result, total_result, img_path, result_path)
-            print("total_label: %d   total_detect: %d   total_corr: %d   recall: %f   average iou: %f   accuracy: %f   precision: %f ap: %f\n" % \
+            print(
+                "total_label: %d   total_detect: %d   total_corr: %d   recall: %f   average iou: %f   accuracy: %f   precision: %f ap: %f\n" % \
                 (total_result[0], total_result[1], total_result[2], total_result[3], total_result[4], total_result[5],
                  total_result[6], ap))
 
