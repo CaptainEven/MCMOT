@@ -4,8 +4,9 @@ import os
 import copy
 import numpy as np
 import cv2
-import shutil
+# import shutil
 from collections import defaultdict
+from tqdm import tqdm
 
 # ignored regions (0),
 
@@ -104,7 +105,7 @@ def gen_track_dataset(src_root, dst_root, viz_root=None):
     seq_names.sort()
 
     # 遍历每一个视频序列
-    for seq in seq_names:
+    for seq in tqdm(seq_names):
         print('Processing {}:'.format(seq))
 
         seq_img_dir = src_root + '/sequences/' + seq
@@ -245,7 +246,7 @@ def gen_track_dataset(src_root, dst_root, viz_root=None):
                 truncation = label[8]  # no truncation = 0 (truncation ratio 0%), and partial truncation = 1 (truncation ratio 1% °´ 50%))
                 occlusion = label[9]
                 if occlusion > 1:  # heavy occlusion = 2 (occlusion ratio 50% ~ 100%)).
-                    print('[Warning]: skip the bbox because of heavy occlusion')
+                    # print('[Warning]: skip the bbox because of heavy occlusion')
                     continue
 
                 # ----- 绘制该label(一个label是一张图的一个检测/跟踪目标): 在归一化之前

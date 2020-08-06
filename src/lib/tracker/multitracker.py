@@ -15,23 +15,23 @@ from lib.tracking_utils.log import logger
 from lib.tracking_utils.utils import *
 from lib.utils.post_process import ctdet_post_process
 from .basetrack import BaseTrack, TrackState
-
+from gen_dataset_visdrone import cls2id, id2cls
 # class name and class id mapping
-cls2id = {
-    'car': 0,
-    'bicycle': 1,
-    'person': 2,
-    'cyclist': 3,
-    'tricycle': 4
-}
-
-id2cls = {
-    0: 'car',
-    1: 'bicycle',
-    2: 'person',
-    3: 'cyclist',
-    4: 'tricycle'
-}
+# cls2id = {
+#     'car': 0,
+#     'bicycle': 1,
+#     'person': 2,
+#     'cyclist': 3,
+#     'tricycle': 4
+# }
+#
+# id2cls = {
+#     0: 'car',
+#     1: 'bicycle',
+#     2: 'person',
+#     3: 'cyclist',
+#     4: 'tricycle'
+# }
 
 
 class STrack(BaseTrack):

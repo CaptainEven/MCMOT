@@ -103,7 +103,7 @@ class opts(object):
                                  help='total training epochs.')
         self.parser.add_argument('--batch_size',
                                  type=int,
-                                 default=18,  # 16, 14, 12, 10, 8, 4
+                                 default=16,  # 18, 16, 14, 12, 10, 8, 4
                                  help='batch size')
         self.parser.add_argument('--master_batch_size', type=int, default=-1,
                                  help='batch size on the master gpu.')
@@ -119,7 +119,7 @@ class opts(object):
         # test
         self.parser.add_argument('--K',
                                  type=int,
-                                 default=128,
+                                 default=200,  # 128
                                  help='max number of output objects.')  # 一张图输出检测目标最大数量
         self.parser.add_argument('--not_prefetch_test',
                                  action='store_true',

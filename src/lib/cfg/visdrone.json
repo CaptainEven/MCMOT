@@ -2,14 +2,14 @@
     "root":"/mnt/diskb/even/dataset",
     "train":
     {
-        "mcmot":"./data/visdrone.train"
+        "visdrone":"./data/visdrone.train"
     },
     "test_emb":
     {
-        "mcmot":"./data/visdrone.train"
+        "visdrone":"./data/visdrone.train"
     },
     "test":
     {
-        "mcmot":"./data/visdrone.train"
+        "visdrone":"./data/visdrone.train"
     }
 }

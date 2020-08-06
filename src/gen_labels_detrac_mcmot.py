@@ -700,8 +700,8 @@ def gen_dot_train_file(data_root, rel_path, out_root, f_name='detrac.train'):
     with open(out_f_path, 'w') as f:
         root = data_root + rel_path
         seqs = [x for x in os.listdir(root)]
-        # seqs.sort()
-        seqs = sorted(seqs, key=lambda x: int(x.split('_')[-1]))
+        seqs.sort()
+        # seqs = sorted(seqs, key=lambda x: int(x.split('_')[-1]))
         for seq in tqdm(seqs):
             img_dir = root + '/' + seq  # + '/img1'
             img_list = [x for x in os.listdir(img_dir)]
