@@ -105,7 +105,7 @@ def gen_track_dataset(src_root, dst_root, viz_root=None):
 
     # 遍历每一个视频序列
     for seq in seq_names:
-        print('Processing', seq)
+        print('Processing {}:'.format(seq))
 
         seq_img_dir = src_root + '/sequences/' + seq
         seq_txt_f_path = src_root + '/annotations/' + seq + '.txt'
@@ -175,7 +175,7 @@ def gen_track_dataset(src_root, dst_root, viz_root=None):
         # 更新max_track_id
         for k, v in seq_cls_target_ids_dict.items():
             seq_max_tra_id_dict[k] = len(v)
-        print('Seq {}:'.format(seq))
+        # print('Seq {}:'.format(seq))
         for k in id2cls.keys():
             print("{} max track id: {:d}, start id: {:d}"
                   .format(id2cls[k], seq_max_tra_id_dict[k], track_start_id_dict[k]))
