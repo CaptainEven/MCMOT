@@ -316,7 +316,7 @@ def gen_track_dataset(src_root, dst_root, viz_root=None):
                 cv2.imwrite(viz_path, img_viz)
 
             # ----- 这一帧的targets解析结束才输出一次
-            # 输出label
+            # 输出该图片的所有label(一个label对应一个bbox)
             label_f_path = dst_seq_txt_dir + '/' + fr_name.replace('.jpg', '.txt')
             with open(label_f_path, 'w', encoding='utf-8') as f:
                 for label_str in fr_label_strs:
@@ -325,7 +325,7 @@ def gen_track_dataset(src_root, dst_root, viz_root=None):
 
             frame_cnt += 1
 
-        # # 处理完成该视频seq, 更新track_start_id
+        # 处理完成该视频seq, 更新track_start_id
         for cls_id in id2cls.keys():
             track_start_id_dict[cls_id] += seq_max_tra_id_dict[cls_id]
         print('Processing seq {} done.\n'.format(seq))
