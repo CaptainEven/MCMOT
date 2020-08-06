@@ -199,12 +199,12 @@ class opts(object):
                                  help='expected output root path')
 
         # mot: 选择数据集的配置文件
-        # self.parser.add_argument('--data_cfg', type=str,
-        #                          default='../src/lib/cfg/detrac.json',  # 'mot15.json',
-        #                          help='load data from cfg')
         self.parser.add_argument('--data_cfg', type=str,
-                                 default='../src/lib/cfg/mcmot_det.json',  # mcmot.json, mcmot_det.json,
+                                 default='../src/lib/cfg/visdrone.json',  # 'mot15.json',
                                  help='load data from cfg')
+        # self.parser.add_argument('--data_cfg', type=str,
+        #                          default='../src/lib/cfg/mcmot_det.json',  # mcmot.json, mcmot_det.json,
+        #                          help='load data from cfg')
         self.parser.add_argument('--data_dir',
                                  type=str,
                                  default='/mnt/diskb/even/dataset')
@@ -234,14 +234,29 @@ class opts(object):
                                  help='reid loss: ce | triplet')
         self.parser.add_argument('--id_weight',
                                  type=float,
-                                 default=0,  # 0for detection only and 1 for detection and re-ida
+                                 default=1,  # 0for detection only and 1 for detection and re-ida
                                  help='loss weight for id')  # 控制是否计算ReID
         self.parser.add_argument('--reid_dim',
                                  type=int,
                                  default=128,  # 128, 256, 512
                                  help='feature dim for reid')
+
+        # ----------------------1~10类是我们需要检测和跟踪的目标
+        # pedestrian      (1),  --> 0
+        # people          (2),  --> 1
+        # bicycle         (3),  --> 2
+        # car             (4),  --> 3
+        # van             (5),  --> 4
+        # truck           (6),  --> 5
+        # tricycle        (7),  --> 6
+        # awning-tricycle (8),  --> 7
+        # bus             (9),  --> 8
+        # motor           (10), --> 9
+        # ----------------------
+
+        # others          (11)
         self.parser.add_argument('--reid_cls_ids',
-                                 default='0,1,2,3,4',  # car, bicycle, person, cyclist, tricycle
+                                 default='0,1,2,3,4,5,6,7,8,9',
                                  help='')  # the object classes need to do reid
 
         self.parser.add_argument('--norm_wh', action='store_true',

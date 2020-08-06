@@ -207,7 +207,7 @@ def gen_track_dataset(src_root, dst_root, viz_root=None):
             dst_img_path = dst_seq_img_dir + '/' + fr_name
             if not os.path.isfile(dst_img_path):
                 cv2.imwrite(dst_img_path, img)  # 将绘制过ignore region的图片存入目标子目录
-                print('{} saved to {}'.format(fr_path, dst_seq_img_dir))
+                # print('{} saved to {}'.format(fr_path, dst_seq_img_dir))
 
             # ----- 如果可视化目录不为空, 进行可视化计算
             if not (viz_root is None):
@@ -240,6 +240,13 @@ def gen_track_dataset(src_root, dst_root, viz_root=None):
                 bbox_top = label[3]
                 bbox_width = label[4]
                 bbox_height = label[5]
+
+                score = label[6]
+                truncation = label[8]  # no truncation = 0 (truncation ratio 0%), and partial truncation = 1 (truncation ratio 1% °´ 50%))
+                occlusion = label[9]
+                if occlusion > 1:  # heavy occlusion = 2 (occlusion ratio 50% ~ 100%)).
+                    print('[Warning]: skip the bbox because of heavy occlusion')
+                    continue
 
                 # ----- 绘制该label(一个label是一张图的一个检测/跟踪目标): 在归一化之前
                 if not (viz_root is None):  # 如果可视化目录不为空
@@ -292,10 +299,6 @@ def gen_track_dataset(src_root, dst_root, viz_root=None):
                 bbox_width /= W
                 bbox_height /= H
 
-                # score = label[6]
-                # truncation = label[8]
-                # occlusion = label[9]
-
                 # 组织label的内容, 每帧label生成完成才输出
                 # class_id, track_id, bbox_center_x, box_center_y, bbox_width, bbox_height
                 label_str = '{:d} {:d} {:.6f} {:.6f} {:.6f} {:.6f}\n'.format(
@@ -317,7 +320,7 @@ def gen_track_dataset(src_root, dst_root, viz_root=None):
             with open(label_f_path, 'w', encoding='utf-8') as f:
                 for label_str in fr_label_strs:
                     f.write(label_str)
-            print('{} written.'.format(label_f_path))
+            # print('{} written.'.format(label_f_path))
 
             frame_cnt += 1
 
