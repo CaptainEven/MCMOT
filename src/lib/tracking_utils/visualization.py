@@ -3,9 +3,9 @@ import cv2
 from lib.tracker.multitracker import id2cls, cls2id
 
 cls_color_dict = {
-    'car': [180, 105, 255],        # hot pink
-    'bicycle': [219, 112, 147],    # MediumPurple
-    'person': [98, 130, 238],      # Salmon
+    'car': [180, 105, 255],  # hot pink
+    'bicycle': [219, 112, 147],  # MediumPurple
+    'person': [98, 130, 238],  # Salmon
     'cyclist': [181, 228, 255],
     'tricycle': [211, 85, 186]
 }
@@ -155,13 +155,24 @@ def plot_tracks(image,
 
             # draw class name and index
             cv2.putText(img,
-                        id2cls[cls_id] + id_text,
+                        id2cls[cls_id],
                         (int(x1), int(y1)),
                         cv2.FONT_HERSHEY_PLAIN,
                         text_scale,
                         (0, 255, 255),  # cls_id: yellow
                         thickness=text_thickness)
 
+            txt_w, txt_h = cv2.getTextSize(id2cls[cls_id],
+                                           fontFace=cv2.FONT_HERSHEY_PLAIN,
+                                           fontScale=text_scale, thickness=text_thickness)
+
+            cv2.putText(img,
+                        id_text,
+                        (int(x1), int(y1) - txt_h),
+                        cv2.FONT_HERSHEY_PLAIN,
+                        text_scale,
+                        (0, 255, 255),  # cls_id: yellow
+                        thickness=text_thickness)
 
     return img
 

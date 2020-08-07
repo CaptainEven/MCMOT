@@ -8,6 +8,23 @@ from tqdm import tqdm
 from gen_mcmot_for_detect import target_types, classes, bbox_format
 
 
+# class name and class id mapping
+cls2id = {
+    'car': 0,
+    'bicycle': 1,
+    'person': 2,
+    'cyclist': 3,
+    'tricycle': 4
+}
+
+id2cls = {
+    0: 'car',
+    1: 'bicycle',
+    2: 'person',
+    3: 'cyclist',
+    4: 'tricycle'
+}
+
 def preprocess(src_root, dst_root):
     """
     :param src_root:

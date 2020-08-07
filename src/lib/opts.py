@@ -32,7 +32,7 @@ class opts(object):
                                  help='-1 for CPU, use comma for multiple gpus')
         self.parser.add_argument('--num_workers',
                                  type=int,
-                                 default=4,  # 8, 6, 4
+                                 default=2,  # 8, 6, 4
                                  help='dataloader threads. 0 for single-thread.')
         self.parser.add_argument('--not_cuda_benchmark', action='store_true',
                                  help='disable when the input size is not fixed.')
@@ -180,7 +180,7 @@ class opts(object):
         # 输入的video文件路径
         self.parser.add_argument('--input-video',
                                  type=str,
-                                 default='../videos/visdrone_train13.mp4',
+                                 default='../videos/visdrone_train9.mp4',
                                  help='path to the input video')
 
         # 输入的image目录
@@ -234,7 +234,7 @@ class opts(object):
                                  help='reid loss: ce | triplet')
         self.parser.add_argument('--id_weight',
                                  type=float,
-                                 default=0,  # 0for detection only and 1 for detection and re-ida
+                                 default=1,  # 0for detection only and 1 for detection and re-ida
                                  help='loss weight for id')  # 控制是否计算ReID
         self.parser.add_argument('--reid_dim',
                                  type=int,
