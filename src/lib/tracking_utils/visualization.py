@@ -1,7 +1,6 @@
 import numpy as np
 import cv2
-from gen_dataset_visdrone import cls2id, id2cls
-# from gen_labels_detrac_mcmot import cls2id, id2cls
+from lib.tracker.multitracker import id2cls, cls2id
 
 cls_color_dict = {
     'car': [180, 105, 255],  # hot pink
