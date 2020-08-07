@@ -16,7 +16,7 @@ class opts(object):
         self.parser.add_argument('--exp_id', default='default')
         self.parser.add_argument('--test', action='store_true')
         self.parser.add_argument('--load_model',
-                                 default='../exp/mot/default/mcmot_last_track_resdcn_18_visdrone.pth',
+                                 default='../exp/mot/default/mcmot_last_track_resdcn_18.pth',
                                  # ../exp/mot/default/mcmot_last_track_resdcn_18.pth
                                  help='path to pretrained model')
         self.parser.add_argument('--resume',
