@@ -16,7 +16,7 @@ class opts(object):
         self.parser.add_argument('--exp_id', default='default')
         self.parser.add_argument('--test', action='store_true')
         self.parser.add_argument('--load_model',
-                                 default='',
+                                 default='../exp/mot/default/mcmot_last_track_resdcn_18_visdrone.pth',
                                  # ../exp/mot/default/mcmot_last_track_resdcn_18.pth
                                  help='path to pretrained model')
         self.parser.add_argument('--resume',
@@ -174,13 +174,13 @@ class opts(object):
         # 测试阶段的输入数据模式: video or image dir
         self.parser.add_argument('--input-mode',
                                  type=str,
-                                 default='img_path_list_txt',  # video or image_dir or img_path_list_txt
+                                 default='video',  # video or image_dir or img_path_list_txt
                                  help='input data type(video or image dir)')
 
         # 输入的video文件路径
         self.parser.add_argument('--input-video',
                                  type=str,
-                                 default='../videos/test5.mp4',
+                                 default='../videos/visdrone_val3.mp4',
                                  help='path to the input video')
 
         # 输入的image目录
@@ -365,9 +365,11 @@ class opts(object):
         return opt
 
     def init(self, args=''):
+        opt = self.parse(args)
+
         default_dataset_info = {
             'mot': {'default_resolution': [608, 1088],  # [608, 1088], [320, 640]
-                    'num_classes': 5,  # 1
+                    'num_classes': len(opt.reid_cls_ids.split(',')),  # 1
                     'mean': [0.408, 0.447, 0.470],
                     'std': [0.289, 0.274, 0.278],
                     'dataset': 'jde',
@@ -379,8 +381,6 @@ class opts(object):
             def __init__(self, entries):
                 for k, v in entries.items():
                     self.__setattr__(k, v)
-
-        opt = self.parse(args)
 
         h_w = default_dataset_info[opt.task]['default_resolution']
         opt.img_size = (h_w[1], h_w[0])
