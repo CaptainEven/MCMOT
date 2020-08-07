@@ -180,7 +180,7 @@ class opts(object):
         # 输入的video文件路径
         self.parser.add_argument('--input-video',
                                  type=str,
-                                 default='../videos/visdrone_val3.mp4',
+                                 default='../videos/visdrone_train13.mp4',
                                  help='path to the input video')
 
         # 输入的image目录
@@ -200,7 +200,7 @@ class opts(object):
 
         # mot: 选择数据集的配置文件
         self.parser.add_argument('--data_cfg', type=str,
-                                 default='../src/lib/cfg/visdrone.json',  # 'mot15.json',
+                                 default='../src/lib/cfg/mcmot.json',  # 'mot15.json', 'visdrone.json'
                                  help='load data from cfg')
         # self.parser.add_argument('--data_cfg', type=str,
         #                          default='../src/lib/cfg/mcmot_det.json',  # mcmot.json, mcmot_det.json,
@@ -234,7 +234,7 @@ class opts(object):
                                  help='reid loss: ce | triplet')
         self.parser.add_argument('--id_weight',
                                  type=float,
-                                 default=1,  # 0for detection only and 1 for detection and re-ida
+                                 default=0,  # 0for detection only and 1 for detection and re-ida
                                  help='loss weight for id')  # 控制是否计算ReID
         self.parser.add_argument('--reid_dim',
                                  type=int,

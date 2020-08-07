@@ -23,7 +23,6 @@ def tlwhs_to_tlbrs(tlwhs):
 def get_color(idx):
     idx = idx * 3
     color = ((37 * idx) % 255, (17 * idx) % 255, (29 * idx) % 255)
-
     return color
 
 
@@ -49,7 +48,7 @@ def plot_detects(image,
     :return:
     """
     img = np.ascontiguousarray(np.copy(image))
-    im_h, im_w = img.shape[:2]
+    # im_h, im_w = img.shape[:2]
 
     text_scale = max(1.0, image.shape[1] / 1200.)  # 1600.
     text_thickness = 2
@@ -73,7 +72,8 @@ def plot_detects(image,
             x1, y1, x2, y2, score, cls_id = obj
             cls_name = id2cls[int(cls_id)]
             box_int = tuple(map(int, (x1, y1, x2, y2)))
-            cls_color = cls_color_dict[cls_name]
+            # cls_color = cls_color_dict[cls_name]
+            cls_color = get_color(abs(cls_id))
 
             # draw bbox for each object
             cv2.rectangle(img,
