@@ -1,12 +1,14 @@
 import os
 import shutil
 import copy
+import random
 import cv2
+import re
+import numpy as np
 import xml.etree.ElementTree as ET
 from collections import defaultdict
 from tqdm import tqdm
 from gen_mcmot_for_detect import target_types, classes, bbox_format
-
 
 # class name and class id mapping
 cls2id = {
@@ -24,6 +26,7 @@ id2cls = {
     3: 'cyclist',
     4: 'tricycle'
 }
+
 
 def preprocess(src_root, dst_root):
     """
@@ -397,8 +400,8 @@ def gen_dot_train_file_from_txt(txt_f_path,
     if not os.path.isdir(dst_txt_root):
         os.makedirs(dst_txt_root)
     else:
-       shutil.rmtree(dst_txt_root)
-       os.makedirs(dst_txt_root)
+        shutil.rmtree(dst_txt_root)
+        os.makedirs(dst_txt_root)
 
     # 训练数据条数, 类别目标数, 计数
     item_cnt = 0
@@ -502,7 +505,7 @@ def gen_dot_train_file_from_txt(txt_f_path,
 
                 # 生成检测对象的标签行: class_id, track_id, bbox_center_x, box_center_y, bbox_width, bbox_height
                 obj_str = '{:d} 0 {:.6f} {:.6f} {:.6f} {:.6f}\n'.format(
-                    cls_id,   # class_id
+                    cls_id,  # class_id
                     bbox[0],  # center_x
                     bbox[1],  # center_y
                     bbox[2],  # bbox_w
@@ -800,6 +803,121 @@ def clean_train_set(img_root, label_root):
                 print('{} removed.'.format(txt_path))
 
 
+def add_suffix_for_files(data_root, suffix, mode):
+    """
+    :param data_root:
+    :param suffix:
+    :param mode: string contained in filename
+    :return:
+    """
+    if not os.path.isdir(data_root):
+        print('[Err]: invalid data root.')
+        return
+
+    file_names = [x for x in os.listdir(data_root)]
+    file_names.sort()
+
+    for f_name in file_names:
+        if mode in f_name:
+            pure_f_name, orig_suffix = f_name.split('.')
+            new_f_name = pure_f_name + '_' + suffix + '.' + orig_suffix
+            os.rename(data_root + '/' + f_name, data_root + '/' + new_f_name)
+            print('{} renamed to {} in {}.'.format(f_name, new_f_name, data_root))
+
+
+def cvt2voc_format(data_root):
+    """
+    :param data_root:
+    :return:
+    """
+    if not os.path.isdir(data_root):
+        print('[Err]: invalid data root.')
+        return
+
+    jpg_dir = data_root + '/images'
+    txt_with_id_dir = data_root + '/labels_with_ids'
+    if not (os.path.isdir(jpg_dir) and os.path.isdir(txt_with_id_dir)):
+        print('[Err]: invalid img dir or invalid txt_id dir.')
+        return
+
+    # 创建label目录
+    txt_dir = data_root + '/labels'
+    if not os.path.isdir(txt_dir):
+        os.makedirs(txt_dir)
+        print('[Note]: {} made.'.format(txt_dir))
+
+    # 遍历各个子目录
+    seq_names = [x for x in os.listdir(jpg_dir)]
+    # seq_names.sort()
+    seq_names = sorted(seq_names, key=lambda x: int(x.split('_')[-1]))
+
+    dot_train_f_path = data_root + '/train_mcmot.txt'
+    dot_train_f_h = open(dot_train_f_path, 'w', encoding='utf-8')
+
+    for seq in seq_names:
+        img_dir = jpg_dir + '/' + seq
+        if not os.path.isdir(img_dir):
+            print('[Warning]: empty seq dir.')
+            continue
+
+        img_names = [x for x in os.listdir(img_dir)]
+        img_names.sort()
+
+        for img_name in img_names:
+            if not img_name.endswith('.jpg'):
+                continue
+
+            img_path = img_dir + '/' + img_name
+            txt_name = img_name.replace('.jpg', '.txt')
+            txt_path = txt_with_id_dir + '/' + seq + '/' + txt_name
+            if not (os.path.isfile(img_path) and os.path.isfile(txt_path)):
+                print('[Err]: invalid jpg file or txt(with id) label.')
+                continue
+
+            # 写入train.txt文件
+            dot_train_f_h.write(img_path.replace('images', 'JPEGImages') + '\n')
+
+            # 创建目标子目录
+            seq_txt_dir = txt_dir + '/' + seq
+            if not os.path.isdir(seq_txt_dir):
+                os.makedirs(seq_txt_dir)
+
+            # label格式转换
+            voc_txt_path = seq_txt_dir + '/' + txt_name
+            # with open(voc_txt_path, 'w', encoding='utf-8') as w_h, \
+            #         open(txt_path, 'r', encoding='utf-8') as r_h:
+            #     lines = [x.strip() for x in r_h.readlines()]
+            labels = np.loadtxt(txt_path)
+
+            # cls_id, center_x, center_y, bbox_w, bbox_h
+            voc_labels = labels[:, [0, 2, 3, 4, 5]]
+            np.savetxt(voc_txt_path, voc_labels)
+            print('{} written.'.format(voc_txt_path))
+
+    dot_train_f_h.close()
+
+
+def pick_as_val(dot_train_f, ratio=0.1):
+    if not os.path.isfile(dot_train_f):
+        print('[Err]: invalid dot train file.')
+        return
+
+    dot_val_f = dot_train_f.replace('train', 'val')
+
+    with open(dot_train_f, 'r', encoding='utf-8') as train_f:
+        lines = train_f.readlines()
+        nF = len(lines)
+        nPick = int(ratio * nF + 0.5)
+
+        with open(dot_val_f, 'w', encoding='utf-8') as val_f:
+            for i in range(nPick):
+                if random.random() < ratio:  # pick as val
+                    idx = random.randint(0, nF) % nF
+                    pick = lines[idx]
+                    val_f.write(pick)
+        print('{} written.'.format(dot_val_f))
+
+
 if __name__ == '__main__':
     # preprocess(src_root='/mnt/diskb/even/Insight-MVT_Annotation_Train',
     #            dst_root='/mnt/diskb/even/dataset/DETRAC')
@@ -809,10 +927,17 @@ if __name__ == '__main__':
     #            label_root='/mnt/diskb/even/dataset/DETRAC/labels_with_ids/train',
     #            viz_root='/mnt/diskb/even/viz_result')
 
-    gen_dot_train_file(data_root='/mnt/diskb/even/dataset',
-                       rel_path='/VisDrone2019/images',
-                       out_root='/mnt/diskb/even/MCMOT/src/data',
-                       f_name='visdrone.train')
+    # gen_dot_train_file(data_root='/mnt/diskb/even/dataset',
+    #                    rel_path='/MCMOT/images',
+    #                    out_root='/mnt/diskb/even/MCMOT/src/data',
+    #                    f_name='mcmot.train')
+
+    # cvt2voc_format(data_root='/mnt/diskb/even/dataset/MCMOT')
+    # pick_as_val(dot_train_f='/mnt/diskb/even/dataset/MCMOT/train_mcmot.txt')
+
+    add_suffix_for_files(data_root='/mnt/diskb/even/MCMOT/results',
+                         suffix='old',
+                         mode='visdrone')
 
     # add_new_train_data(part_train_f_path='/mnt/diskb/maqiao/multiClass/c5_pc_20200714/train.txt',
     #                    data_root='/mnt/diskb/even/dataset/MCMOT_DET',

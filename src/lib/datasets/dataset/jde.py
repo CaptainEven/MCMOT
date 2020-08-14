@@ -474,7 +474,8 @@ class JointDataset(LoadImagesAndLabels):  # for training
             for ds, label_paths in self.label_files.items():  # 每个子数据集
                 max_ids_dict = defaultdict(int)  # cls_id => max track id
 
-                for lp in label_paths:  # 子数据集中每个label
+                # 子数据集中每个label
+                for lp in label_paths:
                     if not os.path.isfile(lp):
                         print('[Warning]: invalid label file {}.'.format(lp))
                         continue

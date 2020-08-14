@@ -71,9 +71,9 @@ def load_model(model,
     for k in state_dict:
         if k in model_state_dict:
             if state_dict[k].shape != model_state_dict[k].shape:
-                print('Skip loading parameter {}, required shape{}, '
-                      'loaded shape{}. {}'.format(
-                    k, model_state_dict[k].shape, state_dict[k].shape, msg))
+                # print('Skip loading parameter {}, required shape{}, '
+                #       'loaded shape{}. {}'.format(
+                #     k, model_state_dict[k].shape, state_dict[k].shape, msg))
                 state_dict[k] = model_state_dict[k]
         else:
             print('Drop parameter {}.'.format(k) + msg)

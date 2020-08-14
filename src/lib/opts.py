@@ -17,7 +17,6 @@ class opts(object):
         self.parser.add_argument('--test', action='store_true')
         self.parser.add_argument('--load_model',
                                  default='../exp/mot/default/mcmot_last_track_resdcn_18.pth',
-                                 # ../exp/mot/default/mcmot_last_track_resdcn_18.pth
                                  help='path to pretrained model')
         self.parser.add_argument('--resume',
                                  action='store_true',
@@ -32,7 +31,7 @@ class opts(object):
                                  help='-1 for CPU, use comma for multiple gpus')
         self.parser.add_argument('--num_workers',
                                  type=int,
-                                 default=2,  # 8, 6, 4
+                                 default=4,  # 8, 6, 4
                                  help='dataloader threads. 0 for single-thread.')
         self.parser.add_argument('--not_cuda_benchmark', action='store_true',
                                  help='disable when the input size is not fixed.')
@@ -40,7 +39,7 @@ class opts(object):
                                  help='random seed')  # from CornerNet
         self.parser.add_argument('--is_debug',
                                  type=bool,
-                                 default=True,  # 是否使用多线程加载数据, default: False
+                                 default=False,  # 是否使用多线程加载数据, default: False
                                  help='whether in debug mode or not')  # debug模式下只能使用单进程
 
         # log
@@ -99,7 +98,7 @@ class opts(object):
                                  help='drop learning rate by 10.')
         self.parser.add_argument('--num_epochs',
                                  type=int,
-                                 default=30,  # 30, 10, 3, 1
+                                 default=10,  # 30, 10, 3, 1
                                  help='total training epochs.')
         self.parser.add_argument('--batch_size',
                                  type=int,
@@ -164,7 +163,7 @@ class opts(object):
                                  help='iou thresh for nms')
         self.parser.add_argument('--track_buffer',
                                  type=int,
-                                 default=30,
+                                 default=30,  # 30
                                  help='tracking buffer')
         self.parser.add_argument('--min-box-area',
                                  type=float,
@@ -180,7 +179,7 @@ class opts(object):
         # 输入的video文件路径
         self.parser.add_argument('--input-video',
                                  type=str,
-                                 default='../videos/visdrone_train9.mp4',
+                                 default='../videos/test5.mp4',
                                  help='path to the input video')
 
         # 输入的image目录
@@ -256,7 +255,7 @@ class opts(object):
 
         # others          (11)
         self.parser.add_argument('--reid_cls_ids',
-                                 default='0,1,2,3,4,5,6,7,8,9',
+                                 default='0,1,2,3,4',  # '0,1,2,3,4' or '0,1,2,3,4,5,6,7,8,9'
                                  help='')  # the object classes need to do reid
 
         self.parser.add_argument('--norm_wh', action='store_true',

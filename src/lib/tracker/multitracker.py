@@ -15,8 +15,8 @@ from lib.tracking_utils.log import logger
 from lib.tracking_utils.utils import *
 from lib.utils.post_process import ctdet_post_process
 from .basetrack import BaseTrack, TrackState
-# from gen_dataset_visdrone import cls2id, id2cls
-from gen_labels_detrac_mcmot import cls2id, id2cls
+# from gen_dataset_visdrone import cls2id, id2cls  # visdrone
+from gen_labels_detrac_mcmot import cls2id, id2cls  # mcmot_c5
 
 
 class STrack(BaseTrack):
@@ -264,13 +264,13 @@ class JDETracker(object):
 
         self.frame_id = 0
         self.det_thresh = opt.conf_thres
-        self.buffer_size = int(frame_rate / 10.0 * opt.track_buffer)  # int(frame_rate / 30.0 * opt.track_buffer)
+        self.buffer_size = int(frame_rate / 30.0 * opt.track_buffer)  # int(frame_rate / 30.0 * opt.track_buffer)
         self.max_time_lost = self.buffer_size
-        self.max_per_image = 128  # max objects per image
+        self.max_per_image = self.opt.K  # max objects per image
         self.mean = np.array(opt.mean, dtype=np.float32).reshape(1, 1, 3)
         self.std = np.array(opt.std, dtype=np.float32).reshape(1, 1, 3)
 
-        # 利用卡尔曼滤波过滤跟踪噪声
+        # ----- using kalman filter to stabilize tracking
         self.kalman_filter = KalmanFilter()
 
     def post_process(self, dets, meta):
