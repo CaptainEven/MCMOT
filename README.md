@@ -15,10 +15,10 @@ You can refer to origin fork [FairMOT](https://github.com/ifzhang/FairMOT)
 [VisDrone](http://aiskyeye.com/)
 </br>
 VisDrone is a public dataset for 4 CV challenges: object detection, crowd counting, single class multi-object tracking, multi-class multi-object tracking.
-### Download multi-class multi-object tracking part of Visdrone dataset
-### Using gen_dataset_visdrone.py script to generate labels.
-### Uncomment cls2id and id2cls in multitracker.py for visdrone trainig
-### Set cls ids for visdrone training n opts.py i.e.
+* Download multi-class multi-object tracking part of Visdrone dataset
+* Using gen_dataset_visdrone.py script to generate labels.
+* Uncomment cls2id and id2cls in multitracker.py for visdrone trainig
+* Set cls ids for visdrone training n opts.py i.e.
 '''
         # ----------------------1~10 object classes are what we need
         # pedestrian      (1),  --> 0
