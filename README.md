@@ -10,6 +10,12 @@ You can refer to origin fork [FairMOT](https://github.com/ifzhang/FairMOT)
 ## Tracking demo of VISDrone dataset
 ![image](https://github.com/CaptainEven/MCMOT/blob/master/visdrone_31_track.gif)
 </br>
+
+## VisDrone dataset training
+[VisDrone](http://aiskyeye.com/)
+</br>
+VisDrone is a public dataset for 4 CV challenges: object detection, crowd counting, single class multi-object tracking, multi-class multi-object tracking.
+
 ## Pretained model for C5 detection and tracking
 #### HRNet18 with bi-linear upsampling replaced with de-convolution </br>
 #### The pre-trained model is for 5 classes(C5) detection & tracking: car, bicycle, person, cyclist, tricycle, which can be used for road traffic video surveillance and analysis. </br>
