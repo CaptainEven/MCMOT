@@ -18,5 +18,5 @@ You can refer to origin fork [FairMOT](https://github.com/ifzhang/FairMOT)
 </br>
 [one drive link](https://1drv.ms/u/s!AmgjV-Jny9CqkX2EneIkb6Q8x6WI?e=Lsqx4G)
 
-### Resnet14 backbone for C5
+### Resnet18 backbone for C5， which is much smaller than HRNet18
 [one drive link](https://1drv.ms/u/s!AmgjV-Jny9Cqkjiwqx7UY2g2_uZU?e=tws0eQ)
