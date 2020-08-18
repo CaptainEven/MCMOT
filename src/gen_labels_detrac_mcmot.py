@@ -704,7 +704,7 @@ def add_new_train_data(part_train_f_path,
 
 def gen_dot_train_file(data_root, rel_path, out_root, f_name='detrac.train'):
     """
-    生成.train文件
+    To generate the dot train file
     :param data_root:
     :param rel_path:
     :param out_root:
@@ -848,8 +848,8 @@ def cvt2voc_format(data_root):
 
     # 遍历各个子目录
     seq_names = [x for x in os.listdir(jpg_dir)]
-    # seq_names.sort()
-    seq_names = sorted(seq_names, key=lambda x: int(x.split('_')[-1]))
+    seq_names.sort()
+    # seq_names = sorted(seq_names, key=lambda x: int(x.split('_')[-1]))
 
     dot_train_f_path = data_root + '/train_mcmot.txt'
     dot_train_f_h = open(dot_train_f_path, 'w', encoding='utf-8')
@@ -888,16 +888,20 @@ def cvt2voc_format(data_root):
             #         open(txt_path, 'r', encoding='utf-8') as r_h:
             #     lines = [x.strip() for x in r_h.readlines()]
             labels = np.loadtxt(txt_path)
+            labels = labels.reshape(-1, 6)
 
             # cls_id, center_x, center_y, bbox_w, bbox_h
-            voc_labels = labels[:, [0, 2, 3, 4, 5]]
+            try:
+                voc_labels = labels[:, [0, 2, 3, 4, 5]]
+            except Exception as e:
+                print(e)
             np.savetxt(voc_txt_path, voc_labels)
             print('{} written.'.format(voc_txt_path))
 
     dot_train_f_h.close()
 
 
-def pick_as_val(dot_train_f, ratio=0.1):
+def pick_as_val(dot_train_f, ratio=0.2):
     if not os.path.isfile(dot_train_f):
         print('[Err]: invalid dot train file.')
         return
@@ -932,12 +936,13 @@ if __name__ == '__main__':
     #                    out_root='/mnt/diskb/even/MCMOT/src/data',
     #                    f_name='mcmot.train')
 
-    # cvt2voc_format(data_root='/mnt/diskb/even/dataset/MCMOT')
+    # cvt2voc_format(data_root='/mnt/diskb/even/dataset/MCMOT_DET')
     # pick_as_val(dot_train_f='/mnt/diskb/even/dataset/MCMOT/train_mcmot.txt')
+    # pick_as_val(dot_train_f='/mnt/diskb/even/MCMOT/src/data/mcmot_det.train')
 
-    add_suffix_for_files(data_root='/mnt/diskb/even/MCMOT/results',
-                         suffix='old',
-                         mode='visdrone')
+    # add_suffix_for_files(data_root='/mnt/diskb/even/MCMOT/results',
+    #                      suffix='old',
+    #                      mode='visdrone')
 
     # add_new_train_data(part_train_f_path='/mnt/diskb/maqiao/multiClass/c5_pc_20200714/train.txt',
     #                    data_root='/mnt/diskb/even/dataset/MCMOT_DET',

@@ -240,7 +240,7 @@ class opts(object):
                                  default=128,  # 128, 256, 512
                                  help='feature dim for reid')
 
-        # ----------------------1~10类是我们需要检测和跟踪的目标
+        # ----------------------1~10 object classes are what we need
         # pedestrian      (1),  --> 0
         # people          (2),  --> 1
         # bicycle         (3),  --> 2
@@ -255,7 +255,7 @@ class opts(object):
 
         # others          (11)
         self.parser.add_argument('--reid_cls_ids',
-                                 default='0,1,2,3,4',  # '0,1,2,3,4' or '0,1,2,3,4,5,6,7,8,9'
+                                 default='0,1,2,3,4,5,6,7,8,9',  # '0,1,2,3,4' or '0,1,2,3,4,5,6,7,8,9'
                                  help='')  # the object classes need to do reid
 
         self.parser.add_argument('--norm_wh', action='store_true',

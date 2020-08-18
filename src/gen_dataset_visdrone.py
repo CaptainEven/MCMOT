@@ -71,6 +71,42 @@ def draw_ignore_regions(img, boxes):
     return img
 
 
+def gen_dot_train_file(data_root, rel_path, out_root, f_name='detrac.train'):
+    """
+    To generate the dot train file
+    :param data_root:
+    :param rel_path:
+    :param out_root:
+    :param f_name:
+    :return:
+    """
+    if not (os.path.isdir(data_root) and os.path.isdir(out_root)):
+        print('[Err]: invalid root')
+        return
+
+    out_f_path = out_root + '/' + f_name
+    cnt = 0
+    with open(out_f_path, 'w') as f:
+        root = data_root + rel_path
+        seqs = [x for x in os.listdir(root)]
+        seqs.sort()
+        # seqs = sorted(seqs, key=lambda x: int(x.split('_')[-1]))
+        for seq in tqdm(seqs):
+            img_dir = root + '/' + seq  # + '/img1'
+            img_list = [x for x in os.listdir(img_dir)]
+            img_list.sort()
+            for img in img_list:
+                if img.endswith('.jpg'):
+                    img_path = img_dir + '/' + img
+                    if os.path.isfile(img_path):
+                        item = img_path.replace(data_root + '/', '')
+                        # print(item)
+                        f.write(item + '\n')
+                        cnt += 1
+
+    print('Total {:d} images for training'.format(cnt))
+
+
 def gen_track_dataset(src_root, dst_root, viz_root=None):
     """
     :param src_root:
@@ -243,7 +279,8 @@ def gen_track_dataset(src_root, dst_root, viz_root=None):
                 bbox_height = label[5]
 
                 score = label[6]
-                truncation = label[8]  # no truncation = 0 (truncation ratio 0%), and partial truncation = 1 (truncation ratio 1% °´ 50%))
+                truncation = label[
+                    8]  # no truncation = 0 (truncation ratio 0%), and partial truncation = 1 (truncation ratio 1% °´ 50%))
                 occlusion = label[9]
                 if occlusion > 1:  # heavy occlusion = 2 (occlusion ratio 50% ~ 100%)).
                     # print('[Warning]: skip the bbox because of heavy occlusion')
