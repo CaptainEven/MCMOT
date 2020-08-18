@@ -47,5 +47,5 @@ VisDrone is a public dataset for 4 CV challenges: object detection, crowd counti
 </br>
 [one drive link](https://1drv.ms/u/s!AmgjV-Jny9CqkX2EneIkb6Q8x6WI?e=Lsqx4G)
 
-### Resnet18 backbone for C5， which is much smaller than HRNet18
+### Resnet18 backbone for C5，which is much smaller than HRNet18
 [one drive link](https://1drv.ms/u/s!AmgjV-Jny9Cqkjiwqx7UY2g2_uZU?e=tws0eQ)
