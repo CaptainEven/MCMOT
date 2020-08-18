@@ -18,7 +18,7 @@ VisDrone is a public dataset for 4 CV challenges: object detection, crowd counti
 * Download multi-class multi-object tracking part of Visdrone dataset
 * Using gen_dataset_visdrone.py script to generate labels.
 * Generate the dot train file for VisDrone mcmot training task.
-* Uncomment cls2id and id2cls in multitracker.py for visdrone trainig
+* Uncomment cls2id and id2cls in multitracker.py to use the correct class names and class Ids mapping.
 ```
 from gen_dataset_visdrone import cls2id, id2cls  # visdrone
 # from gen_labels_detrac_mcmot import cls2id, id2cls  # mcmot_c5
