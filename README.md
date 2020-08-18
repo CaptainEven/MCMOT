@@ -52,7 +52,7 @@ from gen_dataset_visdrone import cls2id, id2cls  # visdrone
 [one drive link](https://1drv.ms/u/s!AmgjV-Jny9CqkX2EneIkb6Q8x6WI?e=Lsqx4G)
 
 ### Resnet18 backbone for C5，which is much smaller than HRNet18
-[one drive link](https://1drv.ms/u/s!AmgjV-Jny9Cqkjiwqx7UY2g2_uZU?e=tws0eQ)
+[ResNet18 one drive link](https://1drv.ms/u/s!AmgjV-Jny9Cqkjiwqx7UY2g2_uZU?e=tws0eQ)
 
 ### Resnet18 backbone for VisDrone mcmot
-[one drive link](https://1drv.ms/u/s!AmgjV-Jny9CqkjkCXS9QC8mJwMmB?e=XzrH1T)
+[Resnet18 one drive link](https://1drv.ms/u/s!AmgjV-Jny9CqkjkCXS9QC8mJwMmB?e=XzrH1T)
