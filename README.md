@@ -36,7 +36,6 @@ from gen_dataset_visdrone import cls2id, id2cls  # visdrone
         awning-tricycle   (8)  --> 7        
         bus               (9)  --> 8        
         motor             (10) --> 9        
-
         # others          (11)
         self.parser.add_argument('--reid_cls_ids',
                                  default='0,1,2,3,4,5,6,7,8,9',  # '0,1,2,3,4' or '0,1,2,3,4,5,6,7,8,9'
