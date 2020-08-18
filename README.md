@@ -7,6 +7,9 @@ You can refer to origin fork [FairMOT](https://github.com/ifzhang/FairMOT)
 ## Tracking demo
 ![image](https://github.com/CaptainEven/MCMOT/blob/master/demo.gif)
 </br>
+## Tracking demo of VISDrone dataset
+![image](https://github.com/CaptainEven/MCMOT/blob/master/visdrone_31_track.gif)
+</br>
 ## Pretained model for detection and tracking
 #### HRNet18 with bi-linear upsampling replaced with de-convolution </br>
 #### The pre-trained model is for 5 classes detection & tracking: car, bicycle, person, cyclist, tricycle, which can be used for road traffic video surveillance and analysis. </br>
