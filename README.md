@@ -11,7 +11,7 @@ You can refer to origin fork [FairMOT](https://github.com/ifzhang/FairMOT)
 ![image](https://github.com/CaptainEven/MCMOT/blob/master/visdrone_31_track.gif)
 </br>
 
-## VisDrone dataset training
+## VisDrone dataset training with 10 object classes
 [VisDrone link](http://aiskyeye.com/)
 </br>
 VisDrone is a public dataset for 4 CV challenges: object detection, crowd counting, single class multi-object tracking, multi-class multi-object tracking.
