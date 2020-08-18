@@ -43,7 +43,7 @@ from gen_dataset_visdrone import cls2id, id2cls  # visdrone
                                  help='')  # the object classes need to do reid
 ```
 
-## Pretained model for C5 detection and tracking
+## Pretained model for C5 and VisDrone detection and tracking
 #### HRNet18 with bi-linear upsampling replaced with de-convolution </br>
 #### The pre-trained model is for 5 classes(C5) detection & tracking: car, bicycle, person, cyclist, tricycle, which can be used for road traffic video surveillance and analysis. </br>
 </br>
