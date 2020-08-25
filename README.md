@@ -17,7 +17,7 @@ You can refer to origin fork [FairMOT](https://github.com/ifzhang/FairMOT)
 VisDrone is a public dataset for 4 CV challenges: object detection, crowd counting, single class multi-object tracking, multi-class multi-object tracking.
 * Download multi-class multi-object tracking part of Visdrone dataset
 * Using gen_dataset_visdrone.py script to generate labels.
-* Generate the dot train file for VisDrone mcmot training task.
+* Call the gen_dot_train_file function in gen_dataset_visdrone.py to generate the dot train file for VisDrone mcmot training task.
 * Uncomment cls2id and id2cls in multitracker.py to use the correct class names and class Ids mapping.
 ```
 from gen_dataset_visdrone import cls2id, id2cls  # visdrone
@@ -44,7 +44,7 @@ from gen_dataset_visdrone import cls2id, id2cls  # visdrone
 ```
 
 ## Pretained model for C5 and VisDrone detection and tracking
-HRNet18 with bi-linear upsampling replaced with de-convolution </br>
+HRNet18 backbone with bi-linear upsampling replaced with de-convolution </br>
 The pre-trained model is for 5 classes(C5) detection & tracking: car, bicycle, person, cyclist, tricycle, which can be used for road traffic video surveillance and analysis. </br>
 </br>
 [baidu drive link](https://pan.baidu.com/s/1imrim0kt72_Ay9w-X4kqdw) extract code：ej4p
