@@ -30,7 +30,7 @@ def run(opt):
     torch.backends.cudnn.benchmark = not opt.not_cuda_benchmark and not opt.test
 
     print('Setting up data...')
-    Dataset = get_dataset(opt.dataset, opt.task)  # if opt.task==mot -> JointDataset
+    Dataset = get_dataset(opt.dataset, opt.task, opt.multi_scale)  # if opt.task==mot -> JointDataset
 
     f = open(opt.data_cfg)  # choose which dataset to train '../src/lib/cfg/mot15.json',
     data_config = json.load(f)

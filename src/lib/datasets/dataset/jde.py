@@ -5,13 +5,13 @@ import os.path as osp
 import random
 import time
 import warnings
-from collections import OrderedDict, defaultdict
 
 import cv2
 # import json
 import numpy as np
 import torch
 
+from collections import OrderedDict, defaultdict
 # from torch.utils.data import Dataset
 # from torchvision.transforms import transforms as T
 # from cython_bbox import bbox_overlaps as bbox_ious
@@ -448,7 +448,7 @@ Input_WHs = [
 # ----------
 class MultiScaleJD(LoadImagesAndLabels):
     """
-    多尺度训练数据集
+    multi-joint scale for trainig
     """
     mean = None
     std = None
@@ -535,8 +535,13 @@ class MultiScaleJD(LoadImagesAndLabels):
         self.cds = [sum(self.nds[:i]) for i in range(len(self.nds))]  # 当前子数据集前面累计图片总数?
         self.nF = sum(self.nds)  # 用于训练的所有子训练集的图片总数
 
-        # generate mapping from batch_i to
-
+        # randomly generate mapping from batch idx to scale idx
+        self.batch_i_to_scale_i = defaultdict(int)
+        self.num_batches = self.nF // self.opt.batch_size + 1
+        for batch_i in range(self.num_batches):
+            rand_batch_idx = np.random.randint(0, self.num_batches)
+            rand_scale_idx = rand_batch_idx % len(Input_WHs)
+            self.batch_i_to_scale_i[batch_i] = rand_scale_idx
 
         self.width = img_size[0]  # 网络输入图片宽度
         self.height = img_size[1]  # 网络输入图片高度
@@ -560,8 +565,7 @@ class MultiScaleJD(LoadImagesAndLabels):
 
     def __getitem__(self, idx):
         batch_i = idx // int(self.opt.batch_size)
-        scale_idx = batch_i % len(Input_WHs)
-
+        scale_idx = self.batch_i_to_scale_i[batch_i]
         width, height = Input_WHs[scale_idx]
 
         # 为子训练集计算起始index

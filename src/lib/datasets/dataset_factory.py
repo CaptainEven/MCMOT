@@ -5,9 +5,11 @@ from __future__ import print_function
 from .dataset.jde import JointDataset, MultiScaleJD
 
 
-def get_dataset(dataset, task):
+def get_dataset(dataset, task, mult_scale):
   if task == 'mot':
-    # return JointDataset
-    return MultiScaleJD
+    if mult_scale:
+      return MultiScaleJD
+    else:
+      return JointDataset
   else:
     return None

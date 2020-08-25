@@ -243,6 +243,10 @@ class opts(object):
                                  type=tuple,
                                  default=(640, 320),  # 1088, 608
                                  help='net input resplution')
+        self.parser.add_argument('--multi-scale',
+                                 type=bool,
+                                 default=True,
+                                 help='Whether to use multi-scale training or not')
 
         # ----------------------1~10 object classes are what we need
         # pedestrian      (1),  --> 0
