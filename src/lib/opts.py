@@ -39,7 +39,7 @@ class opts(object):
                                  help='random seed')  # from CornerNet
         self.parser.add_argument('--is_debug',
                                  type=bool,
-                                 default=False,  # 是否使用多线程加载数据, default: False
+                                 default=True,  # 是否使用多线程加载数据, default: False
                                  help='whether in debug mode or not')  # debug模式下只能使用单进程
 
         # log
@@ -179,7 +179,7 @@ class opts(object):
         # 输入的video文件路径
         self.parser.add_argument('--input-video',
                                  type=str,
-                                 default='../videos/test5.mp4',
+                                 default='../videos/test2.mp4',
                                  help='path to the input video')
 
         # 输入的image目录
@@ -239,6 +239,10 @@ class opts(object):
                                  type=int,
                                  default=128,  # 128, 256, 512
                                  help='feature dim for reid')
+        self.parser.add_argument('--input-wh',
+                                 type=tuple,
+                                 default=(640, 320),  # 1088, 608
+                                 help='net input resplution')
 
         # ----------------------1~10 object classes are what we need
         # pedestrian      (1),  --> 0
@@ -255,7 +259,7 @@ class opts(object):
 
         # others          (11)
         self.parser.add_argument('--reid_cls_ids',
-                                 default='0,1,2,3,4,5,6,7,8,9',  # '0,1,2,3,4' or '0,1,2,3,4,5,6,7,8,9'
+                                 default='0,1,2,3,4',  # '0,1,2,3,4' or '0,1,2,3,4,5,6,7,8,9'
                                  help='')  # the object classes need to do reid
 
         self.parser.add_argument('--norm_wh', action='store_true',
@@ -367,7 +371,7 @@ class opts(object):
         opt = self.parse(args)
 
         default_dataset_info = {
-            'mot': {'default_resolution': [608, 1088],  # [608, 1088], [320, 640]
+            'mot': {'default_resolution': [opt.input_wh[1], opt.input_wh[0]],  # [608, 1088], [320, 640]
                     'num_classes': len(opt.reid_cls_ids.split(',')),  # 1
                     'mean': [0.408, 0.447, 0.470],
                     'std': [0.289, 0.274, 0.278],

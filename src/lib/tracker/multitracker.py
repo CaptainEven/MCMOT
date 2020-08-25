@@ -15,8 +15,8 @@ from lib.tracking_utils.log import logger
 from lib.tracking_utils.utils import *
 from lib.utils.post_process import ctdet_post_process
 from .basetrack import BaseTrack, TrackState
-from gen_dataset_visdrone import cls2id, id2cls  # visdrone
-# from gen_labels_detrac_mcmot import cls2id, id2cls  # mcmot_c5
+# from gen_dataset_visdrone import cls2id, id2cls  # visdrone
+from gen_labels_detrac_mcmot import cls2id, id2cls  # mcmot_c5
 
 
 class STrack(BaseTrack):
@@ -407,7 +407,7 @@ class JDETracker(object):
             wh = output['wh']
             reg = output['reg'] if self.opt.reg_offset else None
             id_feature = output['id']
-            id_feature = F.normalize(id_feature, dim=1)  # L2 normalize
+            id_feature = F.normalize(id_feature, dim=1)  # L2 normalize the reid feature vector
 
             #  检测和分类结果解析
             dets, inds, cls_inds_mask = mot_decode(heatmap=hm,

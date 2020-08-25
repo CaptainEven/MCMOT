@@ -556,7 +556,7 @@ def gen_dataset_for_mcmot_det(src_root,
 
                 # 生成检测对象的标签行: class_id, track_id, bbox_center_x, box_center_y, bbox_width, bbox_height
                 obj_str = '{:d} 0 {:.6f} {:.6f} {:.6f} {:.6f}\n'.format(
-                    cls_id,   # class_id
+                    cls_id,  # class_id
                     bbox[0],  # center_x
                     bbox[1],  # center_y
                     bbox[2],  # bbox_w
@@ -585,10 +585,169 @@ def gen_dataset_for_mcmot_det(src_root,
         print('Class {} contains {:d} items'.format(k, v))
 
 
+def gen_dataset_from_txt(path_prefix, in_txt_f_path, dst_root, out_txt_f_path):
+    """
+    :param path_prefix:
+    :param in_txt_f_path:
+    :param dst_root:
+    :param out_txt_f_path:
+    :return:
+    """
+    if not os.path.isfile(in_txt_f_path):
+        print('[Err]: invalid input txt file.')
+        return
+
+    if not os.path.isdir(dst_root):
+        os.makedirs(dst_root)
+        print('[Note]: {} made.'.format(dst_root))
+
+    # ----- 数据集统计
+    class_cnt_dict = defaultdict(int)
+    sub_dir_cnt = 0
+    item_cnt = 0
+    sub_dir_names = set()
+
+    with open(in_txt_f_path, 'r', encoding='utf-8') as r_h, \
+            open(out_txt_f_path, 'w', encoding='utf-8') as out_txt_h:
+        lines = [x.strip() for x in r_h.readlines()]
+
+        for img_path in lines:
+            if not os.path.isfile(img_path):
+                print('[Warning]: invalid jpg file {}.'.format(img_path))
+                continue
+
+            # print(jpg_f_path)
+            xml_path = img_path.replace('JPEGImages', 'Annotations').replace('.jpg', '.xml')
+            if not os.path.isfile(xml_path):
+                print('[Warning]: invalid label file.')
+                continue
+            xml_name = os.path.split(xml_path)[-1]
+            img_name = os.path.split(img_path)[-1]
+            assert xml_name[:-4] == img_name[:-4]
+
+            sub_dir_name = img_path.replace(path_prefix, '').split('/')[0]
+            # sub_dir_cnt += 1
+            sub_dir_names.add(sub_dir_name)
+
+            dst_sub_dir = dst_root + '/' + sub_dir_name
+            if not os.path.isdir(dst_sub_dir):
+                os.makedirs(dst_sub_dir)
+                print('[Note]: {} made.'.format(dst_sub_dir))
+
+            dst_sub_dir_img = dst_sub_dir + '/JPEGImages'
+            dst_sub_dir_txt = dst_sub_dir + '/labels'
+            if not os.path.isdir(dst_sub_dir_img):
+                os.makedirs(dst_sub_dir_img)
+                print('[Note]: {} made.'.format(dst_sub_dir_img))
+
+            if not os.path.isdir(dst_sub_dir_txt):
+                os.makedirs(dst_sub_dir_txt)
+                print('[Note]: {} made.'.format(dst_sub_dir_txt))
+
+            # 读取并解析xml
+            tree = ET.parse(xml_path)
+            root = tree.getroot()
+            # print(root)
+            mark_node = root.find('markNode')
+            if mark_node is None:
+                print('[Warning]: markNode not found.')
+                continue
+
+            # 该图片对应的labels
+            label_obj_strs = []
+            try:
+                # 图片宽高
+                w = int(root.find('width').text.strip())
+                h = int(root.find('height').text.strip())
+            except Exception as e:
+                print('[Warning]: invalid (w, h)')
+                print(e)
+                continue
+
+            # 更新item_cnt
+            item_cnt += 1
+
+            for obj in mark_node.iter('object'):
+                target_type = obj.find('targettype')
+                cls_name = target_type.text
+                if cls_name not in target_types:
+                    print("=> " + cls_name + " is not in targetTypes list.")
+                    continue
+
+                # classes_c5(5类别的特殊处理)
+                if cls_name == 'car_front' or cls_name == 'car_rear':
+                    cls_name = 'car_fr'
+                if cls_name == 'car':
+                    car_type = obj.find('cartype').text
+                    if car_type == 'motorcycle':
+                        cls_name = 'bicycle'
+                if cls_name == "motorcycle":
+                    cls_name = "bicycle"
+                if cls_name not in classes:
+                    # print("=> " + cls_name + " is not in class list.")
+                    continue
+                if cls_name == 'non_interest_zone':
+                    # print('Non interest zone.')
+                    continue
+
+                # 获取class_id
+                cls_id = classes.index(cls_name)
+                assert (0 <= cls_id < 5)
+
+                # 更新class_cnt_dict
+                class_cnt_dict[cls_name] += 1
+
+                # 获取bounding box
+                xml_box = obj.find('bndbox')
+                box = (float(xml_box.find('xmin').text),
+                       float(xml_box.find('xmax').text),
+                       float(xml_box.find('ymin').text),
+                       float(xml_box.find('ymax').text))
+
+                # bounding box格式化: bbox([0.0, 1.0]): center_x, center_y, width, height
+                bbox = bbox_format((w, h), box)
+                if bbox is None:
+                    print('[Warning]: bbox err.')
+                    continue
+
+                # 生成检测对象的标签行: class_id, bbox_center_x, box_center_y, bbox_width, bbox_height
+                obj_str = '{:d} {:.6f} {:.6f} {:.6f} {:.6f}\n'.format(
+                    cls_id,   # class_id
+                    bbox[0],  # center_x
+                    bbox[1],  # center_y
+                    bbox[2],  # bbox_w
+                    bbox[3])  # bbox_h
+                label_obj_strs.append(obj_str)
+
+            # 拷贝图片文件
+            dst_img_path = dst_sub_dir_img + '/' + img_name
+            if not os.path.isfile(dst_img_path):
+                shutil.copy(img_path, dst_sub_dir_img)
+
+            # 写入txt标签文件
+            out_label_path = dst_sub_dir_txt + '/' + xml_name.replace('.xml', '.txt')
+            if not os.path.isfile(out_label_path):
+                with open(out_label_path, 'w', encoding='utf-8') as w_label_h:
+                    for obj in label_obj_strs:
+                        w_label_h.write(obj)
+                    print('{} written'.format(os.path.split(out_label_path)[-1]))
+
+            # 输出.txt汇总文件
+            out_txt_h.write(dst_img_path + '\n')
+
+    print('Total {:d} images in the dataset(total {:d} sub_dirs)'.format(item_cnt, len(sub_dir_names)))
+    for k, v in class_cnt_dict.items():
+        print('Class {} contains {:d} items'.format(k, v))
+
 if __name__ == "__main__":
     # gen_one_voc_train_dir()
 
-    gen_dataset_for_mcmot_det(src_root='/mnt/diskb/maqiao/multiClass',
-                              dst_root='/mnt/diskb/even/dataset/MCMOT_DET',
-                              dot_train_f_path='/mnt/diskb/even/MCMOT/src/data/mcmot_det.train',
-                              dataset_prefix='/mnt/diskb/even/dataset/')
+    # gen_dataset_for_mcmot_det(src_root='/mnt/diskb/maqiao/multiClass',
+    #                           dst_root='/mnt/diskb/even/dataset/MCMOT_DET',
+    #                           dot_train_f_path='/mnt/diskb/even/MCMOT/src/data/mcmot_det.train',
+    #                           dataset_prefix='/mnt/diskb/even/dataset/')
+
+    gen_dataset_from_txt(path_prefix='/mnt/diskb/maqiao/multiClass/',
+                         in_txt_f_path='/mnt/diskb/even/YOLOV4/data/test.txt',
+                         dst_root='/mnt/diskb/even/dataset/MCMOT_DET/test',
+                         out_txt_f_path='/mnt/diskb/even/dataset/MCMOT_DET/test/mcmot_det_test.txt')

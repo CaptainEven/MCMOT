@@ -7,6 +7,7 @@ import torch
 from progress.bar import Bar
 from lib.models.data_parallel import DataParallel
 from lib.utils.utils import AverageMeter
+from lib.datasets.dataset.jde import Input_WHs
 
 
 class ModleWithLoss(torch.nn.Module):
@@ -81,8 +82,9 @@ class BaseTrainer(object):
         end = time.time()
 
         # train each batch
-        for iter_id, batch in enumerate(data_loader):
-            if iter_id >= num_iters:
+        # print('Total {} batches in en epoch.'.format(len(data_loader) + 1))
+        for batch_i, batch in enumerate(data_loader):
+            if batch_i >= num_iters:
                 break
 
             data_time.update(time.time() - end)
@@ -105,16 +107,22 @@ class BaseTrainer(object):
             end = time.time()
 
             Bar.suffix = '{phase}: [{0}][{1}/{2}]|Tot: {total:} |ETA: {eta:} '.format(
-                epoch, iter_id, num_iters, phase=phase,
+                epoch, batch_i, num_iters, phase=phase,
                 total=bar.elapsed_td, eta=bar.eta_td)
             for l in avg_loss_stats:
                 avg_loss_stats[l].update(loss_stats[l].mean().item(), batch['input'].size(0))
                 Bar.suffix = Bar.suffix + '|{} {:.4f} '.format(l, avg_loss_stats[l].avg)
+
+            # TODO: add multi-scale img_size display...
+            scale_idx = batch_i % len(Input_WHs)
+            img_size = Input_WHs[scale_idx]
+            Bar.suffix = Bar.suffix + '|Img_size(wh) {:d}×{:d}'.format(img_size[0], img_size[1])
+
             if not opt.hide_data_time:
                 Bar.suffix = Bar.suffix + '|Data {dt.val:.3f}s({dt.avg:.3f}s) ' \
                                           '|Net {bt.avg:.3f}s'.format(dt=data_time, bt=batch_time)
             if opt.print_iter > 0:
-                if iter_id % opt.print_iter == 0:
+                if batch_i % opt.print_iter == 0:
                     print('{}/{}| {}'.format(opt.task, opt.exp_id, Bar.suffix))
             else:
                 bar.next()

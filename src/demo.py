@@ -8,7 +8,7 @@ import os
 os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
 import torch
 
-my_visible_devs = '5'  # '0, 3'  # 设置可运行GPU编号
+my_visible_devs = '3'  # '0, 3'  # 设置可运行GPU编号
 os.environ['CUDA_VISIBLE_DEVICES'] = my_visible_devs
 device = torch.device('cuda: 0' if torch.cuda.is_available() else 'cpu')
 
@@ -54,6 +54,10 @@ def run_demo(opt):
             logger.info('Starting tracking...')
         else:
             logger.info('Starting detection...')
+        if not os.path.isfile(opt.input_video):
+            print('[Err]: invalid input video file.')
+            return
+
         data_loader = datasets.LoadVideo(opt.input_video, opt.img_size)  # load video as input
         f_name = os.path.split(opt.input_video)[-1][:-4]
     elif opt.input_mode == 'image_dir':
