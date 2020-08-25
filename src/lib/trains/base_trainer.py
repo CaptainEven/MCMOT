@@ -113,7 +113,7 @@ class BaseTrainer(object):
                 avg_loss_stats[l].update(loss_stats[l].mean().item(), batch['input'].size(0))
                 Bar.suffix = Bar.suffix + '|{} {:.4f} '.format(l, avg_loss_stats[l].avg)
 
-            # TODO: add multi-scale img_size display...
+            # multi-scale img_size display...
             scale_idx = data_loader.dataset.batch_i_to_scale_i[batch_i]
             img_size = Input_WHs[scale_idx]
             Bar.suffix = Bar.suffix + '|Img_size(wh) {:d}×{:d}'.format(img_size[0], img_size[1])
