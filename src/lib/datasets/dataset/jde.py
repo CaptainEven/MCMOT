@@ -478,6 +478,9 @@ class MultiScaleJD(LoadImagesAndLabels):
         # default input width and height
         self.default_resolution = opt.input_wh
 
+        # define the mapping from batch_i to scale_idx
+        self.batch_i_to_scale_i = defaultdict(int)
+
         # ----- generate img and label file path lists
         for ds, path in paths.items():
             with open(path, 'r') as file:
@@ -535,14 +538,6 @@ class MultiScaleJD(LoadImagesAndLabels):
         self.cds = [sum(self.nds[:i]) for i in range(len(self.nds))]  # 当前子数据集前面累计图片总数?
         self.nF = sum(self.nds)  # 用于训练的所有子训练集的图片总数
 
-        # randomly generate mapping from batch idx to scale idx
-        self.batch_i_to_scale_i = defaultdict(int)
-        self.num_batches = self.nF // self.opt.batch_size + 1
-        for batch_i in range(self.num_batches):
-            rand_batch_idx = np.random.randint(0, self.num_batches)
-            rand_scale_idx = rand_batch_idx % len(Input_WHs)
-            self.batch_i_to_scale_i[batch_i] = rand_scale_idx
-
         self.width = img_size[0]  # 网络输入图片宽度
         self.height = img_size[1]  # 网络输入图片高度
         self.max_objs = opt.K  # 每张图最多检测跟踪的目标个数
@@ -562,6 +557,17 @@ class MultiScaleJD(LoadImagesAndLabels):
                 for cls_id, start_idx in v.items():
                     print('Start index of dataset {} class {:d} is {:d}'
                           .format(k, cls_id, start_idx))
+
+        # rand scale the first time
+        self.rand_scale()
+
+    def rand_scale(self):
+        # randomly generate mapping from batch idx to scale idx
+        self.num_batches = self.nF // self.opt.batch_size + 1
+        for batch_i in range(self.num_batches):
+            rand_batch_idx = np.random.randint(0, self.num_batches)
+            rand_scale_idx = rand_batch_idx % len(Input_WHs)
+            self.batch_i_to_scale_i[batch_i] = rand_scale_idx
 
     def __getitem__(self, idx):
         batch_i = idx // int(self.opt.batch_size)
