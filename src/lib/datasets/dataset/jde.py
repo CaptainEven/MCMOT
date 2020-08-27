@@ -575,15 +575,24 @@ class MultiScaleJD(LoadImagesAndLabels):
         # rand scale the first time
         self.rand_scale()
 
-        self.gen_multi_scale_input_whs()
+        #
+        self.input_multi_scales = None
+        self.gen_multi_scale_input_whs()  # whether to generate multi-scales while keeping aspect ratio
 
     def rand_scale(self):
         # randomly generate mapping from batch idx to scale idx
-        self.num_batches = self.nF // self.opt.batch_size + 1
-        for batch_i in range(self.num_batches):
-            rand_batch_idx = np.random.randint(0, self.num_batches)
-            rand_scale_idx = rand_batch_idx % len(Input_WHs)
-            self.batch_i_to_scale_i[batch_i] = rand_scale_idx
+        if self.input_multi_scales is None:
+            self.num_batches = self.nF // self.opt.batch_size + 1
+            for batch_i in range(self.num_batches):
+                rand_batch_idx = np.random.randint(0, self.num_batches)
+                rand_scale_idx = rand_batch_idx % len(Input_WHs)
+                self.batch_i_to_scale_i[batch_i] = rand_scale_idx
+        else:
+            self.num_batches = self.nF // self.opt.batch_size + 1
+            for batch_i in range(self.num_batches):
+                rand_batch_idx = np.random.randint(0, self.num_batches)
+                rand_scale_idx = rand_batch_idx % len(self.input_multi_scales)
+                self.batch_i_to_scale_i[batch_i] = rand_scale_idx
 
     def gen_multi_scale_input_whs(self, num_scales=16, min_ratio=0.67, max_ratio=1.5):
         """
@@ -612,7 +621,28 @@ class MultiScaleJD(LoadImagesAndLabels):
         # other scales
         widths = list(range(min_width, max_width + 1, int((max_width - min_width) / num_scales)))
         heights = list(range(min_height, max_height + 1, int((max_height - min_height) / num_scales)))
-        assert len(widths) == len(heights)
+        widths = [width for width in widths if not (width % self.opt.down_ratio)]
+        heights = [height for height in heights if not (height % self.opt.down_ratio)]
+        if len(widths) < len(heights):
+            for width in widths:
+                height = math.ceil(width * self.default_aspect_ratio / self.opt.down_ratio) * self.opt.down_ratio
+                if [width, height] in self.input_multi_scales:
+                    continue
+                self.input_multi_scales.append([width, height])
+        elif len(widths) > len(heights):
+            for height in heights:
+                width = math.ceil(height / self.default_aspect_ratio / self.opt.down_ratio) * self.opt.down_ratio
+                if [width, height] in self.input_multi_scales:
+                    continue
+                self.input_multi_scales.append([width, height])
+        else:
+            for width, height in zip(widths, heights):
+                if [width, height] in self.input_multi_scales:
+                    continue
+                height = math.ceil(width * self.default_aspect_ratio / self.opt.down_ratio) * self.opt.down_ratio
+                self.input_multi_scales.append([width, height])
+        self.input_multi_scales.sort(key=lambda x: x[0])
+        print('Total {:d} multi-scales:\n'.format(len(self.input_multi_scales)), self.input_multi_scales)
 
     def shuffle(self):
         """
@@ -644,7 +674,10 @@ class MultiScaleJD(LoadImagesAndLabels):
     def __getitem__(self, idx):
         batch_i = idx // int(self.opt.batch_size)
         scale_idx = self.batch_i_to_scale_i[batch_i]
-        width, height = Input_WHs[scale_idx]
+        if self.input_multi_scales is None:
+            width, height = Input_WHs[scale_idx]
+        else:
+            width, height = self.input_multi_scales[scale_idx]
 
         # 为子训练集计算起始index
         for i, c in enumerate(self.cds):

@@ -241,7 +241,7 @@ class opts(object):
                                  help='feature dim for reid')
         self.parser.add_argument('--input-wh',
                                  type=tuple,
-                                 default=(768, 448),  # 1088, 608
+                                 default=(1088, 608),  # 768, 448
                                  help='net input resplution')
         self.parser.add_argument('--multi-scale',
                                  type=bool,
