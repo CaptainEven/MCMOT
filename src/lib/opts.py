@@ -37,9 +37,13 @@ class opts(object):
                                  help='disable when the input size is not fixed.')
         self.parser.add_argument('--seed', type=int, default=317,
                                  help='random seed')  # from CornerNet
+        self.parser.add_argument('--gen-scale',
+                                 type=bool,
+                                 default=True,
+                                 help='Whether to generate multi-scales')
         self.parser.add_argument('--is_debug',
                                  type=bool,
-                                 default=True,  # 是否使用多线程加载数据, default: False
+                                 default=False,  # 是否使用多线程加载数据, default: False
                                  help='whether in debug mode or not')  # debug模式下只能使用单进程
 
         # log

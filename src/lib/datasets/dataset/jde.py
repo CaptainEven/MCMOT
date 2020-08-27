@@ -572,9 +572,10 @@ class MultiScaleJD(LoadImagesAndLabels):
                     print('Start index of dataset {} class {:d} is {:d}'
                           .format(k, cls_id, start_idx))
 
-        # whether to generate multi-scales while keeping aspect ratio
         self.input_multi_scales = None
-        self.gen_multi_scale_input_whs()
+
+        if opt.gen_scale:  # whether to generate multi-scales while keeping aspect ratio
+            self.gen_multi_scale_input_whs()
 
         # rand scale the first time
         self.rand_scale()
