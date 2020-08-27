@@ -594,7 +594,7 @@ class MultiScaleJD(LoadImagesAndLabels):
                 rand_scale_idx = rand_batch_idx % len(self.input_multi_scales)
                 self.batch_i_to_scale_i[batch_i] = rand_scale_idx
 
-    def gen_multi_scale_input_whs(self, num_scales=128, min_ratio=0.67, max_ratio=1.5):
+    def gen_multi_scale_input_whs(self, num_scales=256, min_ratio=0.67, max_ratio=1.1):
         """
         generate input multi scale image sizes(w, h)
         :param num_scales:
@@ -620,8 +620,10 @@ class MultiScaleJD(LoadImagesAndLabels):
         self.input_multi_scales.append([max_width, max_height])
 
         # other scales
-        widths = list(range(min_width, max_width + 1, int((max_width - min_width) / num_scales)))
-        heights = list(range(min_height, max_height + 1, int((max_height - min_height) / num_scales)))
+        # widths = list(range(min_width, max_width + 1, int((max_width - min_width) / num_scales)))
+        # heights = list(range(min_height, max_height + 1, int((max_height - min_height) / num_scales)))
+        widths = list(range(min_width, max_width + 1, 1))
+        heights = list(range(min_height, max_height + 1, 1))
         widths = [width for width in widths if not (width % gs)]
         heights = [height for height in heights if not (height % gs)]
         if len(widths) < len(heights):
