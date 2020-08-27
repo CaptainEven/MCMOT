@@ -611,7 +611,7 @@ class MultiScaleJD(LoadImagesAndLabels):
 
         # other scales
         widths = list(range(min_width, max_width + 1, int((max_width - min_width) / num_scales)))
-        heights = list(rang(min_height, max_height + 1, int((max_height - min_height) / num_scales)))
+        heights = list(range(min_height, max_height + 1, int((max_height - min_height) / num_scales)))
         assert len(widths) == len(heights)
 
     def shuffle(self):
