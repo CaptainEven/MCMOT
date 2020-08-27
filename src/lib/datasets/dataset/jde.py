@@ -573,7 +573,7 @@ class MultiScaleJD(LoadImagesAndLabels):
 
     def shuffle(self):
         """
-        shuffle the dataset
+        random shuffle the dataset
         :return:
         """
         tmp_img_files = copy.deepcopy(self.img_files)
@@ -591,7 +591,7 @@ class MultiScaleJD(LoadImagesAndLabels):
                 uesd_ids.append(new_idx)
                 tmp_img_files[ds][i] = orig_img_files[new_idx]
 
-        self.img_files = tmp_img_files
+        self.img_files = tmp_img_files  # re-evaluate img_files
         for ds, path in self.paths.items():
             self.label_files[ds] = [x.replace('images', 'labels_with_ids')
                                         .replace('.png', '.txt')

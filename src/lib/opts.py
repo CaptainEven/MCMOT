@@ -16,7 +16,7 @@ class opts(object):
         self.parser.add_argument('--exp_id', default='default')
         self.parser.add_argument('--test', action='store_true')
         self.parser.add_argument('--load_model',
-                                 default='../exp/mot/default/mcmot_last_track_resdcn_18.pth',
+                                 default='../exp/mot/default/mcmot_last_det_resdcn_18.pth',
                                  help='path to pretrained model')
         self.parser.add_argument('--resume',
                                  action='store_true',
@@ -39,7 +39,7 @@ class opts(object):
                                  help='random seed')  # from CornerNet
         self.parser.add_argument('--is_debug',
                                  type=bool,
-                                 default=True,  # 是否使用多线程加载数据, default: False
+                                 default=False,  # 是否使用多线程加载数据, default: False
                                  help='whether in debug mode or not')  # debug模式下只能使用单进程
 
         # log
@@ -199,7 +199,7 @@ class opts(object):
 
         # mot: 选择数据集的配置文件
         self.parser.add_argument('--data_cfg', type=str,
-                                 default='../src/lib/cfg/mcmot.json',  # 'mot15.json', 'visdrone.json'
+                                 default='../src/lib/cfg/mcmot_det.json',  # 'mot15.json', 'visdrone.json'
                                  help='load data from cfg')
         # self.parser.add_argument('--data_cfg', type=str,
         #                          default='../src/lib/cfg/mcmot_det.json',  # mcmot.json, mcmot_det.json,
@@ -233,7 +233,7 @@ class opts(object):
                                  help='reid loss: ce | triplet')
         self.parser.add_argument('--id_weight',
                                  type=float,
-                                 default=1,  # 0for detection only and 1 for detection and re-ida
+                                 default=0,  # 0for detection only and 1 for detection and re-ida
                                  help='loss weight for id')  # 控制是否计算ReID
         self.parser.add_argument('--reid_dim',
                                  type=int,
