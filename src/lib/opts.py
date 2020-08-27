@@ -241,7 +241,7 @@ class opts(object):
                                  help='feature dim for reid')
         self.parser.add_argument('--input-wh',
                                  type=tuple,
-                                 default=(640, 320),  # 1088, 608
+                                 default=(768, 448),  # 1088, 608
                                  help='net input resplution')
         self.parser.add_argument('--multi-scale',
                                  type=bool,
@@ -332,7 +332,7 @@ class opts(object):
         :param dataset:
         :return:
         """
-        input_h, input_w = dataset.default_resolution  # 图片的高和宽
+        input_h, input_w = dataset.default_input_wh  # 图片的高和宽
         opt.mean, opt.std = dataset.mean, dataset.std  # 均值 方差
         opt.num_classes = dataset.num_classes  # 类别数
 
