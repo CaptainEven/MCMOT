@@ -98,7 +98,7 @@ class opts(object):
                                  help='drop learning rate by 10.')
         self.parser.add_argument('--num_epochs',
                                  type=int,
-                                 default=10,  # 30, 10, 3, 1
+                                 default=30,  # 30, 10, 3, 1
                                  help='total training epochs.')
         self.parser.add_argument('--batch_size',
                                  type=int,
@@ -179,7 +179,7 @@ class opts(object):
         # 输入的video文件路径
         self.parser.add_argument('--input-video',
                                  type=str,
-                                 default='../videos/test2.mp4',
+                                 default='../videos/test5.mp4',
                                  help='path to the input video')
 
         # 输入的image目录
@@ -391,7 +391,7 @@ class opts(object):
 
         h_w = default_dataset_info[opt.task]['default_resolution']
         opt.img_size = (h_w[1], h_w[0])
-        print('Net input image H, W', h_w)
+        print('Net input image {:d}×{:d}'.format(h_w[1], h_w[0]))
 
         dataset = Struct(default_dataset_info[opt.task])
         opt.dataset = dataset.dataset

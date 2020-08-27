@@ -10,7 +10,7 @@ os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
 
 import torch
 
-my_visible_devs = '4'  # '0, 3'  # 设置可运行GPU编号
+my_visible_devs = '2'  # '0, 3'  # 设置可运行GPU编号
 os.environ['CUDA_VISIBLE_DEVICES'] = my_visible_devs
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
@@ -80,18 +80,32 @@ def run(opt):
 
     # Get dataloader
     if opt.is_debug:
-        train_loader = torch.utils.data.DataLoader(dataset=dataset,
-                                                   batch_size=opt.batch_size,
-                                                   shuffle=False,  # True
-                                                   pin_memory=True,
-                                                   drop_last=True)  # debug时不设置线程数(即默认为0)
+        if opt.multi_scale:
+            train_loader = torch.utils.data.DataLoader(dataset=dataset,
+                                                       batch_size=opt.batch_size,
+                                                       shuffle=False,
+                                                       pin_memory=True,
+                                                       drop_last=True)  # debug时不设置线程数(即默认为0)
+        else:
+            train_loader = torch.utils.data.DataLoader(dataset=dataset,
+                                                       batch_size=opt.batch_size,
+                                                       shuffle=True,
+                                                       pin_memory=True,
+                                                       drop_last=True)  # debug时不设置线程数(即默认为0)
     else:
-        train_loader = torch.utils.data.DataLoader(dataset=dataset,
-                                                   batch_size=opt.batch_size,
-                                                   shuffle=True,
-                                                   num_workers=opt.num_workers,
-                                                   pin_memory=True,
-                                                   drop_last=True)
+        if opt.multi_scale:
+            train_loader = torch.utils.data.DataLoader(dataset=dataset,
+                                                       batch_size=opt.batch_size,
+                                                       shuffle=False,
+                                                       num_workers=opt.num_workers,
+                                                       pin_memory=True,
+                                                       drop_last=True)
+        else:
+            train_loader = torch.utils.data.DataLoader(dataset=dataset,
+                                                       batch_size=opt.batch_size,
+                                                       shuffle=True,
+                                                       pin_memory=True,
+                                                       drop_last=True)  # debug时不设置线程数(即默认为0)
 
     print('Starting training...')
     Trainer = train_factory[opt.task]

@@ -3,6 +3,7 @@ import math
 import os
 import os.path as osp
 import random
+import copy
 import time
 import warnings
 
@@ -442,7 +443,7 @@ Input_WHs = [
     [896, 576],
     [928, 608],
     [1088, 608]
-]
+]  # total 11 scales
 
 
 # ----------
@@ -482,7 +483,8 @@ class MultiScaleJD(LoadImagesAndLabels):
         self.batch_i_to_scale_i = defaultdict(int)
 
         # ----- generate img and label file path lists
-        for ds, path in paths.items():
+        self.paths = paths
+        for ds, path in self.paths.items():
             with open(path, 'r') as file:
                 self.img_files[ds] = file.readlines()
                 self.img_files[ds] = [osp.join(root, x.strip()) for x in self.img_files[ds]]
@@ -569,6 +571,36 @@ class MultiScaleJD(LoadImagesAndLabels):
             rand_scale_idx = rand_batch_idx % len(Input_WHs)
             self.batch_i_to_scale_i[batch_i] = rand_scale_idx
 
+    def shuffle(self):
+        """
+        shuffle the dataset
+        :return:
+        """
+        tmp_img_files = copy.deepcopy(self.img_files)
+        for ds, path in self.paths.items():
+            ds_n_f = len(self.img_files[ds])  # number of files of this sub-dataset
+            orig_img_files = self.img_files[ds]
+
+            # re-generate ids
+            uesd_ids = []
+            for i in range(ds_n_f):
+                new_idx = np.random.randint(0, ds_n_f)
+                if new_idx in uesd_ids:
+                    continue
+
+                uesd_ids.append(new_idx)
+                try:
+                    tmp_img_files[ds][i] = orig_img_files[new_idx]
+                except Exception as e:
+                    print(e)
+
+        self.img_files = tmp_img_files
+        for ds, path in self.paths.items():
+            self.label_files[ds] = [x.replace('images', 'labels_with_ids')
+                                        .replace('.png', '.txt')
+                                        .replace('.jpg', '.txt')
+                                    for x in self.img_files[ds]]
+
     def __getitem__(self, idx):
         batch_i = idx // int(self.opt.batch_size)
         scale_idx = self.batch_i_to_scale_i[batch_i]
@@ -577,7 +609,7 @@ class MultiScaleJD(LoadImagesAndLabels):
         # 为子训练集计算起始index
         for i, c in enumerate(self.cds):
             if idx >= c:
-                ds = list(self.label_files.keys())[i]
+                ds = list(self.label_files.keys())[i]  # 当前idx属于的子数据集
                 start_index = c
 
         img_path = self.img_files[ds][idx - start_index]
