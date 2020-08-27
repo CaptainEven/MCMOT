@@ -641,8 +641,13 @@ class MultiScaleJD(LoadImagesAndLabels):
                     continue
                 height = math.ceil(width * self.default_aspect_ratio / self.opt.down_ratio) * self.opt.down_ratio
                 self.input_multi_scales.append([width, height])
-        self.input_multi_scales.sort(key=lambda x: x[0])
-        print('Total {:d} multi-scales:\n'.format(len(self.input_multi_scales)), self.input_multi_scales)
+
+        if len(self.input_multi_scales) < 2:
+            self.input_multi_scales = None
+            print('[warning]: generate multi-scales failed(keeping aspect ratio)')
+        else:
+            self.input_multi_scales.sort(key=lambda x: x[0])
+            print('Total {:d} multi-scales:\n'.format(len(self.input_multi_scales)), self.input_multi_scales)
 
     def shuffle(self):
         """
