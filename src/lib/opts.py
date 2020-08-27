@@ -177,7 +177,7 @@ class opts(object):
         # 测试阶段的输入数据模式: video or image dir
         self.parser.add_argument('--input-mode',
                                  type=str,
-                                 default='video',  # video or image_dir or img_path_list_txt
+                                 default='img_path_list_txt',  # video or image_dir or img_path_list_txt
                                  help='input data type(video or image dir)')
 
         # 输入的video文件路径
@@ -379,7 +379,7 @@ class opts(object):
         opt = self.parse(args)
 
         default_dataset_info = {
-            'mot': {'default_resolution': [opt.input_wh[1], opt.input_wh[0]],  # [608, 1088], [320, 640]
+            'mot': {'default_input_wh': [opt.input_wh[1], opt.input_wh[0]],  # [608, 1088], [320, 640]
                     'num_classes': len(opt.reid_cls_ids.split(',')),  # 1
                     'mean': [0.408, 0.447, 0.470],
                     'std': [0.289, 0.274, 0.278],
@@ -393,9 +393,9 @@ class opts(object):
                 for k, v in entries.items():
                     self.__setattr__(k, v)
 
-        h_w = default_dataset_info[opt.task]['default_resolution']
+        h_w = default_dataset_info[opt.task]['default_input_wh']
         opt.img_size = (h_w[1], h_w[0])
-        print('Net input image {:d}×{:d}'.format(h_w[1], h_w[0]))
+        print('Net input image size: {:d}×{:d}'.format(h_w[1], h_w[0]))
 
         dataset = Struct(default_dataset_info[opt.task])
         opt.dataset = dataset.dataset
