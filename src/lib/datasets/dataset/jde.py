@@ -483,11 +483,16 @@ class MultiScaleJD(LoadImagesAndLabels):
         self.tid_start_index = OrderedDict()
         self.num_classes = len(opt.reid_cls_ids.split(','))  # C5: car, bicycle, person, cyclist, tricycle
 
+        # make sure img_size equal to opt.input_wh
+        if opt.input_wh[0] != img_size[0] or opt.input_wh[1] != img_size[1]:
+            opt.input_wh[0], opt.input_wh[1] = img_size[0], img_size[1]
+
         # default input width and height
         self.default_input_wh = opt.input_wh
 
-        # define the mapping from batch_i to scale_idx
-        self.batch_i_to_scale_i = defaultdict(int)
+        # net input width and height
+        self.width = self.default_input_wh[0]
+        self.height = self.default_input_wh[1]
 
         # ----- generate img and label file path lists
         self.paths = paths
@@ -546,9 +551,6 @@ class MultiScaleJD(LoadImagesAndLabels):
         self.nds = [len(x) for x in self.img_files.values()]  # 每个子训练集(MOT15, MOT20...)的图片数
         self.cds = [sum(self.nds[:i]) for i in range(len(self.nds))]  # 当前子数据集前面累计图片总数?
         self.nF = sum(self.nds)  # 用于训练的所有子训练集的图片总数
-
-        self.width = img_size[0]  # 网络输入图片宽度
-        self.height = img_size[1]  # 网络输入图片高度
         self.max_objs = opt.K  # 每张图最多检测跟踪的目标个数
         self.augment = augment
         self.transforms = transforms
@@ -570,6 +572,8 @@ class MultiScaleJD(LoadImagesAndLabels):
         # rand scale the first time
         self.rand_scale()
 
+        self.gen_multi_scale_input_whs()
+
     def rand_scale(self):
         # randomly generate mapping from batch idx to scale idx
         self.num_batches = self.nF // self.opt.batch_size + 1
@@ -578,7 +582,7 @@ class MultiScaleJD(LoadImagesAndLabels):
             rand_scale_idx = rand_batch_idx % len(Input_WHs)
             self.batch_i_to_scale_i[batch_i] = rand_scale_idx
 
-    def gen_multi_scale_input_whs(self, num_scales=16):
+    def gen_multi_scale_input_whs(self, num_scales=16, min_ratio=0.67, max_ratio=1.5):
         """
         generate input multi scale image sizes(w, h)
         :param num_scales:
@@ -586,6 +590,26 @@ class MultiScaleJD(LoadImagesAndLabels):
         """
 
         self.input_multi_scales = []
+        self.input_multi_scales.append([self.width, self.height])
+
+        # ----- min scale and max scale
+        # keep default aspect ratio
+        self.default_aspect_ratio = self.height / self.width
+
+        # min scale
+        min_width = math.ceil(self.width * min_ratio / self.opt.down_ratio) * self.opt.down_ratio
+        min_height = math.ceil(self.height * min_ratio / self.opt.down_ratio) * self.opt.down_ratio
+        self.input_multi_scales.append([min_width, min_height])
+
+        # max scale
+        max_width = math.ceil(self.width * max_ratio / self.opt.down_ratio) * self.opt.down_ratio
+        max_height = math.ceil(self.height * max_ratio / self.opt.down_ratio) * self.opt.down_ratio
+        self.input_multi_scales.append([max_width, max_height])
+
+        # other scales
+        widths = list(range(min_width, max_width + 1, int((max_width - min_width) / num_scales)))
+        heights = list(rang(min_height, max_height + 1, int((max_height - min_height) / num_scales)))
+        assert len(widths) == len(heights)
 
     def shuffle(self):
         """
@@ -779,8 +803,8 @@ class JointDataset(LoadImagesAndLabels):  # for training
         self.default_input_wh = opt.input_wh
 
         # net input width and height
-        self.width = default_input_wh[0]
-        self.height = default_input_wh[1]
+        self.width = self.default_input_wh[0]
+        self.height = self.default_input_wh[1]
 
         # ----- generate img and label file path lists
         for ds, path in paths.items():
