@@ -494,6 +494,9 @@ class MultiScaleJD(LoadImagesAndLabels):
         self.width = self.default_input_wh[0]
         self.height = self.default_input_wh[1]
 
+        # define mapping from batch idx to scale idx
+        self.batch_i_to_scale_i = defaultdict(int)
+
         # ----- generate img and label file path lists
         self.paths = paths
         for ds, path in self.paths.items():
