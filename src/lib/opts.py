@@ -100,9 +100,9 @@ class opts(object):
                                  type=int,
                                  default=30,  # 30, 10, 3, 1
                                  help='total training epochs.')
-        self.parser.add_argument('--batch_size',
+        self.parser.add_argument('--batch-size',
                                  type=int,
-                                 default=16,  # 18, 16, 14, 12, 10, 8, 4
+                                 default=8,  # 18, 16, 14, 12, 10, 8, 4
                                  help='batch size')
         self.parser.add_argument('--master_batch_size', type=int, default=-1,
                                  help='batch size on the master gpu.')

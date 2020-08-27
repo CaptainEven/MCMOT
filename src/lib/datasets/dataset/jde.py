@@ -572,12 +572,12 @@ class MultiScaleJD(LoadImagesAndLabels):
                     print('Start index of dataset {} class {:d} is {:d}'
                           .format(k, cls_id, start_idx))
 
+        # whether to generate multi-scales while keeping aspect ratio
+        self.input_multi_scales = None
+        self.gen_multi_scale_input_whs()
+
         # rand scale the first time
         self.rand_scale()
-
-        #
-        self.input_multi_scales = None
-        self.gen_multi_scale_input_whs()  # whether to generate multi-scales while keeping aspect ratio
 
     def rand_scale(self):
         # randomly generate mapping from batch idx to scale idx
@@ -594,12 +594,13 @@ class MultiScaleJD(LoadImagesAndLabels):
                 rand_scale_idx = rand_batch_idx % len(self.input_multi_scales)
                 self.batch_i_to_scale_i[batch_i] = rand_scale_idx
 
-    def gen_multi_scale_input_whs(self, num_scales=16, min_ratio=0.67, max_ratio=1.5):
+    def gen_multi_scale_input_whs(self, num_scales=128, min_ratio=0.67, max_ratio=1.5):
         """
         generate input multi scale image sizes(w, h)
         :param num_scales:
         :return:
         """
+        gs = 32 # > 4
 
         self.input_multi_scales = []
         self.input_multi_scales.append([self.width, self.height])
@@ -609,29 +610,29 @@ class MultiScaleJD(LoadImagesAndLabels):
         self.default_aspect_ratio = self.height / self.width
 
         # min scale
-        min_width = math.ceil(self.width * min_ratio / self.opt.down_ratio) * self.opt.down_ratio
-        min_height = math.ceil(self.height * min_ratio / self.opt.down_ratio) * self.opt.down_ratio
+        min_width = math.ceil(self.width * min_ratio / gs) * gs
+        min_height = math.ceil(self.height * min_ratio / gs) * gs
         self.input_multi_scales.append([min_width, min_height])
 
         # max scale
-        max_width = math.ceil(self.width * max_ratio / self.opt.down_ratio) * self.opt.down_ratio
-        max_height = math.ceil(self.height * max_ratio / self.opt.down_ratio) * self.opt.down_ratio
+        max_width = math.ceil(self.width * max_ratio / gs) * gs
+        max_height = math.ceil(self.height * max_ratio / gs) * gs
         self.input_multi_scales.append([max_width, max_height])
 
         # other scales
         widths = list(range(min_width, max_width + 1, int((max_width - min_width) / num_scales)))
         heights = list(range(min_height, max_height + 1, int((max_height - min_height) / num_scales)))
-        widths = [width for width in widths if not (width % self.opt.down_ratio)]
-        heights = [height for height in heights if not (height % self.opt.down_ratio)]
+        widths = [width for width in widths if not (width % gs)]
+        heights = [height for height in heights if not (height % gs)]
         if len(widths) < len(heights):
             for width in widths:
-                height = math.ceil(width * self.default_aspect_ratio / self.opt.down_ratio) * self.opt.down_ratio
+                height = math.ceil(width * self.default_aspect_ratio / gs) * gs
                 if [width, height] in self.input_multi_scales:
                     continue
                 self.input_multi_scales.append([width, height])
         elif len(widths) > len(heights):
             for height in heights:
-                width = math.ceil(height / self.default_aspect_ratio / self.opt.down_ratio) * self.opt.down_ratio
+                width = math.ceil(height / self.default_aspect_ratio / gs) * gs
                 if [width, height] in self.input_multi_scales:
                     continue
                 self.input_multi_scales.append([width, height])
@@ -639,7 +640,7 @@ class MultiScaleJD(LoadImagesAndLabels):
             for width, height in zip(widths, heights):
                 if [width, height] in self.input_multi_scales:
                     continue
-                height = math.ceil(width * self.default_aspect_ratio / self.opt.down_ratio) * self.opt.down_ratio
+                height = math.ceil(width * self.default_aspect_ratio / gs) * gs
                 self.input_multi_scales.append([width, height])
 
         if len(self.input_multi_scales) < 2:

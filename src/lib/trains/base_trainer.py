@@ -115,7 +115,10 @@ class BaseTrainer(object):
 
             # multi-scale img_size display
             scale_idx = data_loader.dataset.batch_i_to_scale_i[batch_i]
-            img_size = Input_WHs[scale_idx]
+            if data_loader.dataset.input_multi_scales is None:
+                img_size = Input_WHs[scale_idx]
+            else:
+                img_size = data_loader.dataset.input_multi_scales[scale_idx]
             Bar.suffix = Bar.suffix + '|Img_size(wh) {:d}×{:d}'.format(img_size[0], img_size[1])
 
             if not opt.hide_data_time:
