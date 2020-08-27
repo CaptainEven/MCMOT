@@ -601,7 +601,7 @@ class MultiScaleJD(LoadImagesAndLabels):
         :param num_scales:
         :return:
         """
-        gs = 32 # 2e5
+        gs = 32  # grid size
 
         self.input_multi_scales = []
         self.input_multi_scales.append([self.width, self.height])
