@@ -589,10 +589,7 @@ class MultiScaleJD(LoadImagesAndLabels):
                     continue
 
                 uesd_ids.append(new_idx)
-                try:
-                    tmp_img_files[ds][i] = orig_img_files[new_idx]
-                except Exception as e:
-                    print(e)
+                tmp_img_files[ds][i] = orig_img_files[new_idx]
 
         self.img_files = tmp_img_files
         for ds, path in self.paths.items():
