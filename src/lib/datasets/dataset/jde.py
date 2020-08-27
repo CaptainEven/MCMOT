@@ -596,11 +596,11 @@ class MultiScaleJD(LoadImagesAndLabels):
 
     def gen_multi_scale_input_whs(self, num_scales=256, min_ratio=0.67, max_ratio=1.1):
         """
-        generate input multi scale image sizes(w, h)
+        generate input multi scale image sizes(w, h), keep default aspect ratio
         :param num_scales:
         :return:
         """
-        gs = 32 # > 4
+        gs = 32 # 2e5
 
         self.input_multi_scales = []
         self.input_multi_scales.append([self.width, self.height])
