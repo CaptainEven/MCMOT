@@ -813,7 +813,6 @@ class JointDataset(LoadImagesAndLabels):  # for training
     """
     joint detection and embedding dataset
     """
-    # default_resolution = [1088, 608]
     mean = None
     std = None
 

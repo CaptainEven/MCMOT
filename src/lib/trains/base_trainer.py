@@ -135,10 +135,10 @@ class BaseTrainer(object):
             del output, loss, loss_stats, batch
 
         # randomly do multi-scaling for dataset every epoch
-        data_loader.dataset.rand_scale()
+        data_loader.dataset.rand_scale()  # re-assign scale for each batch
 
         # shuffule the dataset every epoch
-        data_loader.dataset.shuffle()
+        data_loader.dataset.shuffle()  # re-assign file id for each idx
 
         bar.finish()
         ret = {k: v.avg for k, v in avg_loss_stats.items()}
