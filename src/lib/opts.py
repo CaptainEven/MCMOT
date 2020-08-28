@@ -16,7 +16,7 @@ class opts(object):
         self.parser.add_argument('--exp_id', default='default')
         self.parser.add_argument('--test', action='store_true')
         self.parser.add_argument('--load_model',
-                                 default='../exp/mot/default/mcmot_last_det_resdcn_18.pth',
+                                 default='../exp/mot/default/mcmot_last_track_resdcn_18.pth',
                                  help='path to pretrained model')
         self.parser.add_argument('--resume',
                                  action='store_true',
@@ -94,7 +94,7 @@ class opts(object):
         # train
         self.parser.add_argument('--lr',
                                  type=float,
-                                 default=1e-4,  # 1e-4, 5e-5, 3e-5
+                                 default=7e-5,  # 1e-4, 7e-5, 5e-5, 3e-5
                                  help='learning rate for batch size 32.')
         self.parser.add_argument('--lr_step',
                                  type=str,
@@ -106,7 +106,7 @@ class opts(object):
                                  help='total training epochs.')
         self.parser.add_argument('--batch-size',
                                  type=int,
-                                 default=8,  # 18, 16, 14, 12, 10, 8, 4
+                                 default=10,  # 18, 16, 14, 12, 10, 8, 4
                                  help='batch size')
         self.parser.add_argument('--master_batch_size', type=int, default=-1,
                                  help='batch size on the master gpu.')
@@ -177,7 +177,7 @@ class opts(object):
         # 测试阶段的输入数据模式: video or image dir
         self.parser.add_argument('--input-mode',
                                  type=str,
-                                 default='img_path_list_txt',  # video or image_dir or img_path_list_txt
+                                 default='video',  # video or image_dir or img_path_list_txt
                                  help='input data type(video or image dir)')
 
         # 输入的video文件路径
@@ -245,7 +245,7 @@ class opts(object):
                                  help='feature dim for reid')
         self.parser.add_argument('--input-wh',
                                  type=tuple,
-                                 default=(1088, 608),  # 768, 448
+                                 default=(1088, 608),  # (768, 448) or (1088, 608)
                                  help='net input resplution')
         self.parser.add_argument('--multi-scale',
                                  type=bool,

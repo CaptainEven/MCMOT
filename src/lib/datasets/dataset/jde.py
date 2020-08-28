@@ -434,22 +434,22 @@ def collate_fn(batch):
 
 # ---------- Predefined multi-scale input image width and height list
 Input_WHs = [
-    [640, 320],  # 0
-    [672, 352],  # 1
-    [704, 384],  # 2
-    [736, 416],  # 3
-    [768, 448],  # 4
-    [800, 480],  # 5
-    [832, 512],  # 6
-    [864, 544],  # 7
-    [896, 576],  # 8
-    [928, 608],  # 9
-    [960, 640],  # 10
-    [992, 672],  # 11
+    [640, 320],   # 0
+    [672, 352],   # 1
+    [704, 384],   # 2
+    [736, 416],   # 3
+    [768, 448],   # 4
+    [800, 480],   # 5
+    [832, 512],   # 6
+    [864, 544],   # 7
+    [896, 576],   # 8
+    [928, 608],   # 9
+    [960, 640],   # 10
+    [992, 672],   # 11
     [1064, 704],  # 12
     [1064, 736],  # 13
     [1064, 608],  # 14
-    [1088, 608]  # 15
+    [1088, 608]   # 15
 ]  # total 16 scales with floating aspect ratios
 
 
@@ -579,6 +579,7 @@ class MultiScaleJD(LoadImagesAndLabels):
 
         # rand scale the first time
         self.rand_scale()
+        print('Total {:d} multi-scales:\n'.format(len(self.input_multi_scales)), self.input_multi_scales)
 
     def rand_scale(self):
         # randomly generate mapping from batch idx to scale idx
@@ -603,7 +604,8 @@ class MultiScaleJD(LoadImagesAndLabels):
         """
         gs = 32  # grid size
 
-        self.input_multi_scales = []
+        self.input_multi_scales = [x for x in Input_WHs if not (x[0] % gs or x[1] % gs)]
+
         self.input_multi_scales.append([self.width, self.height])
 
         # ----- min scale and max scale
@@ -651,7 +653,6 @@ class MultiScaleJD(LoadImagesAndLabels):
             print('[warning]: generate multi-scales failed(keeping aspect ratio)')
         else:
             self.input_multi_scales.sort(key=lambda x: x[0])
-            print('Total {:d} multi-scales:\n'.format(len(self.input_multi_scales)), self.input_multi_scales)
 
     def shuffle(self):
         """
