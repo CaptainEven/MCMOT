@@ -605,7 +605,6 @@ class MultiScaleJD(LoadImagesAndLabels):
         gs = 32  # grid size
 
         self.input_multi_scales = [x for x in Input_WHs if not (x[0] % gs or x[1] % gs)]
-
         self.input_multi_scales.append([self.width, self.height])
 
         # ----- min scale and max scale
