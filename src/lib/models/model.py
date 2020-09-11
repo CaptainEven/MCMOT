@@ -76,10 +76,11 @@ def load_model(model,
                 #     k, model_state_dict[k].shape, state_dict[k].shape, msg))
                 state_dict[k] = model_state_dict[k]
         else:
-            print('Drop parameter {}.'.format(k) + msg)
+            # print('Drop parameter {}.'.format(k) + msg)
+            pass
     for k in model_state_dict:
         if not (k in state_dict):
-            print('No param {}.'.format(k) + msg)
+            # print('No param {}.'.format(k) + msg)
             state_dict[k] = model_state_dict[k]
     model.load_state_dict(state_dict, strict=False)
 

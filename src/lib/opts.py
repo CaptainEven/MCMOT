@@ -238,7 +238,7 @@ class opts(object):
         self.parser.add_argument('--id_weight',
                                  type=float,
                                  default=0,  # 0for detection only and 1 for detection and re-ida
-                                 help='loss weight for id')  # 控制是否计算ReID
+                                 help='loss weight for id')  # ReID feature extraction or not
         self.parser.add_argument('--reid_dim',
                                  type=int,
                                  default=128,  # 128, 256, 512
