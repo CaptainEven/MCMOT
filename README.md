@@ -43,6 +43,15 @@ from gen_dataset_visdrone import cls2id, id2cls  # visdrone
                                  help='')  # the object classes need to do reid
 ```
 
+## Tracking or detection mode setting
+Set id_weight to 1 for tracking and 0 for detection mode.
+```
+        self.parser.add_argument('--id_weight',
+                                 type=float,
+                                 default=1,  # 0for detection only and 1 for detection and re-ida
+                                 help='loss weight for id')  # ReID feature extraction or not
+```
+
 ## Pretained model for C5 and VisDrone detection and tracking
 HRNet18 backbone with bi-linear upsampling replaced with de-convolution </br>
 The pre-trained model is for 5 classes(C5) detection & tracking: car, bicycle, person, cyclist, tricycle, which can be used for road traffic video surveillance and analysis. </br>
