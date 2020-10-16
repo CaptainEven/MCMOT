@@ -3,15 +3,16 @@ import math
 import os
 import os.path as osp
 import random
+import copy
 import time
 import warnings
-from collections import OrderedDict, defaultdict
 
 import cv2
 # import json
 import numpy as np
 import torch
 
+from collections import OrderedDict, defaultdict
 # from torch.utils.data import Dataset
 # from torchvision.transforms import transforms as T
 # from cython_bbox import bbox_overlaps as bbox_ious
@@ -176,8 +177,10 @@ class LoadImagesAndLabels:  # for training
                             for x in self.img_files]
 
         self.nF = len(self.img_files)  # number of image files
+
         self.width = img_size[0]
         self.height = img_size[1]
+
         self.augment = augment
         self.transforms = transforms
 
@@ -186,16 +189,19 @@ class LoadImagesAndLabels:  # for training
         label_path = self.label_files[files_index]
         return self.get_data(img_path, label_path)
 
-    def get_data(self, img_path, label_path):
+    def get_data(self, img_path, label_path, width=None, height=None):
         """
         图像数据格式转换, 增强; 标签格式化
         :param img_path:
         :param label_path:
+        :param height:
+        :param width:
         :return:
         """
         # 输入网络的图像分辨率
-        height = self.height
-        width = self.width
+        if height is None or width is None:
+            height = self.height
+            width = self.width
 
         # 读取图片数据为numpy array格式, 3通道顺序为BGR
         img = cv2.imread(img_path)  # cv(numpy): BGR
@@ -225,7 +231,7 @@ class LoadImagesAndLabels:  # for training
             cv2.cvtColor(img_hsv, cv2.COLOR_HSV2BGR, dst=img)
 
         h, w, _ = img.shape
-        img, ratio, pad_w, pad_h = letterbox(img, height=height, width=width)
+        img, ratio, pad_w, pad_h = letterbox(img, height=height, width=width)  # resizing and padding
 
         # Load labels
         if os.path.isfile(label_path):
@@ -426,11 +432,32 @@ def collate_fn(batch):
     return imgs, filled_labels, paths, sizes, labels_len.unsqueeze(1)
 
 
-class JointDataset(LoadImagesAndLabels):  # for training
+# ---------- Predefined multi-scale input image width and height list
+Input_WHs = [
+    [640, 320],   # 0
+    [672, 352],   # 1
+    [704, 384],   # 2
+    [736, 416],   # 3
+    [768, 448],   # 4
+    [800, 480],   # 5
+    [832, 512],   # 6
+    [864, 544],   # 7
+    [896, 576],   # 8
+    [928, 608],   # 9
+    [960, 640],   # 10
+    [992, 672],   # 11
+    [1064, 704],  # 12
+    [1064, 736],  # 13
+    [1064, 608],  # 14
+    [1088, 608]   # 15
+]  # total 16 scales with floating aspect ratios
+
+
+# ----------
+class MultiScaleJD(LoadImagesAndLabels):
     """
-    joint detection and embedding dataset
+    multi-joint scale for trainig
     """
-    default_resolution = [1088, 608]
     mean = None
     std = None
 
@@ -450,15 +477,29 @@ class JointDataset(LoadImagesAndLabels):  # for training
         :param transforms:
         """
         self.opt = opt
-        # dataset_names = paths.keys()
         self.img_files = OrderedDict()
         self.label_files = OrderedDict()
         self.tid_num = OrderedDict()
         self.tid_start_index = OrderedDict()
-        self.num_classes = len(opt.reid_cls_ids.split(','))  # car, bicycle, person, cyclist, tricycle
+        self.num_classes = len(opt.reid_cls_ids.split(','))  # C5: car, bicycle, person, cyclist, tricycle
+
+        # make sure img_size equal to opt.input_wh
+        if opt.input_wh[0] != img_size[0] or opt.input_wh[1] != img_size[1]:
+            opt.input_wh[0], opt.input_wh[1] = img_size[0], img_size[1]
+
+        # default input width and height
+        self.default_input_wh = opt.input_wh
+
+        # net input width and height
+        self.width = self.default_input_wh[0]
+        self.height = self.default_input_wh[1]
+
+        # define mapping from batch idx to scale idx
+        self.batch_i_to_scale_i = defaultdict(int)
 
         # ----- generate img and label file path lists
-        for ds, path in paths.items():
+        self.paths = paths
+        for ds, path in self.paths.items():
             with open(path, 'r') as file:
                 self.img_files[ds] = file.readlines()
                 self.img_files[ds] = [osp.join(root, x.strip()) for x in self.img_files[ds]]
@@ -468,6 +509,8 @@ class JointDataset(LoadImagesAndLabels):  # for training
                                         .replace('.png', '.txt')
                                         .replace('.jpg', '.txt')
                                     for x in self.img_files[ds]]
+
+            print('Total {} image files in {} dataset.'.format(len(self.label_files[ds]), ds))
 
         if opt.id_weight > 0:  # If do ReID calculation
             # @even: for MCMOT training
@@ -511,9 +554,6 @@ class JointDataset(LoadImagesAndLabels):  # for training
         self.nds = [len(x) for x in self.img_files.values()]  # 每个子训练集(MOT15, MOT20...)的图片数
         self.cds = [sum(self.nds[:i]) for i in range(len(self.nds))]  # 当前子数据集前面累计图片总数?
         self.nF = sum(self.nds)  # 用于训练的所有子训练集的图片总数
-
-        self.width = img_size[0]  # 网络输入图片宽度
-        self.height = img_size[1]  # 网络输入图片高度
         self.max_objs = opt.K  # 每张图最多检测跟踪的目标个数
         self.augment = augment
         self.transforms = transforms
@@ -532,15 +572,367 @@ class JointDataset(LoadImagesAndLabels):  # for training
                     print('Start index of dataset {} class {:d} is {:d}'
                           .format(k, cls_id, start_idx))
 
-    def __getitem__(self, f_idx):
+        self.input_multi_scales = None
+
+        if opt.gen_scale:  # whether to generate multi-scales while keeping aspect ratio
+            self.gen_multi_scale_input_whs()
+
+        # rand scale the first time
+        self.rand_scale()
+        print('Total {:d} multi-scales:\n'.format(len(self.input_multi_scales)), self.input_multi_scales)
+
+    def rand_scale(self):
+        # randomly generate mapping from batch idx to scale idx
+        if self.input_multi_scales is None:
+            self.num_batches = self.nF // self.opt.batch_size + 1
+            for batch_i in range(self.num_batches):
+                rand_batch_idx = np.random.randint(0, self.num_batches)
+                rand_scale_idx = rand_batch_idx % len(Input_WHs)
+                self.batch_i_to_scale_i[batch_i] = rand_scale_idx
+        else:
+            self.num_batches = self.nF // self.opt.batch_size + 1
+            for batch_i in range(self.num_batches):
+                rand_batch_idx = np.random.randint(0, self.num_batches)
+                rand_scale_idx = rand_batch_idx % len(self.input_multi_scales)
+                self.batch_i_to_scale_i[batch_i] = rand_scale_idx
+
+    def gen_multi_scale_input_whs(self, num_scales=256, min_ratio=0.67, max_ratio=1.1):
+        """
+        generate input multi scale image sizes(w, h), keep default aspect ratio
+        :param num_scales:
+        :return:
+        """
+        gs = 32  # grid size
+
+        self.input_multi_scales = [x for x in Input_WHs if not (x[0] % gs or x[1] % gs)]
+        self.input_multi_scales.append([self.width, self.height])
+
+        # ----- min scale and max scale
+        # keep default aspect ratio
+        self.default_aspect_ratio = self.height / self.width
+
+        # min scale
+        min_width = math.ceil(self.width * min_ratio / gs) * gs
+        min_height = math.ceil(self.height * min_ratio / gs) * gs
+        self.input_multi_scales.append([min_width, min_height])
+
+        # max scale
+        max_width = math.ceil(self.width * max_ratio / gs) * gs
+        max_height = math.ceil(self.height * max_ratio / gs) * gs
+        self.input_multi_scales.append([max_width, max_height])
+
+        # other scales
+        # widths = list(range(min_width, max_width + 1, int((max_width - min_width) / num_scales)))
+        # heights = list(range(min_height, max_height + 1, int((max_height - min_height) / num_scales)))
+        widths = list(range(min_width, max_width + 1, 1))
+        heights = list(range(min_height, max_height + 1, 1))
+        widths = [width for width in widths if not (width % gs)]
+        heights = [height for height in heights if not (height % gs)]
+        if len(widths) < len(heights):
+            for width in widths:
+                height = math.ceil(width * self.default_aspect_ratio / gs) * gs
+                if [width, height] in self.input_multi_scales:
+                    continue
+                self.input_multi_scales.append([width, height])
+        elif len(widths) > len(heights):
+            for height in heights:
+                width = math.ceil(height / self.default_aspect_ratio / gs) * gs
+                if [width, height] in self.input_multi_scales:
+                    continue
+                self.input_multi_scales.append([width, height])
+        else:
+            for width, height in zip(widths, heights):
+                if [width, height] in self.input_multi_scales:
+                    continue
+                height = math.ceil(width * self.default_aspect_ratio / gs) * gs
+                self.input_multi_scales.append([width, height])
+
+        if len(self.input_multi_scales) < 2:
+            self.input_multi_scales = None
+            print('[warning]: generate multi-scales failed(keeping aspect ratio)')
+        else:
+            self.input_multi_scales.sort(key=lambda x: x[0])
+
+    def shuffle(self):
+        """
+        random shuffle the dataset
+        :return:
+        """
+        tmp_img_files = copy.deepcopy(self.img_files)
+        for ds, path in self.paths.items():
+            ds_n_f = len(self.img_files[ds])  # number of files of this sub-dataset
+            orig_img_files = self.img_files[ds]
+
+            # re-generate ids
+            uesd_ids = []
+            for i in range(ds_n_f):
+                new_idx = np.random.randint(0, ds_n_f)
+                if new_idx in uesd_ids:
+                    continue
+
+                uesd_ids.append(new_idx)
+                tmp_img_files[ds][i] = orig_img_files[new_idx]
+
+        self.img_files = tmp_img_files  # re-evaluate img_files
+        for ds, path in self.paths.items():  # re-evaluate corresponding label files
+            self.label_files[ds] = [x.replace('images', 'labels_with_ids')
+                                        .replace('.png', '.txt')
+                                        .replace('.jpg', '.txt')
+                                    for x in self.img_files[ds]]
+
+    def __getitem__(self, idx):
+        batch_i = idx // int(self.opt.batch_size)
+        scale_idx = self.batch_i_to_scale_i[batch_i]
+        if self.input_multi_scales is None:
+            width, height = Input_WHs[scale_idx]
+        else:
+            width, height = self.input_multi_scales[scale_idx]
+
         # 为子训练集计算起始index
         for i, c in enumerate(self.cds):
-            if f_idx >= c:
+            if idx >= c:
+                ds = list(self.label_files.keys())[i]  # 当前idx属于的子数据集
+                start_index = c
+
+        img_path = self.img_files[ds][idx - start_index]
+        label_path = self.label_files[ds][idx - start_index]
+
+        # Get image data and label: using multi-scale input image size
+        imgs, labels, img_path, (input_h, input_w) = self.get_data(img_path, label_path, width, height)
+        # print('input_h, input_w: %d %d' % (input_h, input_w))
+
+        # 存在多个子训练集时, 为每个子训练集合(视频seq)计算正确的起始index
+        # @even: for MCMOT training
+        if self.opt.id_weight > 0:
+            for i, _ in enumerate(labels):
+                if labels[i, 1] > -1:
+                    cls_id = int(labels[i][0])
+                    start_idx = self.tid_start_idx_of_cls_ids[ds][cls_id]
+                    labels[i, 1] += start_idx
+
+        output_h = imgs.shape[1] // self.opt.down_ratio  # 向下取整除法
+        output_w = imgs.shape[2] // self.opt.down_ratio
+        # print('output_h, output_w: %d %d' % (output_h, output_w))
+
+        # 图片中实际标注的目标数
+        num_objs = labels.shape[0]
+
+        # --- GT of detection
+        hm = np.zeros((self.num_classes, output_h, output_w), dtype=np.float32)  # C×H×W: heat-map通道数即类别数
+        wh = np.zeros((self.max_objs, 2), dtype=np.float32)
+        reg = np.zeros((self.max_objs, 2), dtype=np.float32)
+        ind = np.zeros((self.max_objs,), dtype=np.int64)  # K个object
+        reg_mask = np.zeros((self.max_objs,), dtype=np.uint8)  # 只计算feature map有目标的像素的reg loss
+
+        if self.opt.id_weight > 0:
+            # --- GT of ReID
+            ids = np.zeros((self.max_objs,), dtype=np.int64)  # 一张图最多检测并ReID K个目标, 都初始化id为0
+
+            # @even: 每个目标类别都对应一组track ids
+            cls_tr_ids = np.zeros((self.num_classes, output_h, output_w), dtype=np.int64)
+
+            # @even, class id map: 每个(x, y)处的目标类别, 都初始化为-1
+            cls_id_map = np.full((1, output_h, output_w), -1, dtype=np.int64)  # 1×H×W
+
+        # Gauss function definition
+        draw_gaussian = draw_msra_gaussian if self.opt.mse_loss else draw_umich_gaussian
+
+        # 遍历每一个ground truth检测目标
+        for k in range(num_objs):  # 图片中实际的目标个数
+            label = labels[k]
+
+            # 计算bbox的经过网络的输出GT值
+            #                       0        1        2       3
+            bbox = label[2:]  # center_x, center_y, bbox_w, bbox_h
+
+            # 检测目标的类别(索引从0开始, 0代表背景类别)
+            cls_id = int(label[0])
+
+            bbox[[0, 2]] = bbox[[0, 2]] * output_w
+            bbox[[1, 3]] = bbox[[1, 3]] * output_h
+            bbox[0] = np.clip(bbox[0], 0, output_w - 1)
+            bbox[1] = np.clip(bbox[1], 0, output_h - 1)
+
+            w, h = bbox[2], bbox[3]
+
+            if h > 0 and w > 0:
+                # heat-map radius
+                radius = gaussian_radius((math.ceil(h), math.ceil(w)))
+                radius = max(0, int(radius))  # radius >= 0
+                radius = self.opt.hm_gauss if self.opt.mse_loss else radius
+
+                # bbox center coordinate
+                ct = np.array([bbox[0], bbox[1]], dtype=np.float32)
+                ct_int = ct.astype(np.int32)  # floor int
+
+                # draw gauss weight for heat-map
+                draw_gaussian(hm[cls_id], ct_int, radius)  # hm
+
+                # --- GT of detection
+                wh[k] = float(w), float(h)
+
+                # 记录feature map上有目标的坐标索引
+                ind[k] = ct_int[1] * output_w + ct_int[0]  # feature map index:y*w+x
+
+                # offset regression
+                reg[k] = ct - ct_int
+                reg_mask[k] = 1
+
+                # --- GT of ReID
+                if self.opt.id_weight > 0:
+                    # @even: 取output feature map的每个(y, x)处的目标类别
+                    cls_id_map[0][ct_int[1], ct_int[0]] = cls_id  # 1×H×W
+
+                    # @even: 记录该类别对应的track ids
+                    cls_tr_ids[cls_id][ct_int[1]][ct_int[0]] = label[1] - 1  # track id从1开始的, 转换成从0开始
+
+                    ids[k] = label[1] - 1  # 分类的idx: track id - 1
+
+        if self.opt.id_weight > 0:
+            ret = {'input': imgs,
+                   'hm': hm,
+                   'reg': reg,
+                   'wh': wh,
+                   'ind': ind,
+                   'reg_mask': reg_mask,
+                   'ids': ids,
+                   'cls_id_map': cls_id_map,  # feature map上每个(x, y)处的目标类别id
+                   'cls_tr_ids': cls_tr_ids}
+        else:  # only for detection
+            ret = {'input': imgs,
+                   'hm': hm,
+                   'reg': reg,
+                   'wh': wh,
+                   'ind': ind,
+                   'reg_mask': reg_mask}
+
+        return ret  # 返回一个字典(第一次见识这样的getitem)
+
+
+class JointDataset(LoadImagesAndLabels):  # for training
+    """
+    joint detection and embedding dataset
+    """
+    mean = None
+    std = None
+
+    def __init__(self,
+                 opt,
+                 root,
+                 paths,
+                 img_size=(1088, 608),
+                 augment=False,
+                 transforms=None):
+        """
+        :param opt:
+        :param root:
+        :param paths:
+        :param img_size:
+        :param augment:
+        :param transforms:
+        """
+        self.opt = opt
+        # dataset_names = paths.keys()
+        self.img_files = OrderedDict()
+        self.label_files = OrderedDict()
+        self.tid_num = OrderedDict()
+        self.tid_start_index = OrderedDict()
+        self.num_classes = len(opt.reid_cls_ids.split(','))  # C5: car, bicycle, person, cyclist, tricycle
+
+        # make sure img_size equal to opt.input_wh
+        if opt.input_wh[0] != img_size[0] or opt.input_wh[1] != img_size[1]:
+            opt.input_wh[0], opt.input_wh[1] = img_size[0], img_size[1]
+
+        # default input width and height
+        self.default_input_wh = opt.input_wh
+
+        # net input width and height
+        self.width = self.default_input_wh[0]
+        self.height = self.default_input_wh[1]
+
+        # ----- generate img and label file path lists
+        for ds, path in paths.items():
+            with open(path, 'r') as file:
+                self.img_files[ds] = file.readlines()
+                self.img_files[ds] = [osp.join(root, x.strip()) for x in self.img_files[ds]]
+                self.img_files[ds] = list(filter(lambda x: len(x) > 0, self.img_files[ds]))
+
+            self.label_files[ds] = [x.replace('images', 'labels_with_ids')
+                                        .replace('.png', '.txt')
+                                        .replace('.jpg', '.txt')
+                                    for x in self.img_files[ds]]
+
+            print('Total {} image files in {} dataset.'.format(len(self.label_files[ds]), ds))
+
+        if opt.id_weight > 0:  # If do ReID calculation
+            # @even: for MCMOT training
+            for ds, label_paths in self.label_files.items():  # 每个子数据集
+                max_ids_dict = defaultdict(int)  # cls_id => max track id
+
+                # 子数据集中每个label
+                for lp in label_paths:
+                    if not os.path.isfile(lp):
+                        print('[Warning]: invalid label file {}.'.format(lp))
+                        continue
+
+                    with warnings.catch_warnings():
+                        warnings.simplefilter("ignore")
+
+                        lb = np.loadtxt(lp)
+                        if len(lb) < 1:  # 空标签文件
+                            continue
+
+                        lb = lb.reshape(-1, 6)
+                        for item in lb:  # label中每一个item(检测目标)
+                            if item[1] > max_ids_dict[int(item[0])]:  # item[0]: cls_id, item[1]: track id
+                                max_ids_dict[int(item[0])] = item[1]
+
+                # track id number
+                self.tid_num[ds] = max_ids_dict  # 每个子数据集按照需要reid的cls_id组织成dict
+
+            # @even: for MCMOT training
+            self.tid_start_idx_of_cls_ids = defaultdict(dict)
+            last_idx_dict = defaultdict(int)  # 从0开始
+            for k, v in self.tid_num.items():  # 统计每一个子数据集
+                for cls_id, id_num in v.items():  # 统计这个子数据集的每一个类别, v是一个max_ids_dict
+                    self.tid_start_idx_of_cls_ids[k][cls_id] = last_idx_dict[cls_id]
+                    last_idx_dict[cls_id] += id_num
+
+            # @even: for MCMOT training
+            self.nID_dict = defaultdict(int)
+            for k, v in last_idx_dict.items():
+                self.nID_dict[k] = int(v)  # 每个类别的tack ids数量
+
+        self.nds = [len(x) for x in self.img_files.values()]  # 每个子训练集(MOT15, MOT20...)的图片数
+        self.cds = [sum(self.nds[:i]) for i in range(len(self.nds))]  # 当前子数据集前面累计图片总数?
+        self.nF = sum(self.nds)  # 用于训练的所有子训练集的图片总数
+        self.max_objs = opt.K  # 每张图最多检测跟踪的目标个数
+        self.augment = augment
+        self.transforms = transforms
+
+        print('dataset summary')
+        print(self.tid_num)
+
+        if opt.id_weight > 0:  # If do ReID calculation
+            # print('total # identities:', self.nID)
+            for k, v in self.nID_dict.items():
+                print('Total {:d} IDs of {}'.format(v, id2cls[k]))
+
+            # print('start index', self.tid_start_index)
+            for k, v in self.tid_start_idx_of_cls_ids.items():
+                for cls_id, start_idx in v.items():
+                    print('Start index of dataset {} class {:d} is {:d}'
+                          .format(k, cls_id, start_idx))
+
+    def __getitem__(self, idx):
+        # 为子训练集计算起始index
+        for i, c in enumerate(self.cds):
+            if idx >= c:
                 ds = list(self.label_files.keys())[i]
                 start_index = c
 
-        img_path = self.img_files[ds][f_idx - start_index]
-        label_path = self.label_files[ds][f_idx - start_index]
+        img_path = self.img_files[ds][idx - start_index]
+        label_path = self.label_files[ds][idx - start_index]
 
         # Get image data and label
         imgs, labels, img_path, (input_h, input_w) = self.get_data(img_path, label_path)

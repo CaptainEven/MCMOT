@@ -37,6 +37,10 @@ class opts(object):
                                  help='disable when the input size is not fixed.')
         self.parser.add_argument('--seed', type=int, default=317,
                                  help='random seed')  # from CornerNet
+        self.parser.add_argument('--gen-scale',
+                                 type=bool,
+                                 default=True,
+                                 help='Whether to generate multi-scales')
         self.parser.add_argument('--is_debug',
                                  type=bool,
                                  default=False,  # 是否使用多线程加载数据, default: False
@@ -90,7 +94,7 @@ class opts(object):
         # train
         self.parser.add_argument('--lr',
                                  type=float,
-                                 default=1e-4,  # 1e-4, 5e-5, 3e-5
+                                 default=7e-5,  # 1e-4, 7e-5, 5e-5, 3e-5
                                  help='learning rate for batch size 32.')
         self.parser.add_argument('--lr_step',
                                  type=str,
@@ -98,11 +102,11 @@ class opts(object):
                                  help='drop learning rate by 10.')
         self.parser.add_argument('--num_epochs',
                                  type=int,
-                                 default=10,  # 30, 10, 3, 1
+                                 default=30,  # 30, 10, 3, 1
                                  help='total training epochs.')
-        self.parser.add_argument('--batch_size',
+        self.parser.add_argument('--batch-size',
                                  type=int,
-                                 default=16,  # 18, 16, 14, 12, 10, 8, 4
+                                 default=10,  # 18, 16, 14, 12, 10, 8, 4
                                  help='batch size')
         self.parser.add_argument('--master_batch_size', type=int, default=-1,
                                  help='batch size on the master gpu.')
@@ -199,7 +203,7 @@ class opts(object):
 
         # mot: 选择数据集的配置文件
         self.parser.add_argument('--data_cfg', type=str,
-                                 default='../src/lib/cfg/mcmot.json',  # 'mot15.json', 'visdrone.json'
+                                 default='../src/lib/cfg/mcmot_det.json',  # 'mot15.json', 'visdrone.json'
                                  help='load data from cfg')
         # self.parser.add_argument('--data_cfg', type=str,
         #                          default='../src/lib/cfg/mcmot_det.json',  # mcmot.json, mcmot_det.json,
@@ -234,11 +238,19 @@ class opts(object):
         self.parser.add_argument('--id_weight',
                                  type=float,
                                  default=1,  # 0for detection only and 1 for detection and re-ida
-                                 help='loss weight for id')  # 控制是否计算ReID
+                                 help='loss weight for id')  # ReID feature extraction or not
         self.parser.add_argument('--reid_dim',
                                  type=int,
                                  default=128,  # 128, 256, 512
                                  help='feature dim for reid')
+        self.parser.add_argument('--input-wh',
+                                 type=tuple,
+                                 default=(1088, 608),  # (768, 448) or (1088, 608)
+                                 help='net input resplution')
+        self.parser.add_argument('--multi-scale',
+                                 type=bool,
+                                 default=True,
+                                 help='Whether to use multi-scale training or not')
 
         # ----------------------1~10 object classes are what we need
         # pedestrian      (1),  --> 0
@@ -255,7 +267,7 @@ class opts(object):
 
         # others          (11)
         self.parser.add_argument('--reid_cls_ids',
-                                 default='0,1,2,3,4,5,6,7,8,9',  # '0,1,2,3,4' or '0,1,2,3,4,5,6,7,8,9'
+                                 default='0,1,2,3,4',  # '0,1,2,3,4' or '0,1,2,3,4,5,6,7,8,9'
                                  help='')  # the object classes need to do reid
 
         self.parser.add_argument('--norm_wh', action='store_true',
@@ -324,7 +336,7 @@ class opts(object):
         :param dataset:
         :return:
         """
-        input_h, input_w = dataset.default_resolution  # 图片的高和宽
+        input_h, input_w = dataset.default_input_wh  # 图片的高和宽
         opt.mean, opt.std = dataset.mean, dataset.std  # 均值 方差
         opt.num_classes = dataset.num_classes  # 类别数
 
@@ -367,7 +379,7 @@ class opts(object):
         opt = self.parse(args)
 
         default_dataset_info = {
-            'mot': {'default_resolution': [608, 1088],  # [608, 1088], [320, 640]
+            'mot': {'default_input_wh': [opt.input_wh[1], opt.input_wh[0]],  # [608, 1088], [320, 640]
                     'num_classes': len(opt.reid_cls_ids.split(',')),  # 1
                     'mean': [0.408, 0.447, 0.470],
                     'std': [0.289, 0.274, 0.278],
@@ -381,9 +393,9 @@ class opts(object):
                 for k, v in entries.items():
                     self.__setattr__(k, v)
 
-        h_w = default_dataset_info[opt.task]['default_resolution']
+        h_w = default_dataset_info[opt.task]['default_input_wh']
         opt.img_size = (h_w[1], h_w[0])
-        print('Net input image H, W', h_w)
+        print('Net input image size: {:d}×{:d}'.format(h_w[1], h_w[0]))
 
         dataset = Struct(default_dataset_info[opt.task])
         opt.dataset = dataset.dataset
