@@ -229,7 +229,7 @@ def eval_seq(opt,
     results_dict = defaultdict(list)
 
     frame_id = 0  # frame index
-    for path, img, img_0 in data_loader:
+    for path, img, img0 in data_loader:
         if frame_id % 20 == 0:
             logger.info('Processing frame {} ({:.2f} fps)'.format(frame_id, 1.0 / max(1e-5, timer.average_time)))
 
@@ -240,7 +240,7 @@ def eval_seq(opt,
             # ----- track updates of each frame
             timer.tic()
 
-            online_targets_dict = tracker.update_tracking(blob, img_0)
+            online_targets_dict = tracker.update_tracking(blob, img0)
 
             timer.toc()
             # -----
@@ -266,7 +266,7 @@ def eval_seq(opt,
             # 绘制每一帧的结果
             if show_image or save_dir is not None:
                 if frame_id > 0:
-                    online_im: ndarray = vis.plot_tracks(image=img_0,
+                    online_im: ndarray = vis.plot_tracks(image=img0,
                                                          tlwhs_dict=online_tlwhs_dict,
                                                          obj_ids_dict=online_ids_dict,
                                                          num_classes=opt.num_classes,
@@ -277,13 +277,13 @@ def eval_seq(opt,
             timer.tic()
 
             # update detection results of this frame(or image)
-            dets_dict = tracker.update_detection(blob, img_0)
+            dets_dict = tracker.update_detection(blob, img0)
 
             timer.toc()
 
             # plot detection results
             if show_image or save_dir is not None:
-                online_im = vis.plot_detects(image=img_0,
+                online_im = vis.plot_detects(image=img0,
                                              dets_dict=dets_dict,
                                              num_classes=opt.num_classes,
                                              frame_id=frame_id,

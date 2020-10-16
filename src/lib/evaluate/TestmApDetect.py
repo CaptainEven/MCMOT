@@ -223,7 +223,8 @@ def batch_analysis(weights_list_file,
                 total_iou += cmp_res['avg_iou'] * cmp_res['label_num']
 
                 cmp_result.append(cmp_res)
-                print('%s: %d/%d  label: %d   detect: %d   correct: %d   recall: %f   avg_iou: %f   accuracy: %f   precision: %f' %
+                print(
+                    '%s: %d/%d  label: %d   detect: %d   correct: %d   recall: %f   avg_iou: %f   accuracy: %f   precision: %f' %
                     (str(obj_type), j + 1, image_num, cmp_res['label_num'], cmp_res['detect_num'],
                      cmp_res['correct'], cmp_res['recall'], cmp_res['avg_iou'],
                      cmp_res['accuracy'], cmp_res['precision']))
