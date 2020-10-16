@@ -495,7 +495,7 @@ class JDETracker(object):
 
             ''' Add newly detected tracklets to tracked_stracks'''
             unconfirmed_dict = defaultdict(list)
-            tracked_stracks_dict = defaultdict(list)  # type: key(cls_id), value: list[STrack]
+            tracked_stracks_dict = defaultdict(list)
             for track in self.tracked_stracks_dict[cls_id]:
                 if not track.is_activated:
                     unconfirmed_dict[cls_id].append(track)
