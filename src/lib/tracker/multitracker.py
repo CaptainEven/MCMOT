@@ -474,8 +474,9 @@ class JDETracker(object):
                 cls_detections = []
 
             # reset the track ids for each different object class
-            for track in cls_detections:
-                track.reset_track_id()
+            if self.frame_id == 0:
+                for track in cls_detections:
+                    track.reset_track_id()
 
             ''' Add newly detected tracklets to tracked_stracks'''
             unconfirmed_dict = defaultdict(list)
