@@ -15,23 +15,8 @@ from lib.tracking_utils.log import logger
 from lib.tracking_utils.utils import *
 from lib.utils.post_process import ctdet_post_process
 from .basetrack import BaseTrack, TrackState
-
-# class name and class id mapping
-cls2id = {
-    'car': 0,
-    'bicycle': 1,
-    'person': 2,
-    'cyclist': 3,
-    'tricycle': 4
-}
-
-id2cls = {
-    0: 'car',
-    1: 'bicycle',
-    2: 'person',
-    3: 'cyclist',
-    4: 'tricycle'
-}
+# from gen_dataset_visdrone import cls2id, id2cls  # visdrone
+from gen_labels_detrac_mcmot import cls2id, id2cls  # mcmot_c5
 
 
 class STrack(BaseTrack):
@@ -211,6 +196,7 @@ def map2orig(dets, h_out, w_out, h_orig, w_orig, num_classes):
     :param num_classes:
     :return: dict of detections(key: cls_id)
     """
+
     def get_padding():
         """
         :return: pad_1, pad_2, pad_type('pad_x' or 'pad_y'), new_shape(w, h)
@@ -278,13 +264,13 @@ class JDETracker(object):
 
         self.frame_id = 0
         self.det_thresh = opt.conf_thres
-        self.buffer_size = int(frame_rate / 10.0 * opt.track_buffer)  # int(frame_rate / 30.0 * opt.track_buffer)
+        self.buffer_size = int(frame_rate / 30.0 * opt.track_buffer)  # int(frame_rate / 30.0 * opt.track_buffer)
         self.max_time_lost = self.buffer_size
-        self.max_per_image = 128  # max objects per image
+        self.max_per_image = self.opt.K  # max objects per image
         self.mean = np.array(opt.mean, dtype=np.float32).reshape(1, 1, 3)
         self.std = np.array(opt.std, dtype=np.float32).reshape(1, 1, 3)
 
-        # 利用卡尔曼滤波过滤跟踪噪声
+        # ----- using kalman filter to stabilize tracking
         self.kalman_filter = KalmanFilter()
 
     def post_process(self, dets, meta):
@@ -386,7 +372,6 @@ class JDETracker(object):
 
         return dets_dict
 
-    # JDE跟踪器更新追踪状态
     def update_tracking(self, im_blob, img_0):
         """
         :param im_blob:
@@ -396,9 +381,7 @@ class JDETracker(object):
         # update frame id
         self.frame_id += 1
 
-        # 记录跟踪结果
-        # 记录跟踪结果: 默认只有一类, 修改为多类别, 用defaultdict(list)代替list
-        # 以class id为key
+        # record tracking results, key: class_id
         activated_starcks_dict = defaultdict(list)
         refind_stracks_dict = defaultdict(list)
         lost_stracks_dict = defaultdict(list)
@@ -421,9 +404,9 @@ class JDETracker(object):
             wh = output['wh']
             reg = output['reg'] if self.opt.reg_offset else None
             id_feature = output['id']
-            id_feature = F.normalize(id_feature, dim=1)  # L2 normalize
+            id_feature = F.normalize(id_feature, dim=1)  # L2 normalize the reid feature vector
 
-            #  检测和分类结果解析
+            #  detection decoding
             dets, inds, cls_inds_mask = mot_decode(heatmap=hm,
                                                    wh=wh,
                                                    reg=reg,
@@ -451,14 +434,15 @@ class JDETracker(object):
         # dets = self.post_process(dets, meta)  # using affine matrix
         # dets = self.merge_outputs([dets])
 
-        dets = map2orig(dets, h_out, w_out, height, width, self.opt.num_classes)  # translate and scale
+        # translate and scale
+        dets = map2orig(dets, h_out, w_out, height, width, self.opt.num_classes)
 
-        # ----- 解析每个检测类别
+        # ----- parse each object class
         for cls_id in range(self.opt.num_classes):  # cls_id从0开始
             cls_dets = dets[cls_id]
 
             '''
-            # 可视化中间的检测结果(每一类)
+            # visualize each class
             for i in range(0, cls_dets.shape[0]):
                 bbox = cls_dets[i][0:4]
                 cv2.rectangle(img0,
@@ -477,7 +461,7 @@ class JDETracker(object):
             cv2.waitKey(0)
             '''
 
-            # 过滤掉score得分太低的dets
+            # filter out low confidence detections
             remain_inds = cls_dets[:, 4] > self.opt.conf_thres
             cls_dets = cls_dets[remain_inds]
             cls_id_feature = cls_id_feats[cls_id][remain_inds]
@@ -489,9 +473,10 @@ class JDETracker(object):
             else:
                 cls_detections = []
 
-            # reset the track ids for a different object class
-            for track in cls_detections:
-                track.reset_track_id()
+            # reset the track ids for each different object class
+            if self.frame_id == 0:
+                for track in cls_detections:
+                    track.reset_track_id()
 
             ''' Add newly detected tracklets to tracked_stracks'''
             unconfirmed_dict = defaultdict(list)

@@ -147,7 +147,7 @@ class PoseResNet(nn.Module):
         self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3, bias=False)
         self.bn1 = nn.BatchNorm2d(64, momentum=BN_MOMENTUM)
         self.relu = nn.ReLU(inplace=True)
-        self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
+        self.maxpool = nn.MaxPool2d(kernel_size=2, stride=2, padding=0)
         self.layer1 = self._make_layer(block, 64, layers[0])
         self.layer2 = self._make_layer(block, 128, layers[1], stride=2)
         self.layer3 = self._make_layer(block, 256, layers[2], stride=2)
@@ -162,30 +162,32 @@ class PoseResNet(nn.Module):
 
         # set heads
         for head in self.heads:
-            classes = self.heads[head]
+            channels = self.heads[head]
             if head_conv > 0:
-                fc = nn.Sequential(nn.Conv2d(64, head_conv, kernel_size=3, padding=1, bias=True),
-                                   nn.ReLU(inplace=True),
-                                   nn.Conv2d(head_conv, classes, kernel_size=1, stride=1, padding=0, bias=True))
+                head_layer = nn.Sequential(
+                    nn.Conv2d(64, head_conv, kernel_size=3, padding=1, bias=True),
+                    nn.ReLU(inplace=True),
+                    nn.Conv2d(head_conv, channels, kernel_size=1, stride=1, padding=0, bias=True)
+                )
                 if 'hm' in head:
-                    fc[-1].bias.data.fill_(-2.19)
+                    head_layer[-1].bias.data.fill_(-2.19)
                 else:
-                    fill_fc_weights(fc)
+                    fill_fc_weights(head_layer)
             else:
-                fc = nn.Conv2d(64, classes, kernel_size=1, stride=1, padding=0, bias=True)
+                head_layer = nn.Conv2d(64, channels, kernel_size=1, stride=1, padding=0, bias=True)
                 if 'hm' in head:
-                    fc.bias.data.fill_(-2.19)
+                    head_layer.bias.data.fill_(-2.19)
                 else:
-                    fill_fc_weights(fc)
+                    fill_fc_weights(head_layer)
 
-            self.__setattr__(head, fc)
+            self.__setattr__(head, head_layer)
 
     def _make_layer(self, block, planes, blocks, stride=1):
         downsample = None
         if stride != 1 or self.inplanes != planes * block.expansion:
             downsample = nn.Sequential(
                 nn.Conv2d(self.inplanes, planes * block.expansion,
-                          kernel_size=1, stride=stride, bias=False),
+                          kernel_size=2, stride=stride, bias=False),
                 nn.BatchNorm2d(planes * block.expansion, momentum=BN_MOMENTUM),
             )
 
@@ -255,6 +257,7 @@ class PoseResNet(nn.Module):
         return nn.Sequential(*layers)
 
     def forward(self, x):
+        # get feature map
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu(x)
@@ -267,7 +270,7 @@ class PoseResNet(nn.Module):
 
         x = self.deconv_layers(x)
 
-        # get heads
+        # get heads outputs
         ret = {}
         for head in self.heads:
             ret[head] = self.__getattr__(head)(x)
@@ -275,7 +278,7 @@ class PoseResNet(nn.Module):
         return [ret]
 
     def init_weights(self, num_layers):
-        if 1:
+        if 0:  # 1
             url = model_urls['resnet{}'.format(num_layers)]
             pretrained_state_dict = model_zoo.load_url(url)
             print('=> loading pretrained model {}'.format(url))

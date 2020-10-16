@@ -1,14 +1,14 @@
 import numpy as np
 import cv2
-from lib.tracker.multitracker import id2cls, cls2id
+from lib.tracker.multitracker import id2cls
 
-cls_color_dict = {
-    'car': [180, 105, 255],        # hot pink
-    'bicycle': [219, 112, 147],    # MediumPurple
-    'person': [98, 130, 238],      # Salmon
-    'cyclist': [181, 228, 255],
-    'tricycle': [211, 85, 186]
-}
+# cls_color_dict = {
+#     'car': [180, 105, 255],  # hot pink
+#     'bicycle': [219, 112, 147],  # MediumPurple
+#     'person': [98, 130, 238],  # Salmon
+#     'cyclist': [181, 228, 255],
+#     'tricycle': [211, 85, 186]
+# }
 
 
 def tlwhs_to_tlbrs(tlwhs):
@@ -23,7 +23,6 @@ def tlwhs_to_tlbrs(tlwhs):
 def get_color(idx):
     idx = idx * 3
     color = ((37 * idx) % 255, (17 * idx) % 255, (29 * idx) % 255)
-
     return color
 
 
@@ -49,7 +48,7 @@ def plot_detects(image,
     :return:
     """
     img = np.ascontiguousarray(np.copy(image))
-    im_h, im_w = img.shape[:2]
+    # im_h, im_w = img.shape[:2]
 
     text_scale = max(1.0, image.shape[1] / 1200.)  # 1600.
     text_thickness = 2
@@ -73,7 +72,8 @@ def plot_detects(image,
             x1, y1, x2, y2, score, cls_id = obj
             cls_name = id2cls[int(cls_id)]
             box_int = tuple(map(int, (x1, y1, x2, y2)))
-            cls_color = cls_color_dict[cls_name]
+            # cls_color = cls_color_dict[cls_name]
+            cls_color = get_color(abs(cls_id))
 
             # draw bbox for each object
             cv2.rectangle(img,
@@ -155,13 +155,24 @@ def plot_tracks(image,
 
             # draw class name and index
             cv2.putText(img,
-                        id2cls[cls_id] + id_text,
+                        id2cls[cls_id],
                         (int(x1), int(y1)),
                         cv2.FONT_HERSHEY_PLAIN,
                         text_scale,
                         (0, 255, 255),  # cls_id: yellow
                         thickness=text_thickness)
 
+            txt_w, txt_h = cv2.getTextSize(id2cls[cls_id],
+                                           fontFace=cv2.FONT_HERSHEY_PLAIN,
+                                           fontScale=text_scale, thickness=text_thickness)
+
+            cv2.putText(img,
+                        id_text,
+                        (int(x1), int(y1) - txt_h),
+                        cv2.FONT_HERSHEY_PLAIN,
+                        text_scale,
+                        (0, 255, 255),  # cls_id: yellow
+                        thickness=text_thickness)
 
     return img
 

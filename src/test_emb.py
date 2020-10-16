@@ -82,6 +82,7 @@ def test_emb(
     print('Computing pairwise similairity...')
     if len(embedding) < 1:
         return None
+
     embedding = torch.stack(embedding, dim=0).cuda()
     id_labels = torch.LongTensor(id_labels)
     n = len(id_labels)
@@ -103,6 +104,7 @@ def test_emb(
     for f, fa in enumerate(far_levels):
         print('TPR@FAR={:.7f}: {:.4f}'.format(fa, tar_at_far[f]))
     return tar_at_far
+
 
 if __name__ == '__main__':
     os.environ['CUDA_VISIBLE_DEVICES'] = '1'

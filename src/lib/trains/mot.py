@@ -128,7 +128,7 @@ class McMotLoss(torch.nn.Module):
             # 包含可学习参数的层: 用于Re-ID的全连接层
             # @even: 为每个需要ReID的类别定义一个分类器
             self.classifiers = nn.ModuleDict()  # 使用ModuleList或ModuleDict才可以自动注册参数
-            self.focal_loss_dict = nn.ModuleDict()
+            # self.focal_loss_dict = nn.ModuleDict()
             for cls_id, nID in self.nID_dict.items():
                 # 选择一: 使用普通的全连接层
                 self.classifiers[str(cls_id)] = nn.Linear(self.emb_dim, nID)  # FC layers
@@ -216,7 +216,8 @@ class McMotLoss(torch.nn.Module):
 
                     # --- 累加每一个检测类别的ReID loss
                     # 选择一: 使用交叉熵优化ReID
-                    reid_loss += self.ce_loss(cls_id_pred, cls_id_target)
+                    # print('\nNum objects:'); print(cls_id_target.nelement())
+                    reid_loss += self.ce_loss(cls_id_pred, cls_id_target) / float(cls_id_target.nelement())
 
                     # 选择二: 使用Circle loss优化ReID
                     # reid_loss += self.circle_loss(*convert_label_to_similarity(cls_id_pred, cls_id_target))

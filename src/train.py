@@ -10,7 +10,7 @@ os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
 
 import torch
 
-my_visible_devs = '5'  # '0, 3'  # 设置可运行GPU编号
+my_visible_devs = '1'  # '0, 3'  # 设置可运行GPU编号
 os.environ['CUDA_VISIBLE_DEVICES'] = my_visible_devs
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
@@ -30,9 +30,9 @@ def run(opt):
     torch.backends.cudnn.benchmark = not opt.not_cuda_benchmark and not opt.test
 
     print('Setting up data...')
-    Dataset = get_dataset(opt.dataset, opt.task)  # if opt.task==mot -> JointDataset
+    Dataset = get_dataset(opt.dataset, opt.task, opt.multi_scale)  # if opt.task==mot -> JointDataset
 
-    f = open(opt.data_cfg)  # 选择哪一个数据集进行训练测试 '../src/lib/cfg/mot15.json',
+    f = open(opt.data_cfg)  # choose which dataset to train '../src/lib/cfg/mot15.json',
     data_config = json.load(f)
     trainset_paths = data_config['train']  # 训练集路径
     dataset_root = data_config['root']  # 数据集所在目录
@@ -46,7 +46,7 @@ def run(opt):
     dataset = Dataset(opt=opt,
                       root=dataset_root,
                       paths=trainset_paths,
-                      img_size=(1088, 608),
+                      img_size=opt.input_wh,
                       augment=True,
                       transforms=transforms)
     opt = opts().update_dataset_info_and_set_heads(opt, dataset)
@@ -80,18 +80,32 @@ def run(opt):
 
     # Get dataloader
     if opt.is_debug:
-        train_loader = torch.utils.data.DataLoader(dataset=dataset,
-                                                   batch_size=opt.batch_size,
-                                                   shuffle=True,
-                                                   pin_memory=True,
-                                                   drop_last=True)  # debug时不设置线程数(即默认为0)
+        if opt.multi_scale:
+            train_loader = torch.utils.data.DataLoader(dataset=dataset,
+                                                       batch_size=opt.batch_size,
+                                                       shuffle=False,
+                                                       pin_memory=True,
+                                                       drop_last=True)  # debug时不设置线程数(即默认为0)
+        else:
+            train_loader = torch.utils.data.DataLoader(dataset=dataset,
+                                                       batch_size=opt.batch_size,
+                                                       shuffle=True,
+                                                       pin_memory=True,
+                                                       drop_last=True)  # debug时不设置线程数(即默认为0)
     else:
-        train_loader = torch.utils.data.DataLoader(dataset=dataset,
-                                                   batch_size=opt.batch_size,
-                                                   shuffle=True,
-                                                   num_workers=opt.num_workers,
-                                                   pin_memory=True,
-                                                   drop_last=True)
+        if opt.multi_scale:
+            train_loader = torch.utils.data.DataLoader(dataset=dataset,
+                                                       batch_size=opt.batch_size,
+                                                       shuffle=False,
+                                                       num_workers=opt.num_workers,
+                                                       pin_memory=True,
+                                                       drop_last=True)
+        else:
+            train_loader = torch.utils.data.DataLoader(dataset=dataset,
+                                                       batch_size=opt.batch_size,
+                                                       shuffle=True,
+                                                       pin_memory=True,
+                                                       drop_last=True)  # debug时不设置线程数(即默认为0)
 
     print('Starting training...')
     Trainer = train_factory[opt.task]

@@ -77,7 +77,6 @@ def mot_decode(heatmap,
                cat_spec_wh=False,
                K=100):
     """
-    多目标检测结果解析
     :param heatmap:
     :param wh:
     :param reg:
@@ -114,10 +113,10 @@ def mot_decode(heatmap,
 
     classes = classes.view(N, K, 1).float()  # 目标类别
     scores = scores.view(N, K, 1)
-    bboxes = torch.cat([xs - wh[..., 0:1] / 2,   # left    x1
-                        ys - wh[..., 1:2] / 2,   # top     y1
-                        xs + wh[..., 0:1] / 2,   # right   x2
-                        ys + wh[..., 1:2] / 2],  # down    y2
+    bboxes = torch.cat([xs - wh[..., 0:1] * 0.5,   # left    x1
+                        ys - wh[..., 1:2] * 0.5,   # top     y1
+                        xs + wh[..., 0:1] * 0.5,   # right   x2
+                        ys + wh[..., 1:2] * 0.5],  # down    y2
                        dim=2)
     detections = torch.cat([bboxes, scores, classes], dim=2)
 
