@@ -5,8 +5,9 @@ This is an extention work of FairMOT, which extends the one-class multi-object t
 </br>
 You can refer to origin fork [FairMOT](https://github.com/ifzhang/FairMOT)
 ## Tracking demo of C5(car, bicycle, person, cyclist, tricycle)
+![image](https://github.com/CaptainEven/MCMOT/blob/master/test25_track.gif)
 ![image](https://github.com/CaptainEven/MCMOT/blob/master/test27_track.gif)
-![image](https://github.com/CaptainEven/MCMOT/blob/master/demo_c5.gif)
+![image](https://github.com/CaptainEven/MCMOT/blob/master/test28_track.gif)
 </br>
 ## Tracking demo of VISDrone dataset
 ![image](https://github.com/CaptainEven/MCMOT/blob/master/visdrone_31_track.gif)
