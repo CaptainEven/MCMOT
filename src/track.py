@@ -245,11 +245,10 @@ def eval_seq(opt,
             timer.toc()
             # -----
 
-            # 聚合每一帧的结果
+            # collect current frame's result
             online_tlwhs_dict = defaultdict(list)
             online_ids_dict = defaultdict(list)
-            for cls_id in range(opt.num_classes):
-                # 处理每一个目标检测类
+            for cls_id in range(opt.num_classes):  # process each class id
                 online_targets = online_targets_dict[cls_id]
                 for track in online_targets:
                     tlwh = track.tlwh
@@ -259,11 +258,11 @@ def eval_seq(opt,
                         online_tlwhs_dict[cls_id].append(tlwh)
                         online_ids_dict[cls_id].append(t_id)
 
-            # 保存每一帧的结果
+            # collect result
             for cls_id in range(opt.num_classes):
                 results_dict[cls_id].append((frame_id + 1, online_tlwhs_dict[cls_id], online_ids_dict[cls_id]))
 
-            # 绘制每一帧的结果
+            # draw track/detection
             if show_image or save_dir is not None:
                 if frame_id > 0:
                     online_im: ndarray = vis.plot_tracks(image=img0,
@@ -291,22 +290,16 @@ def eval_seq(opt,
         else:
             print('[Err]: un-recognized mode.')
 
-        # # 可视化中间结果
-        # if frame_id > 0:
-        #     cv2.imshow('Frame {}'.format(str(frame_id)), online_im)
-        #     cv2.waitKey()
-
         if frame_id > 0:
-            # 是否显示中间结果
             if show_image:
                 cv2.imshow('online_im', online_im)
             if save_dir is not None:
                 cv2.imwrite(os.path.join(save_dir, '{:05d}.jpg'.format(frame_id)), online_im)
 
-        # 处理完一帧, 更新frame_id
+        # update frame id
         frame_id += 1
 
-    # 写入最终结果save results
+    # write track/detection results
     write_results_dict(result_f_name, results_dict, data_type)
 
     return frame_id, timer.average_time, timer.calls
