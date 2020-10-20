@@ -52,7 +52,7 @@ def write_results(filename, results, data_type):
 
 # def write_detect_imgs()
 
-def write_results_dict(file_name, results_dict, data_type, num_classes=2):
+def write_results_dict(file_name, results_dict, data_type, num_classes=5):
     """
     :param file_name:
     :param results_dict:
@@ -69,9 +69,6 @@ def write_results_dict(file_name, results_dict, data_type, num_classes=2):
 
     with open(file_name, 'w') as f:
         for cls_id in range(num_classes):
-            if cls_id == 0:  # 背景类不处理
-                continue
-
             # 处理每一个目标检测类别的结果
             results = results_dict[cls_id]
             for frame_id, tlwhs, track_ids in results:
