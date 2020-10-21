@@ -74,3 +74,7 @@ The pre-trained model is for 5 classes(C5) detection & tracking: car, bicycle, p
 
 ### Resnet18 backbone for VisDrone mcmot
 [Resnet18 one drive link](https://1drv.ms/u/s!AmgjV-Jny9CqkjkCXS9QC8mJwMmB?e=XzrH1T)
+
+### Using YOLOV4 as detector
+You can also refer to the ropo：[MCMOT_YOLOV4](https://github.com/CaptainEven/YOLOV4_MCMOT) </br>
+This is MCMOT with CenterNet detection frame work replaced with an anchor-based detection framework.
