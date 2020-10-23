@@ -183,7 +183,7 @@ class opts(object):
         # 输入的video文件路径
         self.parser.add_argument('--input-video',
                                  type=str,
-                                 default='../videos/test5.mp4',
+                                 default='../videos/test2.mp4',
                                  help='path to the input video')
 
         # 输入的image目录
@@ -202,12 +202,12 @@ class opts(object):
                                  help='expected output root path')
 
         # mot: 选择数据集的配置文件
-        self.parser.add_argument('--data_cfg', type=str,
-                                 default='../src/lib/cfg/mcmot_det.json',  # 'mot15.json', 'visdrone.json'
-                                 help='load data from cfg')
         # self.parser.add_argument('--data_cfg', type=str,
-        #                          default='../src/lib/cfg/mcmot_det.json',  # mcmot.json, mcmot_det.json,
+        #                          default='../src/lib/cfg/visdrone.json',  # 'mcmot_det.json', 'visdrone.json'
         #                          help='load data from cfg')
+        self.parser.add_argument('--data_cfg', type=str,
+                                 default='../src/lib/cfg/mcmot.json',  # mcmot.json, mcmot_det.json,
+                                 help='load data from cfg')
         self.parser.add_argument('--data_dir',
                                  type=str,
                                  default='/mnt/diskb/even/dataset')
@@ -237,7 +237,7 @@ class opts(object):
                                  help='reid loss: ce | triplet')
         self.parser.add_argument('--id_weight',
                                  type=float,
-                                 default=1,  # 0for detection only and 1 for detection and re-ida
+                                 default=1,  # 0 for detection only and 1 for detection and re-id
                                  help='loss weight for id')  # ReID feature extraction or not
         self.parser.add_argument('--reid_dim',
                                  type=int,

@@ -13,7 +13,7 @@ from lib.tracker import matching
 from lib.tracking_utils.kalman_filter import KalmanFilter
 from lib.tracking_utils.log import logger
 from lib.tracking_utils.utils import *
-from lib.utils.post_process import ctdet_post_process
+from lib.utils.post_process  import ctdet_post_process
 from .basetrack import BaseTrack, TrackState
 # from gen_dataset_visdrone import cls2id, id2cls  # visdrone
 from gen_labels_detrac_mcmot import cls2id, id2cls  # mcmot_c5

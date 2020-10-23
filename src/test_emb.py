@@ -29,8 +29,14 @@ def test_emb(
         opt,
         batch_size=16,
         img_size=(1088, 608),
-        print_interval=40,
-):
+        print_interval=40, ):
+    """
+    :param opt:
+    :param batch_size:
+    :param img_size:
+    :param print_interval:
+    :return:
+    """
     data_cfg = opt.data_cfg
     f = open(data_cfg)
     data_cfg_dict = json.load(f)
@@ -42,6 +48,7 @@ def test_emb(
         opt.device = torch.device('cuda')
     else:
         opt.device = torch.device('cpu')
+        
     print('Creating model...')
     model = create_model(opt.arch, opt.heads, opt.head_conv)
     model = load_model(model, opt.load_model)
@@ -49,14 +56,14 @@ def test_emb(
     model = model.to(opt.device)
     model.eval()
 
-    # Get dataloader
+    # Get data loader
     transforms = T.Compose([T.ToTensor()])
     dataset = JointDataset(opt, dataset_root, test_paths, img_size, augment=False, transforms=transforms)
-    dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=False,
-                                             num_workers=8, drop_last=False)
+    data_loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=False,
+                                              num_workers=8, drop_last=False)
     embedding, id_labels = [], []
-    print('Extracting pedestrain features...')
-    for batch_i, batch in enumerate(dataloader):
+    print('Extracting features...')
+    for batch_i, batch in enumerate(data_loader):
         t = time.time()
         output = model(batch['input'].cuda())[-1]
         id_head = _tranpose_and_gather_feat(output['id'], batch['ind'].cuda())
@@ -75,11 +82,11 @@ def test_emb(
                 id_labels.append(label)
 
         if batch_i % print_interval == 0:
-            print(
-                'Extracting {}/{}, # of instances {}, time {:.2f} sec.'.format(batch_i, len(dataloader), len(id_labels),
-                                                                               time.time() - t))
+            print('Extracting {}/{}, # of instances {}, time {:.2f} sec.'
+                  .format(batch_i, len(data_loader), len(id_labels),
+                          time.time() - t))
 
-    print('Computing pairwise similairity...')
+    print('Computing pairwise similarity...')
     if len(embedding) < 1:
         return None
 
@@ -90,15 +97,15 @@ def test_emb(
     assert len(embedding) == n
 
     embedding = F.normalize(embedding, dim=1)
-    pdist = torch.mm(embedding, embedding.t()).cpu().numpy()
+    p_dist = torch.mm(embedding, embedding.t()).cpu().numpy()
     gt = id_labels.expand(n, n).eq(id_labels.expand(n, n).t()).numpy()
 
-    up_triangle = np.where(np.triu(pdist) - np.eye(n) * pdist != 0)
-    pdist = pdist[up_triangle]
+    up_triangle = np.where(np.triu(p_dist) - np.eye(n) * p_dist != 0)
+    p_dist = p_dist[up_triangle]
     gt = gt[up_triangle]
 
     far_levels = [1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 1e-1]
-    far, tar, threshold = metrics.roc_curve(gt, pdist)
+    far, tar, threshold = metrics.roc_curve(gt, p_dist)
     interp = interpolate.interp1d(far, tar)
     tar_at_far = [interp(x) for x in far_levels]
     for f, fa in enumerate(far_levels):
