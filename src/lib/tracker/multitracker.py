@@ -89,7 +89,12 @@ class STrack(BaseTrack):
 
         self.tracklet_len = 0
         self.state = TrackState.Tracked
+
+        # to return the first frame's detection result
+        if frame_id == 1:  # activate the first frame's detection result
+            self.is_activated = True
         # self.is_activated = True
+
         self.frame_id = frame_id
         self.start_frame = frame_id
 
