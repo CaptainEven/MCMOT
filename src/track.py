@@ -227,7 +227,7 @@ def eval_seq(opt,
 
     frame_id = 0  # frame index
     for path, img, img0 in data_loader:
-        if frame_id % 20 == 0:
+        if frame_id % 20 == 0 and frame_id != 0:
             logger.info('Processing frame {} ({:.2f} fps)'.format(frame_id, 1.0 / max(1e-5, timer.average_time)))
 
         # --- run tracking
@@ -250,7 +250,6 @@ def eval_seq(opt,
                 for track in online_targets:
                     tlwh = track.tlwh
                     t_id = track.track_id
-                    # vertical = tlwh[2] / tlwh[3] > 1.6  # box宽高比判断:w/h不能超过1.6?
                     if tlwh[2] * tlwh[3] > opt.min_box_area:  # and not vertical:
                         online_tlwhs_dict[cls_id].append(tlwh)
                         online_ids_dict[cls_id].append(t_id)

@@ -171,7 +171,7 @@ class opts(object):
                                  help='tracking buffer')
         self.parser.add_argument('--min-box-area',
                                  type=float,
-                                 default=200,
+                                 default=100,
                                  help='filter out tiny boxes')
 
         # 测试阶段的输入数据模式: video or image dir
