@@ -16,7 +16,7 @@ import numpy as np
 import torch
 
 from collections import defaultdict
-from lib.tracker.multitracker import JDETracker, id2cls
+from lib.tracker.multitracker import JDETracker, MCJDETracker, id2cls
 from lib.tracking_utils import visualization as vis
 from lib.tracking_utils.log import logger
 from lib.tracking_utils.timer import Timer
@@ -78,9 +78,12 @@ def write_results_dict(file_name, results_dict, data_type, num_classes=5):
                         continue
 
                     x1, y1, w, h = tlwh
-                    x2, y2 = x1 + w, y1 + h
+                    # x2, y2 = x1 + w, y1 + h
                     # line = save_format.format(frame=frame_id, id=track_id, x1=x1, y1=y1, x2=x2, y2=y2, w=w, h=h)
-                    line = save_format.format(frame=frame_id, id=track_id, x1=x1, y1=y1, x2=x2, y2=y2, w=w, h=h, cls_id=cls_id)
+                    line = save_format.format(frame=frame_id,
+                                              id=track_id,
+                                              x1=x1, y1=y1, w=w, h=h,
+                                              cls_id=cls_id)
                     f.write(line)
 
     logger.info('save results to {}'.format(file_name))
@@ -139,7 +142,6 @@ def eval_imgs_output_dets(opt,
     timer = Timer()
 
     results_dict = defaultdict(list)
-
     frame_id = 0  # frame index(start from 0)
     for path, img, img_0 in data_loader:
         if frame_id % 30 == 0:
@@ -219,7 +221,8 @@ def eval_seq(opt,
     if save_dir:
         mkdir_if_missing(save_dir)
 
-    tracker = JDETracker(opt, frame_rate=frame_rate)
+    # tracker = JDETracker(opt, frame_rate)
+    tracker = MCJDETracker(opt, frame_rate)
 
     timer = Timer()
 

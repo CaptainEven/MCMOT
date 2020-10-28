@@ -183,7 +183,7 @@ class opts(object):
         # 输入的video文件路径
         self.parser.add_argument('--input-video',
                                  type=str,
-                                 default='../videos/test2.mp4',
+                                 default='../videos/mcmot_seq2.mp4',
                                  help='path to the input video')
 
         # 输入的image目录
