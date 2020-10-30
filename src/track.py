@@ -61,6 +61,7 @@ def write_results_dict(file_name, results_dict, data_type, num_classes=5):
     if data_type == 'mot':
         # save_format = '{frame},{id},{x1},{y1},{w},{h},1,-1,-1,-1\n'
         save_format = '{frame},{id},{x1},{y1},{w},{h},1,{cls_id},1\n'
+        save_format = '{frame},{id},{x1},{y1},{w},{h},{score},{cls_id},1\n'
     elif data_type == 'kitti':
         save_format = '{frame} {id} pedestrian 0 0 -10 {x1} {y1} {x2} {y2} -10 -10 -10 -1000 -1000 -1000 -10\n'
     else:
@@ -69,11 +70,11 @@ def write_results_dict(file_name, results_dict, data_type, num_classes=5):
     with open(file_name, 'w') as f:
         for cls_id in range(num_classes):  # process each object class
             cls_results = results_dict[cls_id]
-            for frame_id, tlwhs, track_ids in cls_results:
+            for frame_id, tlwhs, track_ids, scores in cls_results:
                 if data_type == 'kitti':
                     frame_id -= 1
 
-                for tlwh, track_id in zip(tlwhs, track_ids):
+                for tlwh, track_id, score in zip(tlwhs, track_ids, scores):
                     if track_id < 0:
                         continue
 
@@ -83,6 +84,7 @@ def write_results_dict(file_name, results_dict, data_type, num_classes=5):
                     line = save_format.format(frame=frame_id,
                                               id=track_id,
                                               x1=x1, y1=y1, w=w, h=h,
+                                              score=score,
                                               cls_id=cls_id)
                     f.write(line)
 
@@ -248,18 +250,24 @@ def eval_seq(opt,
             # collect current frame's result
             online_tlwhs_dict = defaultdict(list)
             online_ids_dict = defaultdict(list)
+            online_scores_dict = defaultdict(list)
             for cls_id in range(opt.num_classes):  # process each class id
                 online_targets = online_targets_dict[cls_id]
                 for track in online_targets:
                     tlwh = track.tlwh
                     t_id = track.track_id
+                    score = track.score
                     if tlwh[2] * tlwh[3] > opt.min_box_area:  # and not vertical:
                         online_tlwhs_dict[cls_id].append(tlwh)
                         online_ids_dict[cls_id].append(t_id)
+                        online_scores_dict[cls_id].append(score)
 
             # collect result
             for cls_id in range(opt.num_classes):
-                results_dict[cls_id].append((frame_id + 1, online_tlwhs_dict[cls_id], online_ids_dict[cls_id]))
+                results_dict[cls_id].append((frame_id + 1,
+                                             online_tlwhs_dict[cls_id],
+                                             online_ids_dict[cls_id],
+                                             online_scores_dict[cls_id]))
 
             # draw track/detection
             if show_image or save_dir is not None:

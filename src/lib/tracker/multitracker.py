@@ -634,7 +634,6 @@ class MCJDETracker(object):
                 cls_id_feature = cls_id_feature.cpu().numpy()
                 cls_id_feats.append(cls_id_feature)
 
-        # 检测结果后处理
         # meta = {'c': c,
         #         's': s,
         #         'out_height': h_out,
@@ -673,18 +672,18 @@ class MCJDETracker(object):
                     tracked_tracks_dict[cls_id].append(track)
 
             ''' Step 2: First association, with embedding'''
-            strack_pool_dict = defaultdict(list)
-            strack_pool_dict[cls_id] = joint_stracks(tracked_tracks_dict[cls_id], self.lost_tracks_dict[cls_id])
+            track_pool_dict = defaultdict(list)
+            track_pool_dict[cls_id] = joint_stracks(tracked_tracks_dict[cls_id], self.lost_tracks_dict[cls_id])
 
             # Predict the current location with KF
-            # for strack in strack_pool:
-            Track.multi_predict(strack_pool_dict[cls_id])
-            dists = matching.embedding_distance(strack_pool_dict[cls_id], cls_detections)
-            dists = matching.fuse_motion(self.kalman_filter, dists, strack_pool_dict[cls_id], cls_detections)
+            # for track in track_pool:
+            Track.multi_predict(track_pool_dict[cls_id])
+            dists = matching.embedding_distance(track_pool_dict[cls_id], cls_detections)
+            dists = matching.fuse_motion(self.kalman_filter, dists, track_pool_dict[cls_id], cls_detections)
             matches, u_track, u_detection = matching.linear_assignment(dists, thresh=0.7)  # thresh=0.7
 
             for i_tracked, i_det in matches:
-                track = strack_pool_dict[cls_id][i_tracked]
+                track = track_pool_dict[cls_id][i_tracked]
                 det = cls_detections[i_det]
                 if track.state == TrackState.Tracked:
                     track.update(cls_detections[i_det], self.frame_id)
@@ -695,13 +694,13 @@ class MCJDETracker(object):
 
             ''' Step 3: Second association, with IOU'''
             cls_detections = [cls_detections[i] for i in u_detection]
-            r_tracked_stracks = [strack_pool_dict[cls_id][i]
-                                 for i in u_track if strack_pool_dict[cls_id][i].state == TrackState.Tracked]
-            dists = matching.iou_distance(r_tracked_stracks, cls_detections)
+            r_tracked_tracks = [track_pool_dict[cls_id][i]
+                                 for i in u_track if track_pool_dict[cls_id][i].state == TrackState.Tracked]
+            dists = matching.iou_distance(r_tracked_tracks, cls_detections)
             matches, u_track, u_detection = matching.linear_assignment(dists, thresh=0.5)  # thresh=0.5
 
             for i_tracked, i_det in matches:
-                track = r_tracked_stracks[i_tracked]
+                track = r_tracked_tracks[i_tracked]
                 det = cls_detections[i_det]
                 if track.state == TrackState.Tracked:
                     track.update(det, self.frame_id)
@@ -711,7 +710,7 @@ class MCJDETracker(object):
                     refined_tracks_dict[cls_id].append(track)
 
             for it in u_track:
-                track = r_tracked_stracks[it]
+                track = r_tracked_tracks[it]
                 if not track.state == TrackState.Lost:
                     track.mark_lost()
                     lost_tracks_dict[cls_id].append(track)
@@ -728,7 +727,7 @@ class MCJDETracker(object):
                 track.mark_removed()
                 removed_tracks_dict[cls_id].append(track)
 
-            """ Step 4: Init new stracks"""
+            """ Step 4: Init new tracks"""
             for i_new in u_detection:
                 track = cls_detections[i_new]
 
@@ -1091,7 +1090,7 @@ class JDETracker(object):
                 track.mark_removed()
                 removed_tracks_dict[cls_id].append(track)
 
-            """ Step 4: Init new stracks"""
+            """ Step 4: Init new tracks"""
             for i_new in u_detection:
                 track = cls_detections[i_new]
 
