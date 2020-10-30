@@ -84,7 +84,7 @@ def write_results_dict(file_name, results_dict, data_type, num_classes=5):
                     line = save_format.format(frame=frame_id,
                                               id=track_id,
                                               x1=x1, y1=y1, w=w, h=h,
-                                              score=score,
+                                              score=score,  # detection score
                                               cls_id=cls_id)
                     f.write(line)
 
