@@ -15,8 +15,8 @@ from lib.tracking_utils.log import logger
 from lib.tracking_utils.utils import *
 from lib.utils.post_process import ctdet_post_process
 from .basetrack import BaseTrack, MCBaseTrack, TrackState
-# from gen_dataset_visdrone import cls2id, id2cls  # visdrone
-from gen_labels_detrac_mcmot import cls2id, id2cls  # mcmot_c5
+from gen_dataset_visdrone import cls2id, id2cls  # visdrone
+# from gen_labels_detrac_mcmot import cls2id, id2cls  # mcmot_c5
 
 
 # TODO: Multi-class Track class
@@ -662,7 +662,7 @@ class MCJDETracker(object):
             else:
                 cls_detections = []
 
-            ''' Add newly detected tracks to tracked_stracks'''
+            ''' Add newly detected tracks to tracked_tracks'''
             unconfirmed_dict = defaultdict(list)
             tracked_tracks_dict = defaultdict(list)
             for track in self.tracked_tracks_dict[cls_id]:
@@ -673,7 +673,7 @@ class MCJDETracker(object):
 
             ''' Step 2: First association, with embedding'''
             track_pool_dict = defaultdict(list)
-            track_pool_dict[cls_id] = joint_stracks(tracked_tracks_dict[cls_id], self.lost_tracks_dict[cls_id])
+            track_pool_dict[cls_id] = join_tracks(tracked_tracks_dict[cls_id], self.lost_tracks_dict[cls_id])
 
             # Predict the current location with KF
             # for track in track_pool:
@@ -746,10 +746,10 @@ class MCJDETracker(object):
             # print('Ramained match {} s'.format(t4-t3))
             self.tracked_tracks_dict[cls_id] = [t for t in self.tracked_tracks_dict[cls_id] if
                                                 t.state == TrackState.Tracked]
-            self.tracked_tracks_dict[cls_id] = joint_stracks(self.tracked_tracks_dict[cls_id],
-                                                             activated_tracks_dict[cls_id])
-            self.tracked_tracks_dict[cls_id] = joint_stracks(self.tracked_tracks_dict[cls_id],
-                                                             refined_tracks_dict[cls_id])
+            self.tracked_tracks_dict[cls_id] = join_tracks(self.tracked_tracks_dict[cls_id],
+                                                           activated_tracks_dict[cls_id])
+            self.tracked_tracks_dict[cls_id] = join_tracks(self.tracked_tracks_dict[cls_id],
+                                                           refined_tracks_dict[cls_id])
             self.lost_tracks_dict[cls_id] = sub_stracks(self.lost_tracks_dict[cls_id],
                                                         self.tracked_tracks_dict[cls_id])
             self.lost_tracks_dict[cls_id].extend(lost_tracks_dict[cls_id])
@@ -1036,7 +1036,7 @@ class JDETracker(object):
 
             ''' Step 2: First association, with embedding'''
             strack_pool_dict = defaultdict(list)
-            strack_pool_dict[cls_id] = joint_stracks(tracked_stracks_dict[cls_id], self.lost_tracks_dict[cls_id])
+            strack_pool_dict[cls_id] = join_tracks(tracked_stracks_dict[cls_id], self.lost_tracks_dict[cls_id])
 
             # Predict the current location with KF
             # for strack in strack_pool:
@@ -1109,10 +1109,10 @@ class JDETracker(object):
             # print('Ramained match {} s'.format(t4-t3))
             self.tracked_tracks_dict[cls_id] = [t for t in self.tracked_tracks_dict[cls_id] if
                                                 t.state == TrackState.Tracked]
-            self.tracked_tracks_dict[cls_id] = joint_stracks(self.tracked_tracks_dict[cls_id],
-                                                             activated_tracks_dict[cls_id])
-            self.tracked_tracks_dict[cls_id] = joint_stracks(self.tracked_tracks_dict[cls_id],
-                                                             refined_tracks_dict[cls_id])
+            self.tracked_tracks_dict[cls_id] = join_tracks(self.tracked_tracks_dict[cls_id],
+                                                           activated_tracks_dict[cls_id])
+            self.tracked_tracks_dict[cls_id] = join_tracks(self.tracked_tracks_dict[cls_id],
+                                                           refined_tracks_dict[cls_id])
             self.lost_tracks_dict[cls_id] = sub_stracks(self.lost_tracks_dict[cls_id],
                                                         self.tracked_tracks_dict[cls_id])
             self.lost_tracks_dict[cls_id].extend(lost_tracks_dict[cls_id])
@@ -1139,7 +1139,7 @@ class JDETracker(object):
         return output_tracks_dict
 
 
-def joint_stracks(t_list_a, t_list_b):
+def join_tracks(t_list_a, t_list_b):
     """
     join two track lists
     :param t_list_a:

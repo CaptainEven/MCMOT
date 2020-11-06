@@ -12,11 +12,11 @@ my_visible_devs = '0'  # '0, 3'  # 设置可运行GPU编号
 os.environ['CUDA_VISIBLE_DEVICES'] = my_visible_devs
 device = torch.device('cuda: 0' if torch.cuda.is_available() else 'cpu')
 
-import torch.nn.functional as F
 import cv2
 import shutil
 import numpy as np
 import os.path as osp
+import torch.nn.functional as F
 from collections import defaultdict
 from lib.opts import opts  # import opts
 from lib.tracking_utils.utils import mkdir_if_missing
@@ -29,8 +29,22 @@ from lib.models.decode import mot_decode
 from lib.models.utils import _tranpose_and_gather_feat
 from lib.tracker.multitracker import map2orig
 from lib.tracking_utils.visualization import plot_detects
+from lib.utils.utils import select_device
 
 logger.setLevel(logging.INFO)
+
+
+# find the GPU idx with the largest remaining memory
+def FindFreeGPU():
+    """
+    :return:
+    """
+    os.system('nvidia-smi -q -d Memory |grep -A4 GPU|grep Free > tmp')
+    memory_left_gpu = [int(x.split()[2]) for x in open('tmp', 'r').readlines()]
+
+    most_free_gpu_idx = np.argmax(memory_left_gpu)
+    # print(str(most_free_gpu_idx))
+    return int(most_free_gpu_idx)
 
 
 def run_demo(opt):
@@ -81,6 +95,14 @@ def run_demo(opt):
     result_file_name = os.path.join(result_root, 'results.txt')
     frame_rate = data_loader.frame_rate
     frame_dir = None if opt.output_format == 'text' else osp.join(result_root, 'frame')
+
+    # Set device
+    # opt.device = device
+
+    # set device
+    opt.device = str(FindFreeGPU())
+    print('Using gpu: {:s}'.format(opt.device))
+    device = select_device(device='cpu' if not torch.cuda.is_available() else opt.device)
     opt.device = device
 
     try:
