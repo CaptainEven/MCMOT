@@ -554,13 +554,7 @@ class MCJDETracker(object):
                                                    K=self.opt.K)
 
             # --- map to original image coordinate system
-            # meta = {'c': c,
-            #         's': s,
-            #         'out_height': h_out,
-            #         'out_width': w_out}
-            # dets = self.post_process(dets, meta)  # using affine matrix
             dets = map2orig(dets, h_out, w_out, height, width, self.opt.num_classes)  # translate and scale
-            # dets = self.merge_outputs([dets])
 
             # --- parse detections of each class
             for cls_id in range(self.opt.num_classes):  # cls_id start from index 0
@@ -633,13 +627,6 @@ class MCJDETracker(object):
                 cls_id_feature = cls_id_feature.squeeze(0)  # n × FeatDim
                 cls_id_feature = cls_id_feature.cpu().numpy()
                 cls_id_feats.append(cls_id_feature)
-
-        # meta = {'c': c,
-        #         's': s,
-        #         'out_height': h_out,
-        #         'out_width': w_out}
-        # dets = self.post_process(dets, meta)  # using affine matrix
-        # dets = self.merge_outputs([dets])
 
         # translate and scale
         dets = map2orig(dets, h_out, w_out, height, width, self.opt.num_classes)
@@ -750,13 +737,13 @@ class MCJDETracker(object):
                                                            activated_tracks_dict[cls_id])
             self.tracked_tracks_dict[cls_id] = join_tracks(self.tracked_tracks_dict[cls_id],
                                                            refined_tracks_dict[cls_id])
-            self.lost_tracks_dict[cls_id] = sub_stracks(self.lost_tracks_dict[cls_id],
-                                                        self.tracked_tracks_dict[cls_id])
+            self.lost_tracks_dict[cls_id] = sub_tracks(self.lost_tracks_dict[cls_id],
+                                                       self.tracked_tracks_dict[cls_id])
             self.lost_tracks_dict[cls_id].extend(lost_tracks_dict[cls_id])
-            self.lost_tracks_dict[cls_id] = sub_stracks(self.lost_tracks_dict[cls_id],
-                                                        self.removed_tracks_dict[cls_id])
+            self.lost_tracks_dict[cls_id] = sub_tracks(self.lost_tracks_dict[cls_id],
+                                                       self.removed_tracks_dict[cls_id])
             self.removed_tracks_dict[cls_id].extend(removed_tracks_dict[cls_id])
-            self.tracked_tracks_dict[cls_id], self.lost_tracks_dict[cls_id] = remove_duplicate_stracks(
+            self.tracked_tracks_dict[cls_id], self.lost_tracks_dict[cls_id] = remove_duplicate_tracks(
                 self.tracked_tracks_dict[cls_id],
                 self.lost_tracks_dict[cls_id])
 
@@ -1113,13 +1100,13 @@ class JDETracker(object):
                                                            activated_tracks_dict[cls_id])
             self.tracked_tracks_dict[cls_id] = join_tracks(self.tracked_tracks_dict[cls_id],
                                                            refined_tracks_dict[cls_id])
-            self.lost_tracks_dict[cls_id] = sub_stracks(self.lost_tracks_dict[cls_id],
-                                                        self.tracked_tracks_dict[cls_id])
+            self.lost_tracks_dict[cls_id] = sub_tracks(self.lost_tracks_dict[cls_id],
+                                                       self.tracked_tracks_dict[cls_id])
             self.lost_tracks_dict[cls_id].extend(lost_tracks_dict[cls_id])
-            self.lost_tracks_dict[cls_id] = sub_stracks(self.lost_tracks_dict[cls_id],
-                                                        self.removed_tracks_dict[cls_id])
+            self.lost_tracks_dict[cls_id] = sub_tracks(self.lost_tracks_dict[cls_id],
+                                                       self.removed_tracks_dict[cls_id])
             self.removed_tracks_dict[cls_id].extend(removed_tracks_dict[cls_id])
-            self.tracked_tracks_dict[cls_id], self.lost_tracks_dict[cls_id] = remove_duplicate_stracks(
+            self.tracked_tracks_dict[cls_id], self.lost_tracks_dict[cls_id] = remove_duplicate_tracks(
                 self.tracked_tracks_dict[cls_id],
                 self.lost_tracks_dict[cls_id])
 
@@ -1159,31 +1146,31 @@ def join_tracks(t_list_a, t_list_b):
     return res
 
 
-def sub_stracks(tlista, tlistb):
-    stracks = {}
-    for t in tlista:
-        stracks[t.track_id] = t
-    for t in tlistb:
+def sub_tracks(t_list_a, t_list_b):
+    tracks = {}
+    for t in t_list_a:
+        tracks[t.track_id] = t
+    for t in t_list_b:
         tid = t.track_id
-        if stracks.get(tid, 0):
-            del stracks[tid]
-    return list(stracks.values())
+        if tracks.get(tid, 0):
+            del tracks[tid]
+    return list(tracks.values())
 
 
-def remove_duplicate_stracks(stracksa, stracksb):
-    pdist = matching.iou_distance(stracksa, stracksb)
-    pairs = np.where(pdist < 0.15)
-    dupa, dupb = list(), list()
+def remove_duplicate_tracks(tracks_a, tracks_b):
+    p_dist = matching.iou_distance(tracks_a, tracks_b)
+    pairs = np.where(p_dist < 0.15)
+    dup_a, dup_b = list(), list()
 
     for p, q in zip(*pairs):
-        timep = stracksa[p].frame_id - stracksa[p].start_frame
-        timeq = stracksb[q].frame_id - stracksb[q].start_frame
-        if timep > timeq:
-            dupb.append(q)
+        time_p = tracks_a[p].frame_id - tracks_a[p].start_frame
+        time_q = tracks_b[q].frame_id - tracks_b[q].start_frame
+        if time_p > time_q:
+            dup_b.append(q)
         else:
-            dupa.append(p)
+            dup_a.append(p)
 
-    resa = [t for i, t in enumerate(stracksa) if not i in dupa]
-    resb = [t for i, t in enumerate(stracksb) if not i in dupb]
+    res_a = [t for i, t in enumerate(tracks_a) if not i in dup_a]
+    res_b = [t for i, t in enumerate(tracks_b) if not i in dup_b]
 
-    return resa, resb
+    return res_a, res_b
