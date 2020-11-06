@@ -659,11 +659,11 @@ class MCJDETracker(object):
                     tracked_tracks_dict[cls_id].append(track)
 
             ''' Step 2: First association, with embedding'''
+            # building tracking pool for the current frame
             track_pool_dict = defaultdict(list)
             track_pool_dict[cls_id] = join_tracks(tracked_tracks_dict[cls_id], self.lost_tracks_dict[cls_id])
 
             # Predict the current location with KF
-            # for track in track_pool:
             Track.multi_predict(track_pool_dict[cls_id])
             dists = matching.embedding_distance(track_pool_dict[cls_id], cls_detects)
             dists = matching.fuse_motion(self.kalman_filter, dists, track_pool_dict[cls_id], cls_detects)
