@@ -642,12 +642,12 @@ class MCJDETracker(object):
 
             if len(cls_dets) > 0:
                 '''Detections, tlbrs: top left bottom right score'''
-                cls_detections = [
+                cls_detects = [
                     MCTrack(MCTrack.tlbr_to_tlwh(tlbrs[:4]), tlbrs[4], feat, self.opt.num_classes, cls_id, 30)
                     for (tlbrs, feat) in zip(cls_dets[:, :5], cls_id_feature)
                 ]
             else:
-                cls_detections = []
+                cls_detects = []
 
             ''' Add newly detected tracks to tracked_tracks'''
             unconfirmed_dict = defaultdict(list)
@@ -665,30 +665,30 @@ class MCJDETracker(object):
             # Predict the current location with KF
             # for track in track_pool:
             Track.multi_predict(track_pool_dict[cls_id])
-            dists = matching.embedding_distance(track_pool_dict[cls_id], cls_detections)
-            dists = matching.fuse_motion(self.kalman_filter, dists, track_pool_dict[cls_id], cls_detections)
+            dists = matching.embedding_distance(track_pool_dict[cls_id], cls_detects)
+            dists = matching.fuse_motion(self.kalman_filter, dists, track_pool_dict[cls_id], cls_detects)
             matches, u_track, u_detection = matching.linear_assignment(dists, thresh=0.7)  # thresh=0.7
 
             for i_tracked, i_det in matches:
                 track = track_pool_dict[cls_id][i_tracked]
-                det = cls_detections[i_det]
+                det = cls_detects[i_det]
                 if track.state == TrackState.Tracked:
-                    track.update(cls_detections[i_det], self.frame_id)
+                    track.update(cls_detects[i_det], self.frame_id)
                     activated_tracks_dict[cls_id].append(track)  # for multi-class
                 else:
                     track.re_activate(det, self.frame_id, new_id=False)
                     refined_tracks_dict[cls_id].append(track)
 
             ''' Step 3: Second association, with IOU'''
-            cls_detections = [cls_detections[i] for i in u_detection]
+            cls_detects = [cls_detects[i] for i in u_detection]
             r_tracked_tracks = [track_pool_dict[cls_id][i]
                                  for i in u_track if track_pool_dict[cls_id][i].state == TrackState.Tracked]
-            dists = matching.iou_distance(r_tracked_tracks, cls_detections)
+            dists = matching.iou_distance(r_tracked_tracks, cls_detects)
             matches, u_track, u_detection = matching.linear_assignment(dists, thresh=0.5)  # thresh=0.5
 
             for i_tracked, i_det in matches:
                 track = r_tracked_tracks[i_tracked]
-                det = cls_detections[i_det]
+                det = cls_detects[i_det]
                 if track.state == TrackState.Tracked:
                     track.update(det, self.frame_id)
                     activated_tracks_dict[cls_id].append(track)
@@ -703,11 +703,11 @@ class MCJDETracker(object):
                     lost_tracks_dict[cls_id].append(track)
 
             '''Deal with unconfirmed tracks, usually tracks with only one beginning frame'''
-            cls_detections = [cls_detections[i] for i in u_detection]
-            dists = matching.iou_distance(unconfirmed_dict[cls_id], cls_detections)
+            cls_detects = [cls_detects[i] for i in u_detection]
+            dists = matching.iou_distance(unconfirmed_dict[cls_id], cls_detects)
             matches, u_unconfirmed, u_detection = matching.linear_assignment(dists, thresh=0.7)
             for i_tracked, i_det in matches:
-                unconfirmed_dict[cls_id][i_tracked].update(cls_detections[i_det], self.frame_id)
+                unconfirmed_dict[cls_id][i_tracked].update(cls_detects[i_det], self.frame_id)
                 activated_tracks_dict[cls_id].append(unconfirmed_dict[cls_id][i_tracked])
             for it in u_unconfirmed:
                 track = unconfirmed_dict[cls_id][it]
@@ -716,7 +716,7 @@ class MCJDETracker(object):
 
             """ Step 4: Init new tracks"""
             for i_new in u_detection:
-                track = cls_detections[i_new]
+                track = cls_detects[i_new]
 
                 if track.score < self.det_thresh:
                     continue
@@ -774,10 +774,10 @@ class JDETracker(object):
         self.model = self.model.to(opt.device)
         self.model.eval()
 
-        # ----- track_lets
-        self.tracked_tracks_dict = defaultdict(list)  # value type: list[STrack]
-        self.lost_tracks_dict = defaultdict(list)  # value type: list[STrack]
-        self.removed_tracks_dict = defaultdict(list)  # value type: list[STrack]
+        # ----- track_lets: value type: list[Track]
+        self.tracked_tracks_dict = defaultdict(list)
+        self.lost_tracks_dict = defaultdict(list)
+        self.removed_tracks_dict = defaultdict(list)
 
         self.frame_id = 0
         self.det_thresh = opt.conf_thres
